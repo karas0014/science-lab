@@ -6,8 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Physics: Wave Properties (Tailwind Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -24,14 +27,27 @@
         }
     </script>
     <style>
-        /* 僅保留極少量的自定義樣式，處理 Webkit Slider 的細節與數學符號字體 */
-        
+        :root{ --ac:#0ea5e9; }
+        body{ font-family:'Noto Sans HK',sans-serif; }
+        .bp-btn{
+            position:fixed;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+            box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
         /* 數學符號專用字體 */
         .math-symbol {
             font-family: "Times New Roman", Times, serif;
             font-style: italic;
             font-weight: normal;
         }
+        body.dark #lang-label-zh, body.dark #lang-label-en { color:#94a3b8; }
+        body.dark #lang-label-zh.font-bold, body.dark #lang-label-en.font-bold { color:#f1f5f9; }
 
         /* 讓 Range Slider 在 Webkit 瀏覽器中有更好的互動手感 (雖然 accent-color 已處理大部分) */
         input[type=range]::-webkit-slider-thumb {
@@ -46,12 +62,26 @@
         }
     </style>
 </head>
-<body class="bg-sky-50 text-slate-900 min-h-screen flex flex-col items-center p-5 font-sans selection:bg-sky-200">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bg-sky-50 dark:bg-[#0a1626] text-slate-900 dark:text-slate-200 min-h-screen flex flex-col items-center p-5 pt-16 selection:bg-sky-200">
+<a href="../../physics.html" class="bp-btn" style="top:12px;left:12px" aria-label="返回索引 / Back to index">
+    <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
+</a>
+<button onclick="toggleTheme()" class="bp-btn" style="top:12px;left:118px" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+    <span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span>
+</button>
+<script>
+    function toggleTheme(){
+        const dark = !document.body.classList.contains('dark');
+        document.body.classList.toggle('dark', dark);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="16" height="16"></i>`;
+        if(window.__setSimTheme) window.__setSimTheme(dark);
+        if(window.lucide) lucide.createIcons();
+    }
+</script>
 
     <!-- Header -->
     <header class="w-full max-w-3xl flex justify-between items-center mb-6">
-        <h1 id="app-title" class="text-2xl font-bold text-sky-600 tracking-tight">波動實驗室</h1>
+        <h1 id="app-title" class="text-2xl font-bold text-sky-600 dark:text-sky-400 tracking-tight" style="font-family:'Noto Serif HK',serif">波動實驗室</h1>
         
         <!-- Toggle Container -->
         <div class="flex items-center gap-3 text-sm font-medium text-slate-500">
@@ -69,16 +99,16 @@
 
     <!-- Canvas Container -->
     <!-- 乾淨的卡片容器，帶有細微陰影與邊框 -->
-    <div class="canvas-container w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative mb-6 h-[400px]">
+    <div class="canvas-container w-full max-w-3xl bg-white dark:bg-[#0d192b] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden relative mb-6 h-[400px]">
         <canvas id="waveCanvas" class="w-full h-full block touch-none"></canvas>
     </div>
 
     <!-- Controls Grid -->
-    <div class="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="w-full max-w-3xl bg-white dark:bg-[#0d192b] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         
         <!-- Amplitude -->
         <div class="flex flex-col gap-2">
-            <div class="flex justify-between text-sm text-slate-500">
+            <div class="flex justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span data-i18n="amplitude">振幅 (<span class="math-symbol text-base">A</span>)</span>
                 <span id="val-amp" class="text-sky-600 font-mono font-bold">1.0 m</span>
             </div>
@@ -89,7 +119,7 @@
 
         <!-- Frequency -->
         <div class="flex flex-col gap-2">
-            <div class="flex justify-between text-sm text-slate-500">
+            <div class="flex justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span data-i18n="frequency">頻率 (<span class="math-symbol text-base">f</span>)</span>
                 <span id="val-freq" class="text-sky-600 font-mono font-bold">0.5 Hz</span>
             </div>
@@ -99,7 +129,7 @@
 
         <!-- Wavelength -->
         <div class="flex flex-col gap-2">
-            <div class="flex justify-between text-sm text-slate-500">
+            <div class="flex justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span data-i18n="wavelength">波長 (<span class="math-symbol text-base">λ</span>)</span>
                 <span id="val-lambda" class="text-sky-600 font-mono font-bold">2.0 m</span>
             </div>
@@ -120,26 +150,26 @@
     <!-- Info Panel -->
     <div class="w-full max-w-3xl grid grid-cols-2 gap-5 mb-6">
         <!-- Period Card -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-sky-500 flex flex-col justify-center">
+        <div class="bg-white dark:bg-[#0d192b] p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 border-l-4 border-l-sky-500 flex flex-col justify-center">
             <!-- Removed 'uppercase' class to ensure physics symbols (f, v) are rendered correctly in lowercase -->
-            <div class="text-sm tracking-wide text-slate-500 mb-1" data-i18n="period">
+            <div class="text-sm tracking-wide text-slate-500 dark:text-slate-400 mb-1" data-i18n="period">
                 週期 (<span class="math-symbol">T</span> = 1/<span class="math-symbol">f</span>)
             </div>
-            <div class="text-2xl font-bold text-slate-900 font-mono" id="disp-period">2.00 s</div>
+            <div class="text-2xl font-bold text-slate-900 dark:text-white font-mono" id="disp-period">2.00 s</div>
         </div>
         
         <!-- Speed Card -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-sky-500 flex flex-col justify-center">
+        <div class="bg-white dark:bg-[#0d192b] p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 border-l-4 border-l-sky-500 flex flex-col justify-center">
             <!-- Removed 'uppercase' class here as well -->
-            <div class="text-sm tracking-wide text-slate-500 mb-1" data-i18n="waveSpeed">
+            <div class="text-sm tracking-wide text-slate-500 dark:text-slate-400 mb-1" data-i18n="waveSpeed">
                 波速 (<span class="math-symbol">v</span> = <span class="math-symbol">fλ</span>)
             </div>
-            <div class="text-2xl font-bold text-slate-900 font-mono" id="disp-speed">1.00 m/s</div>
+            <div class="text-2xl font-bold text-slate-900 dark:text-white font-mono" id="disp-speed">1.00 m/s</div>
         </div>
     </div>
 
     <!-- Tip Box -->
-    <div class="w-full max-w-3xl bg-amber-50 border border-amber-200 text-amber-900 p-5 rounded-2xl shadow-sm flex gap-3 items-start">
+    <div class="w-full max-w-3xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-900 dark:text-amber-200 p-5 rounded-2xl shadow-sm flex gap-3 items-start">
         <div class="shrink-0 mt-0.5 text-amber-500">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </div>
@@ -161,11 +191,18 @@
         const theme = {
             wave: '#0284c7',      // sky-600 (深天藍，用於波浪線)
             particle: '#e11d48',  // rose-600 (鮮豔玫紅，用於粒子)
-            grid: '#cbd5e1',      // slate-300 (淺灰，用於格線)
-            guide: '#b45309',     // amber-700 (深琥珀，用於標註)
-            equilibrium: '#94a3b8', // slate-400 (中灰，用於平衡位置)
-            text: '#0f172a',      // slate-900 (深黑，用於標籤文字)
-            panelBg: '#ffffff'    // white (用於遮罩文字背景)
+            grid: 'rgba(56,189,248,.16)',
+            guide: '#f59e0b',
+            equilibrium: '#64748b',
+            text: '#e2e8f0',
+            panelBg: '#0d192b'
+        };
+        window.__setSimTheme = (dark) => {
+            theme.grid = dark ? 'rgba(56,189,248,.16)' : '#cbd5e1';
+            theme.guide = dark ? '#f59e0b' : '#b45309';
+            theme.equilibrium = dark ? '#64748b' : '#94a3b8';
+            theme.text = dark ? '#e2e8f0' : '#0f172a';
+            theme.panelBg = dark ? '#0d192b' : '#ffffff';
         };
 
         const state = {
@@ -528,9 +565,10 @@
         // 初始化
         setTimeout(() => {
              resize();
-             updateCalculations(); 
-             updateLanguage(); 
-             requestAnimationFrame(animate); 
+             updateCalculations();
+             updateLanguage();
+             requestAnimationFrame(animate);
+             if(window.lucide) lucide.createIcons();
         }, 50);
 
     </script>
