@@ -4,18 +4,20 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>庫倫定律模擬器</title>
+    <title>庫倫定律模擬器 · Coulomb's Law Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Fonts: Serif (CJK titles) · Sans (body) · Mono (technical labels) -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         /* ============================================================
            BLUEPRINT SKIN — shared across all Science-Panel simulators
-           (surface · panels · fonts · technical labels · accent)
+           surface · panels · fonts · technical labels · accent ·
+           dark/light theme · zh/en language toggle
            ============================================================ */
         :root{ color-scheme: light dark; --ac:#10b981; }
-        body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; }
+        body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
         .serif-font{ font-family:'Noto Serif HK',serif; }
         .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
 
@@ -46,31 +48,39 @@
         }
         body.dark .bp-panel{ border-color:#2c3e57; background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
 
-        /* Corner registration ticks (technical crop-marks) */
+        /* Corner registration ticks */
         .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
         .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; }
         .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
         .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; }
         .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
 
-        /* Blueprint back-link (matches hub nav buttons) */
-        .bp-back{
-            position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:7px;
-            padding:8px 14px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);
-            color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;
-            letter-spacing:.08em;text-decoration:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+        /* Fixed top control bar (back-link + theme + language) */
+        .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
             box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s;
         }
-        .bp-back:hover{ border-color:var(--ac);color:#0f172a; }
-        body.dark .bp-back{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
-        body.dark .bp-back:hover{ border-color:var(--ac);color:#fff; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
 
-        /* Reading chip (result readout) */
+        /* Reading chip */
         .bp-chip{
             font-family:'JetBrains Mono',ui-monospace,monospace;
             border:1px solid #c3ccd8;border-radius:4px;background:rgba(255,255,255,.7);
         }
         body.dark .bp-chip{ border-color:#2c3e57;background:rgba(13,25,43,.5); }
+
+        /* Theme-aware SVG neutrals */
+        .svg-grid{ stroke:rgba(37,99,235,.14); }
+        body.dark .svg-grid{ stroke:rgba(56,189,248,.16); }
+        .svg-dim{ stroke:#64748b; }
+        .svg-dim-fill{ fill:#475569; }
+        body.dark .svg-dim-fill{ fill:#94a3b8; }
 
         /* ---- Sliders (blueprint-reskinned, per-charge accents kept) ---- */
         input[type=range]{ -webkit-appearance:none;width:100%;background:transparent; }
@@ -78,9 +88,7 @@
             -webkit-appearance:none;height:18px;width:18px;border-radius:3px;background:#fff;
             border:2px solid #64748b;cursor:pointer;margin-top:-7px;box-shadow:0 1px 3px rgba(2,6,23,.35);
         }
-        input[type=range]::-webkit-slider-runnable-track{
-            width:100%;height:4px;cursor:pointer;background:#c3ccd8;border-radius:2px;
-        }
+        input[type=range]::-webkit-slider-runnable-track{ width:100%;height:4px;cursor:pointer;background:#c3ccd8;border-radius:2px; }
         body.dark input[type=range]::-webkit-slider-runnable-track{ background:#2c3e57; }
         #q1-slider::-webkit-slider-thumb{ border-color:#ef4444; }
         #q1-slider::-webkit-slider-runnable-track{ background:#fecaca; }
@@ -92,17 +100,32 @@
         .math-font{ font-family:'Times New Roman',Times,serif;font-style:italic; }
     </style>
 </head>
-<body class="bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
-<a id="__backlink" href="../../physics.html" class="bp-back">← <span>INDEX</span></a>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
 
-    <div class="max-w-6xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-2">
+<!-- Top control bar -->
+<a href="../../physics.html" class="bp-bar bp-btn" style="left:12px" aria-label="返回索引 / Back to index">
+    <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
+</a>
+<div class="bp-bar" style="right:12px">
+    <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+        <span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span>
+    </button>
+    <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language">
+        <i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span>
+    </button>
+</div>
+
+    <div class="max-w-6xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
         <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
 
         <!-- Header: drawing title block -->
         <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.10</span>
-                <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">庫倫定律模擬器</h1>
+                <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                    <span class="lang-zh">庫倫定律模擬器</span>
+                    <span class="lang-en hidden">Coulomb's Law Simulator</span>
+                </h1>
             </div>
             <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">PHY · Coulomb's Law</span>
         </div>
@@ -112,9 +135,11 @@
             <!-- 左側：視覺化區域 (SVG) -->
             <div class="w-full md:w-3/4 relative min-h-[450px] flex items-center justify-center border-b md:border-b-0 md:border-r border-slate-300 dark:border-slate-700 overflow-hidden bg-white/40 dark:bg-slate-900/30">
 
-                <!-- 公式顯示 (移至左側右上角) -->
+                <!-- 公式顯示 -->
                 <div class="absolute top-4 right-4 bp-chip p-4 z-10 max-w-[200px] md:max-w-xs">
-                    <h3 class="mono font-bold text-slate-500 dark:text-slate-400 mb-1 border-b border-slate-300 dark:border-slate-600 pb-1 text-[11px] tracking-[0.14em] uppercase text-center">庫倫定律</h3>
+                    <h3 class="mono font-bold text-slate-500 dark:text-slate-400 mb-1 border-b border-slate-300 dark:border-slate-600 pb-1 text-[11px] tracking-[0.14em] uppercase text-center">
+                        <span class="lang-zh">庫倫定律</span><span class="lang-en hidden">Coulomb's Law</span>
+                    </h3>
                     <div class="text-center text-lg my-1 math-font text-slate-900 dark:text-slate-100">
                         F = k <span class="text-xl">|</span><div class="inline-block align-middle text-center"><span class="border-b border-current block px-1 leading-tight">Q<sub>1</sub> Q<sub>2</sub></span><span class="block leading-tight">r<sup>2</sup></span></div><span class="text-xl">|</span>
                     </div>
@@ -125,18 +150,15 @@
 
                 <!-- 作用力狀態標籤 -->
                 <div id="force-type-label" class="absolute top-4 left-4 bp-chip px-3 py-1 mono font-bold text-sm text-slate-600 dark:text-slate-300 z-10">
-                    狀態: <span class="text-purple-600 dark:text-purple-400">相吸</span>
+                    <span class="lang-zh">狀態: <span class="text-purple-600 dark:text-purple-400">相吸</span></span>
+                    <span class="lang-en hidden">Status: <span class="text-purple-600 dark:text-purple-400">Attraction</span></span>
                 </div>
 
                 <svg id="sim-canvas" width="100%" height="450" viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" class="z-0">
-                    <!-- 背景網格 -->
                     <defs>
                         <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(37,99,235,.14)" stroke-width="1"/>
+                            <path d="M 40 0 L 0 0 0 40" fill="none" class="svg-grid" stroke-width="1"/>
                         </pattern>
-                        <!-- 定義箭頭 (marker) -->
-                        <!-- 關鍵修改: refX="0"。這確保箭頭的"底部"對齊線條的終點，實現不重疊。 -->
-                        <!-- markerWidth=6, stroke-width=6 => 箭頭實際像素長度為 36px -->
                         <marker id="arrowhead-red" markerWidth="6" markerHeight="4.2" refX="0" refY="3.5" orient="auto" viewBox="0 0 10 7">
                             <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
                         </marker>
@@ -148,26 +170,24 @@
 
                     <!-- 距離標示線 -->
                     <g id="distance-indicator" transform="translate(0, 280)">
-                        <line id="dist-line" x1="150" y1="0" x2="450" y2="0" stroke="#64748b" stroke-width="2" stroke-dasharray="5,5"/>
-                        <line id="dist-tick-1" x1="150" y1="-5" x2="150" y2="5" stroke="#64748b" stroke-width="2"/>
-                        <line id="dist-tick-2" x1="450" y1="-5" x2="450" y2="5" stroke="#64748b" stroke-width="2"/>
-                        <text id="dist-text" x="300" y="25" text-anchor="middle" fill="#475569" font-size="16" font-weight="bold" font-family="'JetBrains Mono',monospace">r = 3.0 m</text>
+                        <line id="dist-line" x1="150" y1="0" x2="450" y2="0" class="svg-dim" stroke-width="2" stroke-dasharray="5,5"/>
+                        <line id="dist-tick-1" x1="150" y1="-5" x2="150" y2="5" class="svg-dim" stroke-width="2"/>
+                        <line id="dist-tick-2" x1="450" y1="-5" x2="450" y2="5" class="svg-dim" stroke-width="2"/>
+                        <text id="dist-text" x="300" y="25" text-anchor="middle" class="svg-dim-fill" font-size="16" font-weight="bold" font-family="'JetBrains Mono',monospace">r = 3.0 m</text>
                     </g>
 
-                    <!-- 力向量 (Arrows) -->
-                    <!-- Q1 的受力箭頭 -->
+                    <!-- 力向量 -->
                     <line id="force-arrow-q1" x1="150" y1="200" x2="100" y2="200" stroke="#ef4444" stroke-width="6" marker-end="url(#arrowhead-red)" opacity="0.8"/>
                     <text id="force-label-q1" x="100" y="180" text-anchor="middle" fill="#ef4444" font-weight="bold" font-size="16" font-family="serif">
                         F<tspan dy="5" font-size="12">12</tspan>
                     </text>
 
-                    <!-- Q2 的受力箭頭 -->
                     <line id="force-arrow-q2" x1="450" y1="200" x2="500" y2="200" stroke="#3b82f6" stroke-width="6" marker-end="url(#arrowhead-blue)" opacity="0.8"/>
                     <text id="force-label-q2" x="500" y="180" text-anchor="middle" fill="#3b82f6" font-weight="bold" font-size="16" font-family="serif">
                         F<tspan dy="5" font-size="12">21</tspan>
                     </text>
 
-                    <!-- 球體 Q1 (固定位置，稍微左移以適應大距離) -->
+                    <!-- 球體 Q1 -->
                     <g id="sphere-q1" transform="translate(150, 200)">
                         <circle cx="0" cy="0" r="30" fill="#ef4444" stroke="#b91c1c" stroke-width="3" class="shadow-xl"/>
                         <text x="0" y="8" text-anchor="middle" fill="white" font-weight="bold" font-size="22" font-family="serif">
@@ -176,7 +196,7 @@
                         <text id="q1-val-svg" x="0" y="55" text-anchor="middle" fill="#ef4444" font-weight="bold" font-size="14" font-family="'JetBrains Mono',monospace">+4 µC</text>
                     </g>
 
-                    <!-- 球體 Q2 (移動位置) -->
+                    <!-- 球體 Q2 -->
                     <g id="sphere-q2" transform="translate(450, 200)">
                         <circle cx="0" cy="0" r="30" fill="#3b82f6" stroke="#1d4ed8" stroke-width="3"/>
                         <text x="0" y="8" text-anchor="middle" fill="white" font-weight="bold" font-size="22" font-family="serif">
@@ -191,82 +211,72 @@
             <div class="w-full md:w-1/4 p-4 flex flex-col gap-5 overflow-y-auto max-h-[600px]">
 
                 <div class="mono text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500 flex items-center gap-2">
-                    <span style="color:var(--ac)">///</span> 控制 · Controls
+                    <span style="color:var(--ac)">///</span>
+                    <span class="lang-zh">控制 · Controls</span><span class="lang-en hidden">Controls</span>
                 </div>
 
-                <!-- 控制項 -->
                 <div class="space-y-6 pt-1">
-                    <!-- Q1 控制 -->
+                    <!-- Q1 -->
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="font-bold text-red-600 dark:text-red-400 flex items-center">
-                                Q<sub>1</sub> 電荷 <span class="mono text-xs ml-1 font-normal text-slate-400">(µC)</span>
+                                <span class="lang-zh">Q<sub>1</sub> 電荷</span><span class="lang-en hidden">Q<sub>1</sub> Charge</span>
+                                <span class="mono text-xs ml-1 font-normal text-slate-400">(µC)</span>
                             </label>
                             <span id="q1-display" class="mono bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 px-2 py-0.5 rounded text-sm">+4</span>
                         </div>
                         <input type="range" id="q1-slider" min="-10" max="10" step="1" value="4">
-                        <div class="mono flex justify-between text-[10px] text-slate-400 mt-1">
-                            <span>-10</span>
-                            <span>0</span>
-                            <span>+10</span>
-                        </div>
+                        <div class="mono flex justify-between text-[10px] text-slate-400 mt-1"><span>-10</span><span>0</span><span>+10</span></div>
                     </div>
 
-                    <!-- Q2 控制 -->
+                    <!-- Q2 -->
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="font-bold text-blue-600 dark:text-blue-400 flex items-center">
-                                Q<sub>2</sub> 電荷 <span class="mono text-xs ml-1 font-normal text-slate-400">(µC)</span>
+                                <span class="lang-zh">Q<sub>2</sub> 電荷</span><span class="lang-en hidden">Q<sub>2</sub> Charge</span>
+                                <span class="mono text-xs ml-1 font-normal text-slate-400">(µC)</span>
                             </label>
                             <span id="q2-display" class="mono bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-sm">-4</span>
                         </div>
                         <input type="range" id="q2-slider" min="-10" max="10" step="1" value="-4">
-                        <div class="mono flex justify-between text-[10px] text-slate-400 mt-1">
-                            <span>-10</span>
-                            <span>0</span>
-                            <span>+10</span>
-                        </div>
+                        <div class="mono flex justify-between text-[10px] text-slate-400 mt-1"><span>-10</span><span>0</span><span>+10</span></div>
                     </div>
 
-                    <!-- 距離 r 控制 -->
+                    <!-- r -->
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="font-bold text-emerald-600 dark:text-emerald-400 flex items-center">
-                                r 距離 <span class="mono text-xs ml-1 font-normal text-slate-400">(m)</span>
+                                <span class="lang-zh">r 距離</span><span class="lang-en hidden">r Distance</span>
+                                <span class="mono text-xs ml-1 font-normal text-slate-400">(m)</span>
                             </label>
                             <span id="r-display" class="mono bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded text-sm">3.0</span>
                         </div>
                         <input type="range" id="r-slider" min="1" max="10" step="0.1" value="3.0">
-                        <div class="mono flex justify-between text-[10px] text-slate-400 mt-1">
-                            <span>1m</span>
-                            <span>10m</span>
-                        </div>
+                        <div class="mono flex justify-between text-[10px] text-slate-400 mt-1"><span>1m</span><span>10m</span></div>
                     </div>
                 </div>
 
                 <!-- 計算過程與結果 -->
                 <div class="bp-chip p-3 mt-auto">
-                    <h3 class="mono font-bold text-slate-500 dark:text-slate-400 mb-2 text-[11px] tracking-[0.14em] uppercase">數值代入</h3>
+                    <h3 class="mono font-bold text-slate-500 dark:text-slate-400 mb-2 text-[11px] tracking-[0.14em] uppercase">
+                        <span class="lang-zh">數值代入</span><span class="lang-en hidden">Substitution</span>
+                    </h3>
 
-                    <!-- 代入式 (使用 Flexbox 進行整齊排版) -->
                     <div class="flex items-center justify-center text-xs md:text-sm text-slate-800 dark:text-slate-100 font-mono bg-white/70 dark:bg-slate-900/50 p-3 rounded border border-slate-200 dark:border-slate-700 overflow-x-auto">
                         <span class="mr-1 italic font-serif text-slate-600 dark:text-slate-300">F</span>
                         <span class="mr-1 text-slate-400">=</span>
                         <span class="mr-1 text-slate-600 dark:text-slate-300">9×10<sup>9</sup></span>
                         <span class="mr-2 text-slate-400">×</span>
-
                         <div class="flex flex-col items-center">
-                            <div id="calc-formula-top" class="border-b border-slate-800 dark:border-slate-200 px-1 pb-0.5 mb-0.5 text-center whitespace-nowrap">
-                                <!-- 分子內容由 JS 插入 -->
-                            </div>
-                            <div id="calc-formula-bot" class="text-center">
-                                <!-- 分母內容由 JS 插入 -->
-                            </div>
+                            <div id="calc-formula-top" class="border-b border-slate-800 dark:border-slate-200 px-1 pb-0.5 mb-0.5 text-center whitespace-nowrap"></div>
+                            <div id="calc-formula-bot" class="text-center"></div>
                         </div>
                     </div>
 
                     <div class="flex flex-col items-end border-t pt-3 mt-3 border-slate-200 dark:border-slate-700">
-                        <span class="mono text-slate-500 dark:text-slate-400 text-[11px] font-bold self-start tracking-wide uppercase">靜電力大小 F:</span>
+                        <span class="mono text-slate-500 dark:text-slate-400 text-[11px] font-bold self-start tracking-wide uppercase">
+                            <span class="lang-zh">靜電力大小 F:</span><span class="lang-en hidden">Electrostatic Force F:</span>
+                        </span>
                         <span id="result-force" class="mono text-2xl font-bold text-purple-600 dark:text-purple-400">0.016 N</span>
                     </div>
                 </div>
@@ -275,90 +285,96 @@
         </div>
     </div>
 
+    <!-- Blueprint chrome: theme + language (shared pattern) -->
     <script>
-        // 使用 IIFE (立即執行函式) 來避免全域變數污染和重複宣告錯誤
-        (function() {
-            // 常數定義
-            const K = 8.99e9; // 庫倫常數
-            const CANVAS_WIDTH = 800;
-            const CENTER_Y = 200;
-            const Q1_X = 150; // 將 Q1 向左移一點，留更多空間給長距離
-            const PIXELS_PER_METER = 55; // 調整比例
+        let __isDark = true;
+        let __lang = 'zh';
+        function applyLang(){
+            document.querySelectorAll('.lang-zh').forEach(el=>el.classList.toggle('hidden', __lang!=='zh'));
+            document.querySelectorAll('.lang-en').forEach(el=>el.classList.toggle('hidden', __lang!=='en'));
+        }
+        function toggleTheme(){
+            __isDark = !__isDark;
+            document.body.classList.toggle('dark', __isDark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+        function toggleLang(){
+            __lang = __lang==='zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = __lang==='zh' ? 'EN' : '中';
+            applyLang();
+        }
+    </script>
 
-            // DOM 元素
+    <script>
+        // 使用 IIFE 來避免全域變數污染
+        (function() {
+            const K = 8.99e9;
+            const CENTER_Y = 200;
+            const Q1_X = 150;
+            const PIXELS_PER_METER = 55;
+
             const q1Slider = document.getElementById('q1-slider');
             const q2Slider = document.getElementById('q2-slider');
             const rSlider = document.getElementById('r-slider');
-
             const q1Display = document.getElementById('q1-display');
             const q2Display = document.getElementById('q2-display');
             const rDisplay = document.getElementById('r-display');
-
             const q1ValSvg = document.getElementById('q1-val-svg');
             const q2ValSvg = document.getElementById('q2-val-svg');
-
             const sphereQ1 = document.getElementById('sphere-q1');
             const sphereQ2 = document.getElementById('sphere-q2');
-
             const forceArrowQ1 = document.getElementById('force-arrow-q1');
             const forceArrowQ2 = document.getElementById('force-arrow-q2');
             const forceLabelQ1 = document.getElementById('force-label-q1');
             const forceLabelQ2 = document.getElementById('force-label-q2');
-
             const distLine = document.getElementById('dist-line');
             const distTick2 = document.getElementById('dist-tick-2');
             const distText = document.getElementById('dist-text');
-
             const calcTop = document.getElementById('calc-formula-top');
             const calcBot = document.getElementById('calc-formula-bot');
             const resultForce = document.getElementById('result-force');
             const forceTypeLabel = document.getElementById('force-type-label');
 
-            function updateSimulation() {
-                // 1. 獲取數值
-                const q1_micro = parseFloat(q1Slider.value); // µC
-                const q2_micro = parseFloat(q2Slider.value); // µC
-                const r_meters = parseFloat(rSlider.value);  // m
+            // Bilingual status text (zh + en spans, applyLang() handles visibility)
+            function statusHTML(zh, en, cls){
+                return `<span class="lang-zh">狀態: <span class="${cls}">${zh}</span></span>`+
+                       `<span class="lang-en hidden">Status: <span class="${cls}">${en}</span></span>`;
+            }
 
-                // 2. 物理計算 (將微庫倫轉換為庫倫: 10^-6)
+            function updateSimulation() {
+                const q1_micro = parseFloat(q1Slider.value);
+                const q2_micro = parseFloat(q2Slider.value);
+                const r_meters = parseFloat(rSlider.value);
+
                 const q1 = q1_micro * 1e-6;
                 const q2 = q2_micro * 1e-6;
-
-                // 計算力的大小 (N)
                 const force = (K * Math.abs(q1 * q2)) / (r_meters * r_meters);
 
-                // 判斷方向 (同號相斥，異號相吸)
                 const isRepulsive = (q1_micro * q2_micro) > 0;
                 const isNeutral = q1_micro === 0 || q2_micro === 0;
 
-                // 3. 更新 UI 文字顯示
                 q1Display.textContent = (q1_micro > 0 ? "+" : "") + q1_micro;
                 q2Display.textContent = (q2_micro > 0 ? "+" : "") + q2_micro;
                 rDisplay.textContent = r_meters.toFixed(1);
-
                 q1ValSvg.textContent = q1Display.textContent + " µC";
                 q2ValSvg.textContent = q2Display.textContent + " µC";
 
-                // 4. 更新 SVG 位置 (距離 r)
                 const currentDistPixels = r_meters * PIXELS_PER_METER;
                 const q2_x = Q1_X + currentDistPixels;
-
                 sphereQ2.setAttribute('transform', `translate(${q2_x}, ${CENTER_Y})`);
-
-                // 更新距離標示
                 distLine.setAttribute('x2', q2_x);
                 distTick2.setAttribute('x1', q2_x);
                 distTick2.setAttribute('x2', q2_x);
                 distText.setAttribute('x', Q1_X + currentDistPixels / 2);
                 distText.textContent = `r = ${r_meters.toFixed(1)} m`;
 
-                // 5. 更新力向量箭頭
                 if (isNeutral) {
                     forceArrowQ1.setAttribute('opacity', 0);
                     forceArrowQ2.setAttribute('opacity', 0);
                     forceLabelQ1.setAttribute('opacity', 0);
                     forceLabelQ2.setAttribute('opacity', 0);
-                    forceTypeLabel.innerHTML = '狀態: <span class="text-slate-500 dark:text-slate-400">無作用力</span>';
+                    forceTypeLabel.innerHTML = statusHTML('無作用力','No Force','text-slate-500 dark:text-slate-400');
                     resultForce.textContent = "0 N";
                 } else {
                     forceArrowQ1.setAttribute('opacity', 1);
@@ -366,56 +382,32 @@
                     forceLabelQ1.setAttribute('opacity', 1);
                     forceLabelQ2.setAttribute('opacity', 1);
 
-                    // 計算箭頭長度 (視覺化處理，限制最大最小長度)
-                    // 力越大箭頭越長，但為了不讓箭頭無限長，使用對數或範圍限制
-
-                    // 箭頭尖端像素長度 = stroke-width(6) * markerWidth(6) = 36px
                     const ARROW_HEAD_PIXELS = 36;
-
                     let baseArrowLength = 0;
                     if (force > 0) {
-                        // 增加最小長度，確保至少能顯示大於箭頭尖端的長度
-                        // 當力很小時，箭桿會消失，只剩下箭頭尖端在電荷表面，這樣符合物理直覺
                         baseArrowLength = Math.min(150, Math.max(55, force * 2000));
                     }
-                    const totalVisualLength = baseArrowLength * 0.7; // 縮放至 70%
-
-                    // 計算 rod (箭桿) 長度 = 總視覺長 - 箭頭尖端長度
-                    // 這樣 rod 繪製到此長度後，marker 會剛好接續下去，不會重疊
+                    const totalVisualLength = baseArrowLength * 0.7;
                     const rodLength = Math.max(0, totalVisualLength - ARROW_HEAD_PIXELS);
 
-                    // 設定方向
                     if (isRepulsive) {
-                        // 斥力：箭頭背向
-                        // Q1 箭頭向左
                         forceArrowQ1.setAttribute('x1', Q1_X - 35);
-                        // x2 是箭桿的終點 (箭頭的起點)
                         forceArrowQ1.setAttribute('x2', Q1_X - 35 - rodLength);
-                        // 標籤位置參考總長度
                         forceLabelQ1.setAttribute('x', Q1_X - 35 - totalVisualLength - 25);
-
-                        // Q2 箭頭向右
                         forceArrowQ2.setAttribute('x1', q2_x + 35);
                         forceArrowQ2.setAttribute('x2', q2_x + 35 + rodLength);
                         forceLabelQ2.setAttribute('x', q2_x + 35 + totalVisualLength + 25);
-
-                        forceTypeLabel.innerHTML = '狀態: <span class="text-red-600 dark:text-red-400">相斥 (Repulsion)</span>';
+                        forceTypeLabel.innerHTML = statusHTML('相斥 (Repulsion)','Repulsion','text-red-600 dark:text-red-400');
                     } else {
-                        // 吸力：箭頭相向
-                        // Q1 箭頭向右 (指向 Q2)
                         forceArrowQ1.setAttribute('x1', Q1_X + 35);
                         forceArrowQ1.setAttribute('x2', Q1_X + 35 + rodLength);
                         forceLabelQ1.setAttribute('x', Q1_X + 35 + totalVisualLength + 20);
-
-                        // Q2 箭頭向左 (指向 Q1)
                         forceArrowQ2.setAttribute('x1', q2_x - 35);
                         forceArrowQ2.setAttribute('x2', q2_x - 35 - rodLength);
                         forceLabelQ2.setAttribute('x', q2_x - 35 - totalVisualLength - 20);
-
-                        forceTypeLabel.innerHTML = '狀態: <span class="text-purple-600 dark:text-purple-400">相吸 (Attraction)</span>';
+                        forceTypeLabel.innerHTML = statusHTML('相吸 (Attraction)','Attraction','text-purple-600 dark:text-purple-400');
                     }
 
-                    // 更新數值計算顯示
                     if(force >= 1000) {
                         resultForce.textContent = (force).toExponential(2) + " N";
                     } else if (force < 0.001) {
@@ -425,27 +417,25 @@
                     }
                 }
 
-                // 更新代入式文字
                 const q1Text = Math.abs(q1_micro);
                 const q2Text = Math.abs(q2_micro);
-                // 使用更清晰的顏色標示
                 calcTop.innerHTML = `<span class="text-red-700 dark:text-red-400">|${q1Text}|</span> × <span class="text-blue-700 dark:text-blue-400">|${q2Text}|</span> × 10<sup>-12</sup>`;
                 calcBot.innerHTML = `(${r_meters.toFixed(1)})<sup>2</sup>`;
 
-                // 更新球體顏色透明度
                 const opacity1 = 0.3 + (Math.abs(q1_micro) / 10) * 0.7;
                 const opacity2 = 0.3 + (Math.abs(q2_micro) / 10) * 0.7;
                 sphereQ1.querySelector('circle').setAttribute('fill-opacity', opacity1);
                 sphereQ2.querySelector('circle').setAttribute('fill-opacity', opacity2);
+
+                applyLang(); // keep JS-injected status in the active language
             }
 
-            // 事件監聽
             q1Slider.addEventListener('input', updateSimulation);
             q2Slider.addEventListener('input', updateSimulation);
             rSlider.addEventListener('input', updateSimulation);
 
-            // 初始化
             updateSimulation();
+            if(window.lucide) lucide.createIcons();
         })();
     </script>
 </body>
