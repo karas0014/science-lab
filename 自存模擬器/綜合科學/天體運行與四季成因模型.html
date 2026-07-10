@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>天體運行與四季成因 | Science Simulator</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Chart.js for temperature graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #050510; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Custom Range Slider (iPhone Style) */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%;
+            background: #ffffff; cursor: pointer; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px; cursor: pointer; background: rgba(255,255,255,0.2); border-radius: 3px;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track:hover { background: rgba(255,255,255,0.3); }
+
+        /* Scrollbar for panel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+        .physics-var { font-family: 'Times New Roman', Times, serif; font-style: italic; }
+    </style>
+</head>
+<body class="antialiased select-none">
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div class="absolute inset-0 z-10 pointer-events-none p-4 md:p-6 flex flex-col md:flex-row justify-between items-start">
+        
+        <!-- Header & Bilingual Toggle -->
+        <div class="pointer-events-auto flex flex-col gap-3 max-w-sm">
+            <div class="flex items-center gap-3 glass-panel px-5 py-3 rounded-2xl">
+                <div class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center border border-orange-500/50">
+                    <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-wide shadow-sm" data-i18n="title">天體運行與四季成因</h1>
+                    <p class="text-xs text-blue-200 mt-0.5" data-i18n="subtitle">地球與宇宙 | 科學可視化</p>
+                </div>
+            </div>
+
+            <!-- Language Toggle Pill -->
+            <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer w-max glass-panel px-2 py-1.5 rounded-full border border-white/10">
+                    <input type="checkbox" id="langToggle" class="sr-only peer">
+                    <div class="w-12 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[8px] after:left-[10px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                    <span class="ml-3 mr-2 text-sm font-medium text-gray-200 transition-colors" id="langLabel">中 / EN</span>
+                </label>
+
+                <!-- Gear Button -->
+                <button id="gearBtn" class="glass-panel w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10 shadow-lg cursor-pointer" title="打開溫度圖表">
+                    <svg class="w-5 h-5 text-gray-300 hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="pointer-events-auto mt-4 md:mt-0 glass-panel w-full md:w-80 rounded-2xl p-4 md:p-5 flex flex-col gap-4 md:gap-5 max-h-[40vh] md:max-h-[85vh] overflow-y-auto shadow-2xl">
+            
+            <!-- Data Display -->
+            <div class="bg-black/30 rounded-xl p-4 border border-white/5">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-sm text-gray-400" data-i18n="currentPosition">當前節氣</span>
+                    <span id="seasonLabel" class="text-lg font-bold text-orange-400">春分</span>
+                </div>
+                <div class="flex justify-between items-end">
+                    <span class="text-sm text-gray-400" data-i18n="subsolarLat">太陽直射緯度</span>
+                    <span id="subsolarLabel" class="text-lg font-mono font-bold text-yellow-300">0.0°</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex flex-col gap-4">
+                
+                <!-- Orbital Position -->
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <label class="text-gray-300" data-i18n="orbitPosition">公轉位置</label>
+                        <span id="orbitMonthLabel" class="text-blue-300">3月 (Mar)</span>
+                    </div>
+                    <input type="range" id="orbitSlider" min="0" max="360" value="0" step="1">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span data-i18n="spring">春</span>
+                        <span data-i18n="summer">夏</span>
+                        <span data-i18n="autumn">秋</span>
+                        <span data-i18n="winter">冬</span>
+                    </div>
+                </div>
+
+                <!-- Axial Tilt -->
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <label class="text-gray-300 flex items-center gap-1">
+                            <span data-i18n="axialTilt">自轉軸傾角</span> <span class="physics-var text-xs">θ</span>
+                        </label>
+                        <span id="tiltVal" class="text-blue-300 font-mono">23.5°</span>
+                    </div>
+                    <input type="range" id="tiltSlider" min="0" max="60" value="23.5" step="0.1">
+                </div>
+
+                <!-- Playback Controls -->
+                <div class="flex gap-2 mt-2">
+                    <button id="playPauseBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/30">
+                        <span data-i18n="pause">暫停自動運行</span>
+                    </button>
+                    <button id="resetBtn" class="px-4 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Teacher Tip -->
+            <div class="mt-2 bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border border-blue-500/30 rounded-xl p-4">
+                <h3 class="text-blue-300 font-bold text-sm mb-2 flex items-center gap-2">
+                    <span>💡</span> <span data-i18n="teacherTip">學習要點</span>
+                </h3>
+                <p class="text-xs text-gray-300 leading-relaxed" data-i18n="tipText" id="tipTextContainer">
+                    四季的成因不是地日距離變化！而是因為<b>自轉軸傾斜</b>，導致地球在公轉時，太陽直射點在南北回歸線之間移動，改變了地表的<b>日照角 (Angle of incidence)</b> 及 <b>日照時間 (Daylight duration)</b>。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Modal Overlay (Custom JS Resize & Aspect Ratio Locked) -->
+    <!-- Default size 縮小至約 60% (350px width), 鎖定 4:3 比例 -->
+    <div id="chartModal" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 glass-panel flex flex-col z-50 shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/20 select-none overflow-hidden" style="width: 350px; aspect-ratio: 4/3; min-width: 250px; max-width: 90vw; padding: 16px; border-radius: 16px;">
+        
+        <div id="chartModalHeader" class="flex justify-between items-center cursor-grab active:cursor-grabbing flex-shrink-0 touch-none" style="margin-bottom: 12px;">
+            <h2 id="chartModalHeaderH2" class="font-bold text-white flex items-center gap-2 truncate pr-2" style="font-size: 16px;">
+                <svg id="chartTitleIcon" class="text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                <span data-i18n="chartTitle" class="truncate">年度溫度預測 (北半球中緯度)</span>
+            </h2>
+            <button id="closeChartBtn" class="text-gray-400 hover:text-white transition-colors cursor-pointer p-1 flex-shrink-0">
+                <svg id="closeChartIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div id="chartInnerContainer" class="w-full flex-grow bg-black/40 relative border border-white/5" style="padding: 8px; border-radius: 12px;">
+            <canvas id="tempChart"></canvas>
+        </div>
+        
+        <!-- Custom Resize Handle (Bottom Right) -->
+        <div id="resizeHandle" class="absolute bottom-0 right-0 p-2 md:p-3 cursor-se-resize pointer-events-auto text-white/30 hover:text-white/90 transition-colors z-50 touch-none">
+            <svg id="resizeIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l6 6m0 0v-5m0 5h-5M4 9V4h5M4 4l6 6"></path></svg>
+        </div>
+    </div>
+
+    <script>
+        /** --- I18N Dictionary --- */
+        const dict = {
+            zh: {
+                title: "天體運行與四季成因",
+                subtitle: "地球與宇宙 | 科學可視化",
+                currentPosition: "當前節氣",
+                subsolarLat: "太陽直射緯度",
+                orbitPosition: "手動公轉位置",
+                axialTilt: "自轉軸傾角",
+                pause: "暫停自動運行",
+                play: "啟動實驗 (播放)",
+                spring: "春分", summer: "夏至", autumn: "秋分", winter: "冬至",
+                teacherTip: "學習要點",
+                tipText: "四季的成因並非地日距離的變化，而是因為地球的<b>自轉軸傾斜 (Axial Tilt)</b>！<br><br>這導致地球在公轉時，太陽直射點在南北回歸線之間移動，從而改變了特定緯度的<b>日照角 (Angle of Incidence)</b> 及 <b>日照時間 (Daylight Duration)</b>，造成氣候變化。",
+                chartTitle: "年度溫度預測 (北半球中緯度)",
+                xAxisLabel: "時間 / 月份",
+                yAxisLabel: "溫度 / 攝氏溫 (°C)"
+            },
+            en: {
+                title: "Celestial Motion & Seasons",
+                subtitle: "Earth & Universe | Science Visualization",
+                currentPosition: "Solar Term",
+                subsolarLat: "Subsolar Latitude",
+                orbitPosition: "Orbital Position",
+                axialTilt: "Axial Tilt",
+                pause: "Pause Animation",
+                play: "Start Experiment",
+                spring: "Spring", summer: "Summer", autumn: "Autumn", winter: "Winter",
+                teacherTip: "Learning Concepts",
+                tipText: "Seasons are NOT caused by the varying distance to the Sun! <br><br>They are caused by Earth's <b>Axial Tilt</b>. As Earth orbits, the subsolar point moves between the tropics, altering the <b>Angle of Incidence</b> and <b>Daylight Duration</b> at different latitudes, driving seasonal climate changes.",
+                chartTitle: "Annual Temp Est. (Mid-Lat North)",
+                xAxisLabel: "Time / Month",
+                yAxisLabel: "Temperature / °C"
+            }
+        };
+
+        let currentLang = 'zh';
+
+        function updateLang() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[currentLang][key]) {
+                    el.innerHTML = dict[currentLang][key];
+                }
+            });
+            updateSeasonText();
+            
+            // 同步更新圖表的軸標籤語言
+            if (tempChart) {
+                tempChart.options.scales.x.title.text = dict[currentLang].xAxisLabel;
+                tempChart.options.scales.y.title.text = dict[currentLang].yAxisLabel;
+                tempChart.update('none');
+            }
+        }
+
+        document.getElementById('langToggle').addEventListener('change', (e) => {
+            currentLang = e.target.checked ? 'en' : 'zh';
+            updateLang();
+        });
+
+        /** --- Three.js Setup --- */
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050510);
+        
+        const starGeo = new THREE.BufferGeometry();
+        const starVerts = [];
+        for(let i=0; i<1000; i++) {
+            starVerts.push((Math.random()-0.5)*200, (Math.random()-0.5)*200, (Math.random()-0.5)*200);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVerts, 3));
+        const starMat = new THREE.PointsMaterial({color: 0xffffff, size: 0.2, transparent: true, opacity: 0.6});
+        scene.add(new THREE.Points(starGeo, starMat));
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 35, 55);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 100;
+        controls.minDistance = 10;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; 
+
+        const ambientLight = new THREE.AmbientLight(0x222233);
+        scene.add(ambientLight);
+        const sunLight = new THREE.PointLight(0xffffff, 2, 300);
+        scene.add(sunLight);
+
+        /** --- Celestial Objects --- */
+        const R_ORBIT = 25;
+        const R_EARTH = 3;
+        const R_SUN = 5;
+
+        const sunGeo = new THREE.SphereGeometry(R_SUN, 32, 32);
+        const sunMat = new THREE.MeshBasicMaterial({ color: 0xffdd44 });
+        const sun = new THREE.Mesh(sunGeo, sunMat);
+        scene.add(sun);
+        
+        const sunGlowGeo = new THREE.SphereGeometry(R_SUN * 1.2, 32, 32);
+        const sunGlowMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+        scene.add(new THREE.Mesh(sunGlowGeo, sunGlowMat));
+
+        const orbitGeo = new THREE.BufferGeometry();
+        const orbitPoints = [];
+        for(let i=0; i<=128; i++) {
+            const theta = (i/128) * Math.PI * 2;
+            orbitPoints.push(new THREE.Vector3(R_ORBIT * Math.cos(theta), 0, -R_ORBIT * Math.sin(theta)));
+        }
+        orbitGeo.setFromPoints(orbitPoints);
+        const orbitLine = new THREE.Line(orbitGeo, new THREE.LineBasicMaterial({color: 0x445577, transparent: true, opacity: 0.5}));
+        scene.add(orbitLine);
+
+        const earthGroup = new THREE.Group();
+        scene.add(earthGroup);
+
+        const earthTiltGroup = new THREE.Group();
+        earthGroup.add(earthTiltGroup);
+
+        const earthMesh = new THREE.Group(); 
+        earthTiltGroup.add(earthMesh);
+
+        const solidEarth = new THREE.Mesh(
+            new THREE.SphereGeometry(R_EARTH, 32, 32),
+            new THREE.MeshPhongMaterial({color: 0x1a365d, shininess: 10})
+        );
+        earthMesh.add(solidEarth);
+
+        const wireEarth = new THREE.Mesh(
+            new THREE.SphereGeometry(R_EARTH * 1.01, 16, 16),
+            new THREE.MeshBasicMaterial({color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.3})
+        );
+        earthMesh.add(wireEarth);
+
+        const axisPoints = [new THREE.Vector3(0, -R_EARTH*1.5, 0), new THREE.Vector3(0, R_EARTH*1.5, 0)];
+        const axisLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(axisPoints), new THREE.LineBasicMaterial({color: 0xffffff}));
+        earthTiltGroup.add(axisLine);
+
+        function createRing(color, radius, dash = false) {
+            const pts = [];
+            for(let i=0; i<=64; i++) {
+                const a = (i/64) * Math.PI * 2;
+                pts.push(new THREE.Vector3(Math.cos(a)*radius, 0, Math.sin(a)*radius));
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(pts);
+            if(dash) {
+                return new THREE.Line(geo, new THREE.LineDashedMaterial({color: color, dashSize: 0.5, gapSize: 0.3}));
+            }
+            return new THREE.Line(geo, new THREE.LineBasicMaterial({color: color}));
+        }
+
+        const equator = createRing(0xef4444, R_EARTH * 1.02); 
+        earthTiltGroup.add(equator);
+
+        const tropicCancer = createRing(0xf59e0b, R_EARTH * 1.02, true); 
+        const tropicCapricorn = createRing(0xf59e0b, R_EARTH * 1.02, true);
+        tropicCancer.computeLineDistances();
+        tropicCapricorn.computeLineDistances();
+        earthTiltGroup.add(tropicCancer);
+        earthTiltGroup.add(tropicCapricorn);
+
+        const subsolarMarker = new THREE.Mesh(
+            new THREE.SphereGeometry(0.3, 16, 16),
+            new THREE.MeshBasicMaterial({color: 0xffff00})
+        );
+        earthGroup.add(subsolarMarker);
+
+        const rayMat = new THREE.LineBasicMaterial({color: 0xfff000, transparent: true, opacity: 0.6});
+        const sunRay = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]), rayMat);
+        scene.add(sunRay);
+
+        /** --- State Variables --- */
+        let lambda = 0; 
+        let tilt = 23.5;
+        let isPlaying = true;
+        const ORBIT_SPEED = 0.005;
+        const ROTATION_SPEED = 0.05;
+
+        /** --- Chart Setup & Logic --- */
+        const chartModal = document.getElementById('chartModal');
+        const gearBtn = document.getElementById('gearBtn');
+        const closeChartBtn = document.getElementById('closeChartBtn');
+        const ctx = document.getElementById('tempChart').getContext('2d');
+        
+        let tempChart;
+        const monthsLabel = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        // --- Dynamic Scaling Variables ---
+        let chartScale = 1;
+        const BASE_CHART_WIDTH = 350;
+
+        // --- 全局等比縮放功能 ---
+        function updateChartScale(newWidth) {
+            chartScale = newWidth / BASE_CHART_WIDTH;
+            
+            // 縮放外框與 UI 元素 (Padding, 圓角, 文字, Icon)
+            chartModal.style.padding = `${16 * chartScale}px`;
+            chartModal.style.borderRadius = `${16 * chartScale}px`;
+            
+            const header = document.getElementById('chartModalHeader');
+            if(header) header.style.marginBottom = `${12 * chartScale}px`;
+            
+            const h2 = document.getElementById('chartModalHeaderH2');
+            if(h2) h2.style.fontSize = `${16 * chartScale}px`;
+            
+            const titleIcon = document.getElementById('chartTitleIcon');
+            if(titleIcon) { titleIcon.style.width = `${20 * chartScale}px`; titleIcon.style.height = `${20 * chartScale}px`; }
+            
+            const closeIcon = document.getElementById('closeChartIcon');
+            if(closeIcon) { closeIcon.style.width = `${20 * chartScale}px`; closeIcon.style.height = `${20 * chartScale}px`; }
+            
+            const innerContainer = document.getElementById('chartInnerContainer');
+            if(innerContainer) {
+                innerContainer.style.padding = `${8 * chartScale}px`;
+                innerContainer.style.borderRadius = `${12 * chartScale}px`;
+            }
+            
+            const resizeIcon = document.getElementById('resizeIcon');
+            if(resizeIcon) { resizeIcon.style.width = `${20 * chartScale}px`; resizeIcon.style.height = `${20 * chartScale}px`; }
+
+            // 縮放 Chart.js 內部元素 (文字, 線條, 點)
+            if (tempChart) {
+                tempChart.options.scales.x.ticks.font.size = 10 * chartScale;
+                tempChart.options.scales.x.title.font.size = 11 * chartScale;
+                tempChart.options.scales.y.ticks.font.size = 10 * chartScale;
+                tempChart.options.scales.y.title.font.size = 11 * chartScale;
+                
+                if(tempChart.options.plugins.tooltip) {
+                    tempChart.options.plugins.tooltip.titleFont = { size: 12 * chartScale };
+                    tempChart.options.plugins.tooltip.bodyFont = { size: 12 * chartScale };
+                }
+                
+                tempChart.data.datasets[0].borderWidth = 2 * chartScale;
+                tempChart.data.datasets[0].pointRadius = 4 * chartScale;
+                tempChart.data.datasets[0].pointHoverRadius = 6 * chartScale;
+            }
+        }
+
+        function getTemperatureData(currentTilt) {
+            const baseTemp = 15; 
+            const amplitude = currentTilt * 0.6; 
+            return monthsLabel.map((_, i) => {
+                return baseTemp - amplitude * Math.cos((i / 11) * Math.PI * 2);
+            });
+        }
+
+        const currentPointPlugin = {
+            id: 'currentPoint',
+            afterDraw: (chart) => {
+                const chartCtx = chart.ctx;
+                
+                let l_winter = (lambda + Math.PI / 2) % (2 * Math.PI);
+                if (l_winter < 0) l_winter += 2 * Math.PI;
+                let x_cont = (l_winter / (2 * Math.PI)) * 11;
+                
+                const xFloor = Math.floor(x_cont);
+                const xCeil = Math.min(11, Math.ceil(x_cont));
+                const fraction = x_cont - xFloor;
+                const p1 = chart.scales.x.getPixelForValue(xFloor);
+                const p2 = chart.scales.x.getPixelForValue(xCeil);
+                const px = p1 + fraction * (p2 - p1);
+
+                const y_val = 15 - (tilt * 0.6) * Math.cos((x_cont / 11) * Math.PI * 2);
+                const py = chart.scales.y.getPixelForValue(y_val);
+
+                chartCtx.save();
+                chartCtx.beginPath();
+                chartCtx.arc(px, py, 14 * chartScale, 0, 2 * Math.PI);
+                chartCtx.fillStyle = 'rgba(251, 146, 60, 0.4)';
+                chartCtx.fill();
+
+                chartCtx.beginPath();
+                chartCtx.arc(px, py, 6 * chartScale, 0, 2 * Math.PI);
+                chartCtx.fillStyle = '#ffffff';
+                chartCtx.shadowColor = '#fb923c';
+                chartCtx.shadowBlur = 12 * chartScale;
+                chartCtx.fill();
+                chartCtx.strokeStyle = '#fb923c';
+                chartCtx.lineWidth = 2 * chartScale;
+                chartCtx.stroke();
+                chartCtx.restore();
+            }
+        };
+
+        function initChart() {
+            tempChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthsLabel,
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: getTemperatureData(tilt),
+                        borderColor: '#fb923c', 
+                        backgroundColor: 'rgba(251, 146, 60, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                plugins: [currentPointPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, 
+                    animation: false, 
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            titleFont: { size: 12 },
+                            bodyFont: { size: 12 },
+                            callbacks: {
+                                label: function(context) { return context.parsed.y.toFixed(1) + ' °C'; }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0, max: 35,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#9ca3af', font: { size: 10 } },
+                            title: {
+                                display: true, text: dict[currentLang].yAxisLabel,
+                                color: '#d1d5db', font: { size: 11, weight: 'bold' }
+                            }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#9ca3af', font: { size: 10 } },
+                            title: {
+                                display: true, text: dict[currentLang].xAxisLabel,
+                                color: '#d1d5db', font: { size: 11, weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        initChart();
+        updateChartScale(350); // 初始化比例
+
+        function updateChart() {
+            if (tempChart) {
+                tempChart.data.datasets[0].data = getTemperatureData(tilt);
+                tempChart.update('none');
+            }
+        }
+
+        gearBtn.addEventListener('click', () => {
+            chartModal.classList.remove('hidden');
+            // 讀取實際視窗大小以校正比例 (防止手機螢幕小於 350px 導致比例不對)
+            updateChartScale(chartModal.offsetWidth);
+            if(tempChart) {
+                tempChart.resize();
+                tempChart.update('none');
+            }
+        });
+        closeChartBtn.addEventListener('click', () => chartModal.classList.add('hidden'));
+
+        /** --- Position Utility --- */
+        function makeAbsolute() {
+            if (chartModal.classList.contains('transform')) {
+                const rect = chartModal.getBoundingClientRect();
+                chartModal.classList.remove('top-1/2', 'left-1/2', 'transform', '-translate-x-1/2', '-translate-y-1/2');
+                chartModal.style.left = rect.left + 'px';
+                chartModal.style.top = rect.top + 'px';
+            }
+        }
+
+        /** --- Modal Drag Logic --- */
+        const chartModalHeader = document.getElementById('chartModalHeader');
+        let isDraggingModal = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        const startDrag = (clientX, clientY) => {
+            makeAbsolute();
+            isDraggingModal = true;
+            const rect = chartModal.getBoundingClientRect();
+            dragOffsetX = clientX - rect.left;
+            dragOffsetY = clientY - rect.top;
+        };
+
+        const doDrag = (clientX, clientY) => {
+            if (!isDraggingModal) return;
+            chartModal.style.left = (clientX - dragOffsetX) + 'px';
+            chartModal.style.top = (clientY - dragOffsetY) + 'px';
+        };
+
+        const endDrag = () => { isDraggingModal = false; };
+
+        chartModalHeader.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => doDrag(e.clientX, e.clientY));
+        window.addEventListener('mouseup', endDrag);
+
+        chartModalHeader.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) startDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }, {passive: true});
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) doDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }, {passive: true});
+        window.addEventListener('touchend', endDrag);
+
+        /** --- Modal Resize Logic (Aspect Ratio Locked) --- */
+        const resizeHandle = document.getElementById('resizeHandle');
+        let isResizing = false;
+        let initialWidth = 0;
+        let startX = 0;
+
+        const startResize = (clientX) => {
+            makeAbsolute(); // 確保在絕對定位下進行縮放，避免因為置中導致兩邊同時拉伸
+            isResizing = true;
+            initialWidth = chartModal.offsetWidth;
+            startX = clientX;
+        };
+
+        const doResize = (clientX) => {
+            if (!isResizing) return;
+            const deltaX = clientX - startX;
+            let newWidth = initialWidth + deltaX;
+            
+            // 限制最小及最大寬度
+            newWidth = Math.max(250, Math.min(newWidth, window.innerWidth * 0.95));
+            
+            chartModal.style.width = newWidth + 'px';
+            // 高度會自動跟隨 CSS 的 aspect-ratio: 4/3 調整
+            
+            // 同步更新所有圖表與文字元素的比例
+            updateChartScale(newWidth);
+            
+            if(tempChart) {
+                tempChart.resize(); // 強制即時刷新圖表比例
+                tempChart.update('none'); // 即時重繪，不觸發多餘動畫
+            }
+        };
+
+        const stopResize = () => { isResizing = false; };
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            e.stopPropagation(); e.preventDefault();
+            startResize(e.clientX);
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (isResizing) doResize(e.clientX);
+        });
+        window.addEventListener('mouseup', stopResize);
+
+        resizeHandle.addEventListener('touchstart', (e) => {
+            e.stopPropagation(); e.preventDefault();
+            if (e.touches.length > 0) startResize(e.touches[0].clientX);
+        }, {passive: false});
+        window.addEventListener('touchmove', (e) => {
+            if (isResizing) { e.preventDefault(); doResize(e.touches[0].clientX); }
+        }, {passive: false});
+        window.addEventListener('touchend', stopResize);
+
+        /** --- UI Elements & Events --- */
+        const tiltSlider = document.getElementById('tiltSlider');
+        const orbitSlider = document.getElementById('orbitSlider');
+        const playBtn = document.getElementById('playPauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        tiltSlider.addEventListener('input', (e) => {
+            tilt = parseFloat(e.target.value);
+            document.getElementById('tiltVal').innerText = tilt.toFixed(1) + '°';
+            updateTropicsGeometry();
+            updateChart(); 
+        });
+
+        orbitSlider.addEventListener('input', (e) => {
+            lambda = parseFloat(e.target.value) * Math.PI / 180;
+            isPlaying = false;
+            updatePlayBtnUI();
+            
+            if (!chartModal.classList.contains('hidden') && tempChart) {
+                tempChart.draw();
+            }
+        });
+
+        playBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            updatePlayBtnUI();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            tilt = 23.5;
+            tiltSlider.value = tilt;
+            document.getElementById('tiltVal').innerText = '23.5°';
+            lambda = 0;
+            orbitSlider.value = 0;
+            updateTropicsGeometry();
+            updateChart(); 
+        });
+
+        function updatePlayBtnUI() {
+            if (isPlaying) {
+                playBtn.innerHTML = dict[currentLang].pause;
+                playBtn.classList.replace('bg-green-600', 'bg-blue-600');
+                playBtn.classList.replace('hover:bg-green-500', 'hover:bg-blue-500');
+            } else {
+                playBtn.innerHTML = dict[currentLang].play;
+                playBtn.classList.replace('bg-blue-600', 'bg-green-600');
+                playBtn.classList.replace('hover:bg-blue-500', 'hover:bg-green-500');
+            }
+        }
+
+        function updateTropicsGeometry() {
+            const tiltRad = tilt * Math.PI / 180;
+            earthTiltGroup.rotation.x = tiltRad;
+
+            const yOffset = R_EARTH * Math.sin(tiltRad);
+            const scaleCos = Math.cos(tiltRad);
+            
+            tropicCancer.position.y = yOffset;
+            tropicCancer.scale.set(scaleCos, 1, scaleCos);
+            
+            tropicCapricorn.position.y = -yOffset;
+            tropicCapricorn.scale.set(scaleCos, 1, scaleCos);
+        }
+
+        function updateSeasonText() {
+            const deg = (lambda * 180 / Math.PI) % 360;
+            let season = "";
+            let color = "text-white";
+            
+            const margin = 15;
+            if (deg < margin || deg > 360-margin) { season = dict[currentLang].spring; color = "text-green-400"; }
+            else if (Math.abs(deg - 90) <= margin) { season = dict[currentLang].summer; color = "text-red-400"; }
+            else if (Math.abs(deg - 180) <= margin) { season = dict[currentLang].autumn; color = "text-orange-400"; }
+            else if (Math.abs(deg - 270) <= margin) { season = dict[currentLang].winter; color = "text-blue-300"; }
+            else {
+                const monthsEn = ["Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb"];
+                const idx = Math.floor((deg / 360) * 12);
+                season = currentLang === 'zh' ? `${(idx + 3 > 12 ? idx - 9 : idx + 3)}月` : monthsEn[idx];
+                color = "text-gray-300";
+            }
+
+            const el = document.getElementById('seasonLabel');
+            el.innerText = season;
+            el.className = `text-lg font-bold ${color}`;
+
+            const mIdx = Math.floor(((deg % 360) / 360) * 12);
+            const monthsDisplayZh = ["3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月", "1月", "2月"];
+            const monthsDisplayEn = ["March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('orbitMonthLabel').innerText = currentLang === 'zh' ? monthsDisplayZh[mIdx] : monthsDisplayEn[mIdx];
+        }
+
+        /** --- Animation Loop --- */
+        updateTropicsGeometry();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isPlaying) {
+                lambda += ORBIT_SPEED;
+                if (lambda >= Math.PI * 2) lambda -= Math.PI * 2;
+                orbitSlider.value = (lambda * 180 / Math.PI).toFixed(0);
+            }
+
+            const x = R_ORBIT * Math.cos(lambda);
+            const z = -R_ORBIT * Math.sin(lambda); 
+            earthGroup.position.set(x, 0, z);
+
+            if (isPlaying) earthMesh.rotation.y += ROTATION_SPEED;
+
+            const toSunDir = new THREE.Vector3(-x, 0, -z).normalize();
+            subsolarMarker.position.copy(toSunDir).multiplyScalar(R_EARTH);
+            
+            const rayPositions = sunRay.geometry.attributes.position.array;
+            rayPositions[0] = 0; rayPositions[1] = 0; rayPositions[2] = 0;
+            const worldSubsolar = new THREE.Vector3();
+            subsolarMarker.getWorldPosition(worldSubsolar);
+            rayPositions[3] = worldSubsolar.x; rayPositions[4] = worldSubsolar.y; rayPositions[5] = worldSubsolar.z;
+            sunRay.geometry.attributes.position.needsUpdate = true;
+
+            const tiltRad = tilt * Math.PI / 180;
+            const declinationRad = Math.asin(Math.sin(tiltRad) * Math.sin(lambda));
+            const declinationDeg = declinationRad * 180 / Math.PI;
+
+            let latText = Math.abs(declinationDeg).toFixed(1) + "° ";
+            if (declinationDeg > 0.1) latText += (currentLang === 'zh' ? "N (北)" : "N");
+            else if (declinationDeg < -0.1) latText += (currentLang === 'zh' ? "S (南)" : "S");
+            else latText = "0.0° (Equator)";
+            
+            document.getElementById('subsolarLabel').innerText = latText;
+            
+            if (isPlaying) updateSeasonText();
+
+            if (!chartModal.classList.contains('hidden') && tempChart) {
+                tempChart.draw();
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        updateLang();
+        animate();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遺傳學挑戰模擬器 - 中三同學專用</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .lock-animation { animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        .correct-btn { background-color: #d1fae5; border-color: #10b981; }
+        .wrong-btn { background-color: #fee2e2; border-color: #ef4444; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <!-- Header -->
+    <header class="max-w-3xl w-full mb-8 text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-indigo-700 flex items-center justify-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/><path d="M8 15h6"/></svg>
+            遺傳學挑戰模擬器
+        </h1>
+        <p class="text-slate-500 mt-2">中三同學專用：V4 完整版 (HTML)</p>
+    </header>
+
+    <!-- Main Game Container -->
+    <main id="game-container" class="max-w-2xl w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        <!-- Content will be injected by JavaScript -->
+    </main>
+
+    <footer class="mt-8 text-center text-slate-400 text-sm">
+        <p>題庫包含 60 條關於 DNA、蛋白功能、血型計算及 HOT 挑戰題</p>
+        <p class="mt-1 text-indigo-400 font-medium">重點：基因透過控制蛋白合成來展現性狀</p>
+        <p class="mt-1">© 2024 遺傳學自主學習工具 HTML 版</p>
+    </footer>
+
+    <script>
+        // 題庫定義 (60 題)
+        const QUESTION_POOL = [
+            { q: "DNA 分子的基本單位是什麼？", o: ["核苷酸", "蛋白質", "氨基酸", "葡萄糖"], a: 0, e: "DNA 是由許多核苷酸（Nucleotides）連接而成的多核苷酸鏈。" },
+            { q: "在 DNA 分子中，腺嘌呤 (A) 總是與哪種鹼基配對？", o: ["鳥嘌呤 (G)", "胞嘧啶 (C)", "胸腺嘧啶 (T)", "尿嘧啶 (U)"], a: 2, e: "根據鹼基互補配對原則，A 與 T 配對，C 與 G 配對。" },
+            { q: "人類體細胞中含有多少對染色體？", o: ["23 對", "46 對", "22 對", "48 對"], a: 0, e: "人類有 23 對染色體，其中 22 對是常染色體，1 對是性染色體。" },
+            { q: "決定個體性狀的基本遺傳單位是？", o: ["細胞核", "染色體", "基因", "等位基因"], a: 2, e: "基因是位於染色體上的 DNA 片段，是遺傳的基本單位。" },
+            { q: "下列哪一項屬於連續變異 (Continuous Variation)？", o: ["血型", "身高", "捲舌能力", "耳垂形狀"], a: 1, e: "身高在群體中呈現連續的特徵範圍，屬於連續變異。" },
+            { q: "當一個個體擁有兩個相同的等位基因時，我們稱之為？", o: ["雜合子", "純合子", "顯性個體", "隱性個體"], a: 1, e: "純合子指擁有兩個相同等位基因的個體（如 TT 或 tt）。" },
+            { q: "高莖 (T) 對矮莖 (t) 為顯性。雜合子 (Tt) 的表現型是？", o: ["中等高度", "矮莖", "高莖", "部分高部分矮"], a: 2, e: "顯性等位基因會遮蓋隱性等位基因的表達，因此 Tt 表現為高莖。" },
+            { q: "人類男性的性染色體組合是？", o: ["XX", "XY", "YY", "XO"], a: 1, e: "男性具有一條 X 染色體和一條 Y 染色體 (XY)。" },
+            { q: "ABO 血型系統中，哪兩個等位基因表現出等顯性 (Co-dominance)？", o: ["IA 和 i", "IB 和 i", "IA 和 IB", "只有 i"], a: 2, e: "IA 和 IB 同時存在時都會表達，產生 AB 血型。" },
+            { q: "若父母均為雜合子高莖 (Tt)，其後代出現矮莖 (tt) 的概率是多少？", o: ["0%", "25%", "50%", "75%"], a: 1, e: "Tt x Tt 的配對中，基因型比例為 1 TT : 2 Tt : 1 tt，矮莖概率為 1/4 (25%)。" },
+            { q: "DNA 分子的結構通常被描述為？", o: ["單鏈結構", "三螺旋結構", "雙螺旋結構", "球狀結構"], a: 2, e: "華生和克拉克提出的 DNA 模型是雙螺旋（Double Helix）結構。" },
+            { q: "遺傳信息由 DNA 轉移到 mRNA 的過程稱為？", o: ["轉錄", "轉譯", "複製", "突變"], a: 0, e: "轉錄是指以 DNA 為模板合成 mRNA 的過程，發生在細胞核內。" },
+            { q: "構成 DNA 骨幹 (Backbone) 的成分是？", o: ["鹼基與糖", "磷酸鹽與糖", "鹼基與磷酸鹽", "蛋白質與糖"], a: 1, e: "DNA 鏈的骨幹由脫氧核糖和磷酸基團交替連接組成。" },
+            { q: "性別是由哪一個細胞確定的？", o: ["卵子", "精子", "體細胞", "紅血球"], a: 1, e: "精子可能攜帶 X 或 Y 染色體，因此決定了受精卵的性別。" },
+            { q: "下列哪項不是不連續變異的特徵？", o: ["性狀界限分明", "受環境影響很大", "受單一基因控制", "呈現階梯狀分佈"], a: 1, e: "不連續變異通常受基因控制，受環境影響較小。" },
+            { q: "基因主要透過控制什麼分子的合成來決定性狀？", o: ["蛋白質", "葡萄糖", "脂肪", "礦物質"], a: 0, e: "基因是合成蛋白質的藍圖，而蛋白質是執行生命功能、決定性狀的主要分子。" },
+            { q: "表現型 (Phenotype) 是指？", o: ["個體的基因組合", "個體可觀察到的特徵", "染色體的數量", "DNA 序列"], a: 1, e: "表現型是基因型與環境相互作用後表現出來的性狀。" },
+            { q: "血型為 O 型的人，其基因型必定是？", o: ["IAIA", "IBIB", "IAIB", "ii"], a: 3, e: "O 型血是由兩個隱性等位基因 (ii) 組成的純合子。" },
+            { q: "在遺傳圖譜中，方框通常代表？", o: ["女性", "男性", "患者", "攜帶者"], a: 1, e: "在標準遺傳學系譜圖中，方框代表男性，圓圈代表女性。" },
+            { q: "下列哪種人類特徵屬於不連續變異？", o: ["體重", "膚色深淺", "能否捲舌", "智力"], a: 2, e: "能否捲舌只有「能」或「不能」兩種明顯區別，屬於不連續變異。" },
+            { q: "地中海貧血症是一種什麼樣的遺傳病？", o: ["常染色體顯性", "常染色體隱性", "性連鎖隱性", "傳染病"], a: 1, e: "地中海貧血是常染色體隱性遺傳病，父母皆為攜帶者時可能生下患兒。" },
+            { q: "胞嘧啶 (C) 與鳥嘌呤 (G) 之間通過什麼連接？", o: ["離子鍵", "共價鍵", "氫鍵", "肽鍵"], a: 2, e: "DNA 雙鏈之間的鹼基對是通過氫鍵結合的。" },
+            { q: "若一對夫婦血型分別為 AB 型和 O 型，後代不可能出現哪種血型？", o: ["A 型", "B 型", "AB 型", "O 型"], a: 2, e: "後代基因型只能是 IAi 或 IBi，因此只會是 A 或 B 型，不會是 AB 或 O。" },
+            { q: "在真核細胞中，蛋白質的合成（轉譯）主要發生在？", o: ["細胞核", "核糖體", "細胞膜", "線粒體"], a: 1, e: "轉譯是在核糖體上將 mRNA 的信息解碼為蛋白質的過程。" },
+            { q: "下列哪項屬於遺傳特徵？", o: ["染色的頭髮", "傷疤", "天然捲髮", "運動後的肌肉"], a: 2, e: "只有由遺傳物質決定的特徵才能遺傳給下一代。" },
+            { q: "正常膚色夫婦 (Aa) 生下一個白化病孩子 (aa)，概率是多少？", o: ["0%", "25%", "50%", "75%"], a: 1, e: "Aa x Aa 的配對中，出現 aa 的概率為 1/4 (25%)。" },
+            { q: "人類的前 22 對染色體稱為？", o: ["性染色體", "常染色體", "同源染色體", "單倍體"], a: 1, e: "前 22 對在男女中相同，稱為常染色體。" },
+            { q: "孟德爾通過研究什麼生物發現了遺傳規律？", o: ["果蠅", "小白鼠", "豌豆", "大腸桿菌"], a: 2, e: "孟德爾利用豌豆進行了著名的單基因遺傳實驗。" },
+            { q: "雜合子 (Ee) 雜交，後代出現隱性性狀 (ee) 的概率是？", o: ["1/2", "1/4", "3/4", "0"], a: 1, e: "Ee x Ee -> 1 EE : 2 Ee : 1 ee。隱性性狀佔 1/4。" },
+            { q: "顯性等位基因是指？", o: ["最強大的基因", "在雜合子中能表達其性狀的基因", "最常見的基因", "父母傳下來的基因"], a: 1, e: "顯性基因只要存在一個就能表達出對應的性狀。" },
+            { q: "白化病是由於缺乏哪種蛋白質催化黑色素合成？", o: ["血紅蛋白", "酪氨酸酶", "胰島素", "抗體"], a: 1, e: "酪氨酸酶負責將原料轉化為黑色素，缺乏此酶會導致白化病。" },
+            { q: "同種生物個體之間的特徵差異稱為？", o: ["遺傳", "變異", "進化", "突變"], a: 1, e: "變異 (Variation) 是指生物個體間存在的差異。" },
+            { q: "基因型為 Aa 的個體產生的配子種類比例？", o: ["100% A", "100% a", "A:a = 1:1", "A:a = 3:1"], a: 2, e: "分離定律指出，等位基因在產生配子時會彼此分離。" },
+            { q: "DNA 鹼基配對正確的是？", o: ["A-G", "C-T", "A-T", "C-A"], a: 2, e: "A 與 T 配對，C 與 G 配對。" },
+            { q: "同源染色體通常來自？", o: ["都來自父親", "都來自母親", "一條來自父，一條來自母", "隨機產生"], a: 2, e: "同源染色體對是由父母雙方各提供一條組成的。" },
+            { q: "紅血球表面的血型抗原本質上是？", o: ["脂肪", "蛋白質或糖蛋白", "維生素", "純水"], a: 1, e: "血型抗原是細胞膜上的功能性蛋白結構。" },
+            { q: "豌豆綠色種子 (y) 為隱性。yy 的種子顏色是？", o: ["黃色", "綠色", "白色", "藍色"], a: 1, e: "隱性性狀只有在純合子 (yy) 時才會表現。" },
+            { q: "表現型受到哪些因素影響？", o: ["僅基因", "僅環境", "基因與環境共同作用", "都不受影響"], a: 2, e: "生物的性狀是遺傳物質與環境互動的結果。" },
+            { q: "DNA 全稱中的「脫氧核糖」是指？", o: ["一種蛋白質", "一種五碳糖", "一種鹼基", "一種磷酸"], a: 1, e: "DNA 的糖部分是脫氧核糖。" },
+            { q: "父母血型為 A (IAi) 和 B (IBi)，孩子血型可能是？", o: ["只有 A 或 B", "只有 AB", "A, B, AB, O 都有可能", "只有 O"], a: 2, e: "這對父母可以提供 IA, i, IB, i 四種配子組合。" },
+            { q: "IAi x IBi 產生 O 型血孩子的概率？", o: ["0%", "25%", "50%", "100%"], a: 1, e: "只有 ii 組合是 O 型，概率為 1/4 (25%)。" },
+            { q: "轉錄發生的位置是在？", o: ["細胞核", "細胞質", "核糖體", "細胞膜"], a: 0, e: "DNA 儲存在核內，故轉錄在核內完成。" },
+            { q: "唐氏綜合症是因為哪對染色體異常？", o: ["第 13 對", "第 18 對", "第 21 對", "性染色體"], a: 2, e: "唐氏綜合症是第 21 對染色體多了一條。" },
+            { q: "DNA 的主要功能不包括？", o: ["儲存遺傳信息", "指導蛋白合成", "提供能量", "傳遞特徵"], a: 2, e: "DNA 不是能源物質，葡萄糖才是。" },
+            { q: "連續變異通常呈現什麼分佈？", o: ["階梯狀", "正態分佈 (鐘形)", "只有兩極", "完全隨機"], a: 1, e: "如身高、體重，大多數人在中間，少數在兩頭。" },
+            { q: "「F1」代表雜交後的？", o: ["父母", "第一代子代", "第二代子代", "祖先"], a: 1, e: "F1 是 First Filial generation 的縮寫。" },
+            { q: "HOT：正常夫婦生下白化病女兒，再生一個正常兒子的概率？", o: ["25%", "37.5%", "50%", "75%"], a: 1, e: "正常機率 3/4 * 男生機率 1/2 = 3/8 (37.5%)。" },
+            { q: "同卵雙胞胎基因組？", o: ["完全相同", "完全不同", "50% 相同", "與父母相同"], a: 0, e: "來自同一個受精卵，遺傳物質一致。" },
+            { q: "智力屬於哪種變異？", o: ["不連續變異", "連續變異", "不遺傳變異", "環境變異"], a: 1, e: "受多基因控制且受環境影響大，呈現連續分佈。" },
+            { q: "基因與蛋白質關係？", o: ["基因就是蛋白質", "一個基因攜帶合成一條多肽鏈密碼", "蛋白產生基因", "兩者無關"], a: 1, e: "基因是指令，蛋白質是產品。" },
+            { q: "轉譯過程產生的鏈狀分子是？", o: ["多糖", "多肽鏈", "脂肪酸", "DNA 鏈"], a: 1, e: "多肽鏈摺疊後形成功能性蛋白質。" },
+            { q: "酶的主要功能？", o: ["儲能", "催化生物化學反應", "構成細胞骨架", "傳遞指令"], a: 1, e: "大多數酶是蛋白，負責控制代謝。" },
+            { q: "DNA 序列改變如何影響性狀？", o: ["沒影響", "可能改變蛋白結構影響功能", "改變環境", "改變性別"], a: 1, e: "指令變了，產品功能就可能出錯。" },
+            { q: "不同組織功能不同是因為？", o: ["DNA 不同", "表達了不同基因產生不同蛋白", "沒有蛋白", "純粹環境影響"], a: 1, e: "所有細胞 DNA 相同，但開啟的基因不同。" },
+            { q: "胰島素基因受損會導致？", o: ["感冒", "糖尿病", "白化病", "色盲"], a: 1, e: "胰島素蛋白無法正常合成，血糖失控。" },
+            { q: "mRNA 指導蛋白合成的工廠是？", o: ["細胞核", "核糖體", "溶酶體", "高爾基體"], a: 1, e: "核糖體是轉譯的場所。" },
+            { q: "HOT：酶在低溫活性高，眼睛顏色變深。這說明？", o: ["基因決定一切", "環境與基因共同影響表現型", "蛋白不受環境影響", "基因只在低溫複製"], a: 1, e: "表現型 = 基因型 + 環境因素。" }
+        ];
+
+        // 遊戲狀態變量
+        let gameState = 'START';
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let startTime = 0;
+        let finalTime = 0;
+        let lockTimer = 0;
+        let shuffledOptions = [];
+        let timerInterval;
+
+        const container = document.getElementById('game-container');
+
+        // 初始化遊戲
+        function initGame() {
+            const shuffledPool = [...QUESTION_POOL].sort(() => Math.random() - 0.5);
+            questions = shuffledPool.slice(0, 10); // 每次玩抽 10 題
+            currentIndex = 0;
+            score = 0;
+            gameState = 'PLAYING';
+            startTime = Date.now();
+            
+            // 開啟全域計時器顯示
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimerDisplay, 100);
+            
+            loadQuestion();
+        }
+
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('live-timer');
+            if (timerEl && gameState === 'PLAYING') {
+                timerEl.innerText = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+            }
+        }
+
+        // 加載題目
+        function loadQuestion() {
+            const q = questions[currentIndex];
+            const opts = q.o.map((text, idx) => ({ text, isCorrect: idx === q.a }));
+            shuffledOptions = opts.sort(() => Math.random() - 0.5);
+            render();
+        }
+
+        // 處理答題
+        function handleAnswer(isCorrect) {
+            if (isCorrect) {
+                score++;
+                if (score >= 10) {
+                    finalTime = (Date.now() - startTime) / 1000;
+                    gameState = 'FINISHED';
+                    clearInterval(timerInterval);
+                    render();
+                } else {
+                    currentIndex++;
+                    loadQuestion();
+                }
+            } else {
+                gameState = 'WRONG_LOCK';
+                lockTimer = 10;
+                render();
+                
+                const countdown = setInterval(() => {
+                    lockTimer--;
+                    const lockEl = document.getElementById('lock-countdown');
+                    if (lockEl) lockEl.innerText = lockTimer;
+                    
+                    if (lockTimer <= 0) {
+                        clearInterval(countdown);
+                        gameState = 'PLAYING';
+                        currentIndex++;
+                        if (currentIndex >= questions.length) {
+                            // 如果題庫抽完了還沒到10分，理論上這不會發生因為我們每次抽10題直到對10題，
+                            // 這裡加個保險重新抽題
+                            initGame();
+                        } else {
+                            loadQuestion();
+                        }
+                    }
+                }, 1000);
+            }
+        }
+
+        // 渲染界面
+        function render() {
+            if (gameState === 'START') {
+                container.innerHTML = `
+                    <div class="p-8 text-center space-y-6">
+                        <div class="bg-indigo-50 p-6 rounded-xl">
+                            <div class="text-amber-500 mb-4 flex justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-slate-800">準備好接受挑戰嗎？</h2>
+                            <p class="text-slate-600 mt-2">
+                                規則：隨機抽取問題，最快答對 <b>10 題</b> 的同學獲勝！<br/>
+                                注意：答錯會被鎖定 <b>10 秒</b> 閱讀解釋，請小心作答。
+                            </p>
+                        </div>
+                        <button onclick="initGame()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-105 active:scale-95">
+                             開始挑戰
+                        </button>
+                    </div>
+                `;
+            } else if (gameState === 'PLAYING') {
+                const q = questions[currentIndex];
+                container.innerHTML = `
+                    <div class="p-6 md:p-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-sm font-bold">
+                                分數: ${score} / 10
+                            </div>
+                            <div class="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">
+                                用時: <span id="live-timer">0.0s</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-8">
+                            <h3 class="text-xl font-bold text-slate-800 leading-relaxed">
+                                <span class="text-indigo-600 mr-2">Q.</span>
+                                ${q.q}
+                            </h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            ${shuffledOptions.map((opt, i) => `
+                                <button onclick="handleAnswer(${opt.isCorrect})" class="w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-indigo-300 hover:bg-indigo-50 transition-all group flex items-center justify-between">
+                                    <span class="text-slate-700 font-medium">${opt.text}</span>
+                                    <div class="w-6 h-6 rounded-full border-2 border-slate-200 group-hover:border-indigo-400"></div>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (gameState === 'WRONG_LOCK') {
+                const q = questions[currentIndex];
+                container.innerHTML = `
+                    <div class="p-8 bg-rose-50 flex flex-col items-center">
+                        <div class="text-rose-500 mb-4 lock-animation">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-rose-700 mb-2">答錯了！</h2>
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-rose-200 w-full mb-6">
+                            <div class="flex items-start gap-3 text-slate-800 mb-4">
+                                <div class="bg-emerald-100 text-emerald-700 p-1 rounded">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-emerald-700">正確答案：</p>
+                                    <p class="text-lg">${q.o[q.a]}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start gap-3 text-slate-700 italic border-t pt-4">
+                                <p>${q.e}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 bg-rose-600 text-white px-6 py-3 rounded-full font-bold">
+                            鎖定中... <span id="lock-countdown">10</span> 秒後繼續
+                        </div>
+                    </div>
+                `;
+            } else if (gameState === 'FINISHED') {
+                const comment = finalTime < 35 ? "這速度太驚人了！你對蛋白質與性狀的關係瞭如指掌！" : 
+                                finalTime < 70 ? "非常棒！你已經掌握了遺傳學的核心概念。" :
+                                "挑戰完成！建議再玩一次，把那些「蛋白功能」的題目練熟。";
+                container.innerHTML = `
+                    <div class="p-8 text-center space-y-6 bg-emerald-50">
+                        <div class="p-8">
+                            <div class="text-amber-400 flex justify-center mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                            </div>
+                            <h2 class="text-3xl font-extrabold text-slate-800 mt-6">挑戰成功！</h2>
+                            <div class="grid grid-cols-2 gap-4 mt-8">
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200">
+                                    <p class="text-slate-500 text-sm">最終用時</p>
+                                    <p class="text-2xl font-bold text-indigo-600">${finalTime.toFixed(2)}s</p>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200">
+                                    <p class="text-slate-500 text-sm">答對題數</p>
+                                    <p class="text-2xl font-bold text-emerald-600">10 / 10</p>
+                                </div>
+                            </div>
+                            <p class="text-slate-600 mt-6 leading-relaxed">${comment}</p>
+                        </div>
+                        <button onclick="gameState='START'; render();" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all">
+                             重新挑戰
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // 初始化頁面
+        render();
+    </script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>冷氣機運作原理模擬器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: Arial, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+    /* 保留針對 SVG 互動效果的輕量自定義 CSS */
+    .stage-click { 
+      cursor: pointer; 
+      transition: opacity 0.2s ease; 
+    }
+    .stage-click:hover { 
+      opacity: 0.8; 
+    }
+    .machine-part {
+      cursor: pointer;
+      outline: none;
+      transition: filter 0.2s ease;
+    }
+    .machine-part.active { 
+      filter: drop-shadow(0 8px 16px rgba(15,23,42,.25)); 
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 m-0 p-0 h-full overflow-hidden max-lg:overflow-auto">
+  <div class="flex flex-col h-screen min-h-[640px] max-lg:h-auto max-lg:min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-slate-900 text-white px-4 py-3.5 flex justify-between items-center gap-3 shadow-md relative z-20 max-sm:flex-col max-sm:items-stretch">
+      <div class="flex items-center gap-3 min-w-0 max-sm:justify-between">
+        <svg class="w-[22px] h-[22px] text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <line x1="12" y1="2" x2="12" y2="22"></line>
+          <path d="M20 20 4 4"></path>
+          <path d="M20 4 4 20"></path>
+        </svg>
+        <div class="flex-1 min-w-0">
+          <h1 id="appTitle" class="m-0 text-[20px] font-bold leading-tight max-sm:text-[18px]">冷氣機運作原理模擬器</h1>
+          <p id="appSubtitle" class="m-0 mt-0.5 text-[12px] text-slate-400">中六物理：熱學與氣體定律應用</p>
+        </div>
+        <button id="playBtn" class="border-0 rounded-full px-3 py-2 text-[14px] font-bold text-white cursor-pointer bg-red-500 hover:bg-red-600 transition-colors max-sm:ml-2 shrink-0" type="button">⏸ 暫停</button>
+      </div>
+      
+      <div class="flex items-center gap-2 text-[12px] font-bold max-sm:justify-between max-sm:mt-2">
+        <span id="langZh" class="text-white">中</span>
+        <button id="langSwitch" class="w-[46px] h-[26px] rounded-full bg-slate-600 relative border-0 cursor-pointer p-0 transition-colors duration-200 shrink-0" type="button" data-lang="zh" aria-label="切換語言">
+          <span id="switchKnob" class="absolute w-[18px] h-[18px] bg-white rounded-full top-1 left-1 transition-transform duration-200"></span>
+        </button>
+        <span id="langEn" class="text-slate-400">EN</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex min-h-0 flex-row max-lg:flex-col">
+      
+      <!-- Diagram Section -->
+      <section class="flex-1 relative bg-white overflow-hidden flex items-center justify-center p-3 max-lg:min-h-[58vh]">
+        
+        <!-- Background Zones -->
+        <div class="absolute inset-0 flex pointer-events-none">
+          <div class="w-1/2 p-4 flex flex-col justify-start bg-blue-50/70 border-r-2 border-dashed border-slate-300">
+            <div id="indoorLabel" class="text-[42px] font-bold opacity-[0.18] leading-none text-blue-700 max-lg:text-[26px] max-lg:hidden">Indoor (室內)</div>
+            <div id="indoorPill" class="mt-2 px-2.5 py-1.5 rounded-full text-[13px] bg-white border border-black/5 text-blue-700 w-max shadow-sm">Q_in (吸熱)</div>
+          </div>
+          <div class="w-1/2 p-4 flex flex-col justify-start items-end bg-orange-50/70">
+            <div id="outdoorLabel" class="text-[42px] font-bold opacity-[0.18] leading-none text-orange-700 max-lg:text-[26px] max-lg:hidden">Outdoor (室外)</div>
+            <div id="outdoorPill" class="mt-2 px-2.5 py-1.5 rounded-full text-[13px] bg-white border border-black/5 text-orange-700 w-max shadow-sm">Q_out (放熱)</div>
+          </div>
+        </div>
+
+        <!-- SVG Diagram -->
+        <svg class="w-full h-full max-w-[980px] max-h-[760px] relative z-10" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" aria-label="冷氣機製冷循環示意圖">
+          <defs>
+            <linearGradient id="evapToComp" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#60A5FA"></stop>
+              <stop offset="45%" stop-color="#60A5FA"></stop>
+              <stop offset="55%" stop-color="#EF4444"></stop>
+              <stop offset="100%" stop-color="#EF4444"></stop>
+            </linearGradient>
+            <linearGradient id="condToExp" x1="100%" y1="0%" x2="0%" y2="0%">
+              <stop offset="0%" stop-color="#EF4444"></stop>
+              <stop offset="45%" stop-color="#EF4444"></stop>
+              <stop offset="55%" stop-color="#8B5CF6"></stop>
+              <stop offset="100%" stop-color="#3B82F6"></stop>
+            </linearGradient>
+          </defs>
+
+          <!-- Pipe Backgrounds -->
+          <path id="pipeAllBack1" stroke="#CBD5E1" stroke-width="26" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"></path>
+          <path id="pipeAllBack2" stroke="#F8FAFC" stroke-width="20" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"></path>
+
+          <!-- Interactive Pipes -->
+          <path id="pathEvaporator" class="stage-click" stroke="#3B82F6" stroke-width="18" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path id="pathPipe1" stroke="url(#evapToComp)" stroke-width="18" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.25"></path>
+          <path id="pathCondenser" class="stage-click" stroke="#EF4444" stroke-width="18" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path id="pathPipe3" stroke="url(#condToExp)" stroke-width="18" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.25"></path>
+
+          <!-- Particles -->
+          <g id="particleLayer"></g>
+
+          <!-- Compressor -->
+          <g id="compressorGroup" class="machine-part" tabindex="0" role="button" aria-label="Compressor">
+            <circle cx="450" cy="500" r="50" fill="#1E293B"></circle>
+            <circle cx="450" cy="500" r="40" fill="#334155"></circle>
+            <!-- Using Tailwind for spinning animation -->
+            <g id="rotor" class="origin-[450px_500px] animate-[spin_1s_linear_infinite]">
+              <path d="M 430 500 L 470 500 M 450 480 L 450 520" stroke="white" stroke-width="4"></path>
+            </g>
+            <text id="compressorText" x="450" y="570" text-anchor="middle" font-size="14" font-weight="700" fill="#334155">壓縮機</text>
+          </g>
+
+          <!-- Expansion Valve -->
+          <g id="expansionGroup" class="machine-part" tabindex="0" role="button" aria-label="Expansion Valve">
+            <path d="M 420 80 L 480 80 L 450 120 Z" fill="#7C3AED"></path>
+            <path d="M 420 120 L 480 120 L 450 80 Z" fill="#7C3AED"></path>
+            <text id="expansionText" x="450" y="70" text-anchor="middle" font-size="14" font-weight="700" fill="#334155">膨脹閥</text>
+          </g>
+
+          <!-- Gas/Liquid Labels -->
+          <text id="labelGasLow" x="320" y="480" font-size="12" font-weight="700" fill="#2563eb">低壓氣體 (Low P Gas)</text>
+          <text id="labelGasHigh" x="580" y="480" font-size="12" font-weight="700" fill="#991b1b">高壓高溫氣體</text>
+          <text id="labelLiquidHigh" x="730" y="280" font-size="12" font-weight="700" fill="#d97706" transform="rotate(90 730 280)">高壓液體 (Liquid)</text>
+          <text id="labelMistLow" x="320" y="120" font-size="12" font-weight="700" fill="#2563eb">低壓混合物 (Mist)</text>
+        </svg>
+
+        <div id="legend" class="absolute bottom-2 left-2 text-slate-500 text-[12px] z-10 bg-white/80 backdrop-blur-sm p-2 rounded-xl border border-slate-300/80 shadow-sm">
+          * 粒子大小代表分子間距 (Size = Separation)<br>
+          * 粒子顏色代表溫度 (Color = Temp)
+        </div>
+      </section>
+
+      <!-- Info Panel -->
+      <aside class="w-[370px] border-l border-slate-200 overflow-y-auto p-4 max-lg:w-full max-lg:border-l-0 max-lg:border-t" id="infoPanel"></aside>
+      
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var state = {
+        activeStage: 'evaporator',
+        isPlaying: true,
+        lang: 'zh',
+        particles: []
+      };
+
+      var texts = {
+        zh: {
+          appTitle: '冷氣機運作原理模擬器',
+          appSubtitle: '中六物理：熱學與氣體定律應用',
+          pause: '⏸ 暫停',
+          play: '▶ 播放',
+          indoorLabel: 'Indoor (室內)',
+          outdoorLabel: 'Outdoor (室外)',
+          indoorPill: 'Q_in (吸熱)',
+          outdoorPill: 'Q_out (放熱)',
+          compressorText: '壓縮機',
+          expansionText: '膨脹閥',
+          labelGasLow: '低壓氣體 (Low P Gas)',
+          labelGasHigh: '高壓高溫氣體',
+          labelLiquidHigh: '高壓液體 (Liquid)',
+          labelMistLow: '低壓混合物 (Mist)',
+          legend: '* 粒子大小代表分子間距 (Size = Separation)<br>* 粒子顏色代表溫度 (Color = Temp)',
+          physicsTitle: '物理性質變化 (Physics Properties)',
+          temp: '溫度 (Temp)',
+          stateLabel: '形態 (State)',
+          energyTitle: 'Internal Energy Analysis',
+          energy: '內能 (U):',
+          ke: '分子動能 (KE):',
+          pe: '分子勢能 (PE):',
+          tipTitle: 'DSE 提示:',
+          tipBody: '留意潛熱(Latent Heat)發生在蒸發器和冷凝器。在這兩個階段，溫度變化可能不大，但內能改變巨大，主要是勢能(PE)的變化。'
+        },
+        en: {
+          appTitle: 'Air Conditioner Simulator',
+          appSubtitle: 'F.6 Physics: Heat and Gas Laws',
+          pause: '⏸ Pause',
+          play: '▶ Play',
+          indoorLabel: 'INDOOR',
+          outdoorLabel: 'OUTDOOR',
+          indoorPill: 'Q_in (Heat In)',
+          outdoorPill: 'Q_out (Heat Out)',
+          compressorText: 'Compressor',
+          expansionText: 'Exp. Valve',
+          labelGasLow: 'Low P Gas',
+          labelGasHigh: 'High P Hot Gas',
+          labelLiquidHigh: 'High P Liquid',
+          labelMistLow: 'Low P Mist',
+          legend: '* Size = Molecular Separation<br>* Color = Temperature',
+          physicsTitle: 'Physics Properties',
+          temp: 'Temperature',
+          stateLabel: 'State',
+          energyTitle: 'Internal Energy Analysis',
+          energy: 'Energy (U):',
+          ke: 'Molec. KE:',
+          pe: 'Molec. PE:',
+          tipTitle: 'DSE Tip:',
+          tipBody: 'Latent heat transfer occurs in the evaporator and condenser. During these stages, temp change might be small, but internal energy changes massively, primarily due to changes in potential energy (PE).'
+        }
+      };
+
+      var stages = {
+        compressor: {
+          color: '#dc2626', bg: '#fef2f2', title: { zh: '1. 壓縮機', en: '1. Compressor' },
+          description: {
+            zh: '低壓氣體進入壓縮機，壓縮機對氣體做功，使其變成高溫高壓氣體。這是能量輸入的關鍵步驟。',
+            en: 'Low-pressure gas enters the compressor, which does work on the gas, turning it into a high-temperature, high-pressure gas. This is the key energy input step.'
+          },
+          physics: {
+            state: { zh: '氣態', en: 'Gas' },
+            temp: { zh: '急劇上升', en: 'Sharp Increase (Hot)' },
+            internalEnergy: { zh: '內能增加 (U ↑)', en: 'Internal Energy Increases (U ↑)' },
+            molecularKE: { zh: '分子動能大幅上升 (溫度升高)', en: 'Molecular KE increases sharply (Temp ↑)' },
+            molecularPE: { zh: '分子勢能變化不大', en: 'Molecular PE largely unchanged' }
+          }
+        },
+        condenser: {
+          color: '#f59e0b', bg: '#fff7ed', title: { zh: '2. 冷凝管道', en: '2. Condenser' },
+          description: {
+            zh: '高溫氣體流經散熱片，將熱量釋放到室外空氣中。氣體冷卻並凝結成高壓液體。',
+            en: 'High-temp gas flows through fins, rejecting heat to outdoor air. Gas cools and condenses into high-pressure liquid.'
+          },
+          physics: {
+            state: { zh: '氣態 → 液態', en: 'Gas → Liquid' },
+            temp: { zh: '高溫', en: 'High (Warm)' },
+            internalEnergy: { zh: '內能減少 (U ↓)', en: 'Internal Energy Decreases (U ↓)' },
+            molecularKE: { zh: '分子動能輕微下降 (溫度略降)', en: 'Molecular KE slightly decreases (Temp ↓)' },
+            molecularPE: { zh: '分子勢能大幅下降 (凝結釋放潛熱)', en: 'Molecular PE heavily decreases (Latent heat released)' }
+          }
+        },
+        expansion: {
+          color: '#7c3aed', bg: '#faf5ff', title: { zh: '3. 膨脹閥', en: '3. Expansion Valve' },
+          description: {
+            zh: '高壓液體通過細小的孔道，壓力突然釋放。液體迅速膨脹，部分氣化，導致溫度急劇下降。',
+            en: 'High-pressure liquid passes through a tiny orifice, releasing pressure suddenly. It expands rapidly and partially vaporizes, causing a sharp drop in temperature.'
+          },
+          physics: {
+            state: { zh: '液態 → 霧狀混合物', en: 'Liquid → Mist' },
+            temp: { zh: '急劇下降', en: 'Sharp Decrease (Cold)' },
+            internalEnergy: { zh: '內能減少', en: 'Internal Energy Decreases' },
+            molecularKE: { zh: '分子動能大幅下降 (溫度驟降)', en: 'Molecular KE heavily decreases (Temp drops sharply)' },
+            molecularPE: { zh: '分子勢能增加 (部分液體氣化)', en: 'Molecular PE increases (Partial vaporization)' }
+          }
+        },
+        evaporator: {
+          color: '#2563eb', bg: '#eff6ff', title: { zh: '4. 蒸發管道', en: '4. Evaporator' },
+          description: {
+            zh: '低溫製冷劑吸收室內空氣的熱量並蒸發。室內空氣變涼，製冷劑變回低壓氣體。',
+            en: 'Low-temp refrigerant absorbs heat from indoor air and evaporates. Indoor air cools, and refrigerant turns back into low-pressure gas.'
+          },
+          physics: {
+            state: { zh: '液態/霧狀 → 氣態', en: 'Liquid/Mist → Gas' },
+            temp: { zh: '低溫', en: 'Low (Cool)' },
+            internalEnergy: { zh: '內能增加 (U ↑)', en: 'Internal Energy Increases (U ↑)' },
+            molecularKE: { zh: '分子動能維持/微升', en: 'Molecular KE maintained/slightly rises' },
+            molecularPE: { zh: '分子勢能大幅增加 (吸收汽化潛熱)', en: 'Molecular PE heavily increases (Latent heat absorbed)' }
+          }
+        }
+      };
+
+      function getPipePosition(progress) {
+        var x = 0, y = 0;
+        if (progress <= 25) {
+          var t1 = progress / 25;
+          y = 150 + t1 * 300;
+          x = 200 + Math.sin(t1 * Math.PI * 6) * 40;
+        } else if (progress <= 50) {
+          var t2 = (progress - 25) / 25;
+          if (t2 < 0.2) {
+            var nt2a = t2 / 0.2;
+            x = 250 + 50 * Math.cos(Math.PI - nt2a * Math.PI / 2);
+            y = 450 + 50 * Math.sin(Math.PI - nt2a * Math.PI / 2);
+          } else if (t2 < 0.8) {
+            var nt2b = (t2 - 0.2) / 0.6;
+            x = 250 + nt2b * 400;
+            y = 500;
+          } else {
+            var nt2c = (t2 - 0.8) / 0.2;
+            x = 650 + 50 * Math.cos(Math.PI / 2 - nt2c * Math.PI / 2);
+            y = 450 + 50 * Math.sin(Math.PI / 2 - nt2c * Math.PI / 2);
+          }
+        } else if (progress <= 75) {
+          var t3 = (progress - 50) / 25;
+          y = 450 - t3 * 300;
+          x = 700 - Math.sin(t3 * Math.PI * 6) * 40;
+        } else {
+          var t4 = (progress - 75) / 25;
+          if (t4 < 0.2) {
+            var nt4a = t4 / 0.2;
+            x = 650 + 50 * Math.cos(0 - nt4a * Math.PI / 2);
+            y = 150 + 50 * Math.sin(0 - nt4a * Math.PI / 2);
+          } else if (t4 < 0.8) {
+            var nt4b = (t4 - 0.2) / 0.6;
+            x = 650 - nt4b * 400;
+            y = 100;
+          } else {
+            var nt4c = (t4 - 0.8) / 0.2;
+            x = 250 + 50 * Math.cos(-Math.PI / 2 - nt4c * Math.PI / 2);
+            y = 150 + 50 * Math.sin(-Math.PI / 2 - nt4c * Math.PI / 2);
+          }
+        }
+        return { x: x, y: y };
+      }
+
+      function buildPath(start, range) {
+        var d = '';
+        var steps = 100;
+        for (var i = 0; i <= steps; i++) {
+          var pos = getPipePosition(start + (i / steps) * range);
+          d += (i === 0 ? 'M' : 'L') + ' ' + pos.x + ' ' + pos.y + ' ';
+        }
+        return d;
+      }
+
+      var path0 = buildPath(0, 25);
+      var path1 = buildPath(25, 25);
+      var path2 = buildPath(50, 25);
+      var path3 = buildPath(75, 25);
+      var fullPath = path0 + ' ' + path1 + ' ' + path2 + ' ' + path3;
+
+      document.getElementById('pipeAllBack1').setAttribute('d', fullPath);
+      document.getElementById('pipeAllBack2').setAttribute('d', fullPath);
+      document.getElementById('pathEvaporator').setAttribute('d', path0);
+      document.getElementById('pathPipe1').setAttribute('d', path1);
+      document.getElementById('pathCondenser').setAttribute('d', path2);
+      document.getElementById('pathPipe3').setAttribute('d', path3);
+
+      var particleLayer = document.getElementById('particleLayer');
+      var playBtn = document.getElementById('playBtn');
+      var langSwitch = document.getElementById('langSwitch');
+      var infoPanel = document.getElementById('infoPanel');
+      var rotor = document.getElementById('rotor');
+
+      function particleVisual(p) {
+        var color = 'white';
+        var radius = 4;
+        if (p.progress < 25) {
+          var t = p.progress / 25;
+          color = '#A5F3FC';
+          radius = 3 + t * 4;
+        } else if (p.progress < 50) {
+          var t2 = (p.progress - 25) / 25;
+          if (t2 < 0.5) {
+            color = '#BAE6FD';
+            radius = 7;
+          } else {
+            color = '#FCA5A5';
+            radius = 4;
+          }
+        } else if (p.progress < 75) {
+          var t3 = (p.progress - 50) / 25;
+          color = '#EF4444';
+          if (t3 > 0.5) {
+            color = '#F59E0B';
+            radius = 5 - (t3 - 0.5) * 3;
+          } else {
+            radius = 5;
+          }
+        } else {
+          var t4 = (p.progress - 75) / 25;
+          if (t4 < 0.5) {
+            color = '#F59E0B';
+            radius = 3.5;
+          } else {
+            color = '#A5F3FC';
+            radius = 3.5;
+          }
+        }
+        return { color: color, radius: radius };
+      }
+
+      function renderParticles() {
+        particleLayer.innerHTML = '';
+        if (!state.isPlaying) return;
+        for (var i = 0; i < state.particles.length; i++) {
+          var p = state.particles[i];
+          var pos = getPipePosition(p.progress);
+          var visual = particleVisual(p);
+          var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', pos.x + p.offsetX);
+          circle.setAttribute('cy', pos.y + p.offsetY);
+          circle.setAttribute('r', visual.radius);
+          circle.setAttribute('fill', visual.color);
+          circle.setAttribute('opacity', '0.85');
+          particleLayer.appendChild(circle);
+        }
+      }
+
+      function updateParticles() {
+        if (!state.isPlaying) return;
+        for (var i = 0; i < state.particles.length; i++) {
+          state.particles[i].progress += state.particles[i].speed;
+          if (state.particles[i].progress >= 100) state.particles[i].progress = 0;
+        }
+        while (state.particles.length < 35) {
+          state.particles.push({
+            progress: 0,
+            speed: 0.25 + Math.random() * 0.15,
+            offsetX: (Math.random() - 0.5) * 6,
+            offsetY: (Math.random() - 0.5) * 6
+          });
+        }
+      }
+
+      function setActiveVisuals() {
+        document.getElementById('pathEvaporator').setAttribute('opacity', state.activeStage === 'evaporator' ? '0.6' : '0.2');
+        document.getElementById('pathCondenser').setAttribute('opacity', state.activeStage === 'condenser' ? '0.6' : '0.2');
+        document.getElementById('compressorGroup').classList.toggle('active', state.activeStage === 'compressor');
+        document.getElementById('expansionGroup').classList.toggle('active', state.activeStage === 'expansion');
+      }
+
+      function renderInfo() {
+        var lang = state.lang;
+        var t = texts[lang];
+        var current = stages[state.activeStage];
+        infoPanel.style.backgroundColor = current.bg;
+        
+        infoPanel.innerHTML = 
+          '<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4">' +
+            '<div class="flex items-center gap-3 mb-3">' +
+              '<div class="w-10 h-10 rounded-full flex shrink-0 items-center justify-center bg-slate-100"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="' + current.color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>' +
+              '<h2 class="m-0 text-[20px] font-bold" style="color:' + current.color + '">' + current.title[lang] + '</h2>' +
+            '</div>' +
+            '<div class="leading-relaxed text-[15px] text-slate-700">' + current.description[lang] + '</div>' +
+          '</div>' +
+          '<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">' +
+            '<div class="text-[15px] font-bold border-b border-slate-200 pb-2 mb-3 text-slate-800">' + t.physicsTitle + '</div>' +
+            '<div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">' +
+              '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><div class="text-[12px] text-slate-500 mb-1">' + t.temp + '</div><div class="font-bold text-[14px]" style="color:' + current.color + '">' + current.physics.temp[lang] + '</div></div>' +
+              '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><div class="text-[12px] text-slate-500 mb-1">' + t.stateLabel + '</div><div class="font-bold text-[14px] text-slate-800">' + current.physics.state[lang] + '</div></div>' +
+            '</div>' +
+            '<div class="bg-white border-l-[4px] border-slate-300 rounded-xl p-4 shadow-sm mt-3 border border-slate-100">' +
+              '<div class="text-[11px] text-slate-500 font-bold tracking-widest uppercase mb-2">' + t.energyTitle + '</div>' +
+              '<div class="flex gap-2.5 mt-2 text-[14px] leading-relaxed max-sm:flex-col max-sm:gap-1"><div class="min-w-[90px] font-bold text-slate-600 max-sm:min-w-0">' + t.energy + '</div><div style="color:' + current.color + ';font-weight:700;">' + current.physics.internalEnergy[lang] + '</div></div>' +
+              '<div class="flex gap-2.5 mt-2 text-[14px] leading-relaxed max-sm:flex-col max-sm:gap-1"><div class="min-w-[90px] font-bold text-slate-600 max-sm:min-w-0">' + t.ke + '</div><div class="text-slate-700">' + current.physics.molecularKE[lang] + '</div></div>' +
+              '<div class="flex gap-2.5 mt-2 text-[14px] leading-relaxed max-sm:flex-col max-sm:gap-1"><div class="min-w-[90px] font-bold text-slate-600 max-sm:min-w-0">' + t.pe + '</div><div class="text-slate-700">' + current.physics.molecularPE[lang] + '</div></div>' +
+            '</div>' +
+            '<div class="mt-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3.5 text-[14px] leading-relaxed">' +
+              '<strong>' + t.tipTitle + '</strong> ' + t.tipBody + 
+            '</div>' +
+          '</div>';
+      }
+
+      function renderStaticText() {
+        var lang = state.lang;
+        var t = texts[lang];
+        document.getElementById('appTitle').textContent = t.appTitle;
+        document.getElementById('appSubtitle').textContent = t.appSubtitle;
+        
+        document.getElementById('playBtn').textContent = state.isPlaying ? t.pause : t.play;
+        document.getElementById('playBtn').className = state.isPlaying 
+          ? 'border-0 rounded-full px-4 py-2 text-[14px] font-bold text-white cursor-pointer bg-red-500 hover:bg-red-600 transition-colors max-sm:ml-2 shrink-0'
+          : 'border-0 rounded-full px-4 py-2 text-[14px] font-bold text-white cursor-pointer bg-green-500 hover:bg-green-600 transition-colors max-sm:ml-2 shrink-0';
+          
+        document.getElementById('indoorLabel').textContent = t.indoorLabel;
+        document.getElementById('outdoorLabel').textContent = t.outdoorLabel;
+        document.getElementById('indoorPill').textContent = t.indoorPill;
+        document.getElementById('outdoorPill').textContent = t.outdoorPill;
+        document.getElementById('compressorText').textContent = t.compressorText;
+        document.getElementById('expansionText').textContent = t.expansionText;
+        document.getElementById('labelGasLow').textContent = t.labelGasLow;
+        document.getElementById('labelGasHigh').textContent = t.labelGasHigh;
+        document.getElementById('labelLiquidHigh').textContent = t.labelLiquidHigh;
+        document.getElementById('labelMistLow').textContent = t.labelMistLow;
+        document.getElementById('legend').innerHTML = t.legend;
+        
+        document.getElementById('langZh').style.color = lang === 'zh' ? '#fff' : '#94a3b8';
+        document.getElementById('langEn').style.color = lang === 'en' ? '#fff' : '#94a3b8';
+        
+        langSwitch.setAttribute('data-lang', lang);
+        langSwitch.className = lang === 'en' 
+          ? 'w-[46px] h-[26px] rounded-full bg-blue-500 relative border-0 cursor-pointer p-0 transition-colors duration-200 shrink-0'
+          : 'w-[46px] h-[26px] rounded-full bg-slate-600 relative border-0 cursor-pointer p-0 transition-colors duration-200 shrink-0';
+        document.getElementById('switchKnob').style.transform = lang === 'en' ? 'translateX(20px)' : 'translateX(0)';
+        
+        if (state.isPlaying) {
+          rotor.setAttribute('class', 'origin-[450px_500px] animate-[spin_1s_linear_infinite]');
+        } else {
+          rotor.setAttribute('class', 'origin-[450px_500px]');
+        }
+      }
+
+      function renderAll() {
+        setActiveVisuals();
+        renderStaticText();
+        renderInfo();
+        renderParticles();
+      }
+
+      document.getElementById('pathEvaporator').addEventListener('click', function () { state.activeStage = 'evaporator'; renderAll(); });
+      document.getElementById('pathCondenser').addEventListener('click', function () { state.activeStage = 'condenser'; renderAll(); });
+      document.getElementById('compressorGroup').addEventListener('click', function () { state.activeStage = 'compressor'; renderAll(); });
+      document.getElementById('expansionGroup').addEventListener('click', function () { state.activeStage = 'expansion'; renderAll(); });
+      
+      document.getElementById('compressorGroup').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); state.activeStage = 'compressor'; renderAll(); } });
+      document.getElementById('expansionGroup').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); state.activeStage = 'expansion'; renderAll(); } });
+
+      playBtn.addEventListener('click', function () {
+        state.isPlaying = !state.isPlaying;
+        renderAll();
+      });
+
+      langSwitch.addEventListener('click', function () {
+        state.lang = state.lang === 'zh' ? 'en' : 'zh';
+        renderAll();
+      });
+
+      renderAll();
+      setInterval(function () {
+        updateParticles();
+        renderParticles();
+      }, 50);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LED 發光原理模擬器 (PN接面)</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --anim-speed: 3s; /* 預設動畫速度 (對應約 3V) */
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "PingFang TC", "Heiti TC", sans-serif;
+            background-color: #f8fafc; /* Tailwind slate-50 */
+        }
+
+        /* 自訂按鈕點擊效果 */
+        .sim-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-bottom-width: 4px;
+            opacity: 0.5;
+            filter: grayscale(40%);
+        }
+        .sim-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+            margin-bottom: 2px;
+        }
+        .sim-btn.active {
+            opacity: 1;
+            transform: translateY(2px);
+            border-bottom-width: 0px;
+            margin-bottom: 4px;
+            filter: grayscale(0%);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        /* SVG RWD 設定 */
+        .svg-wrapper {
+            width: 100%;
+            height: auto;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background-color: #fff;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* --- 動畫定義 --- */
+        @keyframes electronMove {
+            0% { transform: translateX(0); opacity: 1; }
+            40% { transform: translateX(-215px); opacity: 1; }
+            45% { transform: translateX(-225px); opacity: 0; }
+            100% { transform: translateX(-225px); opacity: 0; }
+        }
+
+        @keyframes holeMove {
+            0% { transform: translateX(0); opacity: 1; }
+            40% { transform: translateX(215px); opacity: 1; }
+            45% { transform: translateX(225px); opacity: 0; }
+            100% { transform: translateX(225px); opacity: 0; }
+        }
+
+        @keyframes flashEffect {
+            0% { opacity: 0; transform: scale(0.1); }
+            40% { opacity: 0; transform: scale(0.1); }
+            45% { opacity: 1; transform: scale(1.5); fill: #eab308; } /* yellow-500 */
+            60% { opacity: 0; transform: scale(2.0); }
+            100% { opacity: 0; }
+        }
+
+        @keyframes photonEmit {
+            0% { opacity: 0; transform: translateX(0) scale(0.5); }
+            45% { opacity: 0; transform: translateX(0) scale(0.5); } 
+            50% { opacity: 1; transform: translateX(10px) scale(0.8); } 
+            100% { opacity: 0; transform: translateX(80px) scale(1.5); }
+        }
+
+        @keyframes arrowPulse {
+            0% { opacity: 0.3; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(5px); }
+            100% { opacity: 0.3; transform: translateX(0); }
+        }
+
+        /* --- 狀態控制 Class --- */
+        .sim-active .particle-e-group { animation: electronMove var(--anim-speed) infinite linear; }
+        .sim-active .particle-h-group { animation: holeMove var(--anim-speed) infinite linear; }
+        .sim-active .flash { animation: flashEffect var(--anim-speed) infinite ease-out; }
+        .sim-active .photon { animation: photonEmit var(--anim-speed) infinite linear; }
+        .sim-active .arrow-indicator { animation: arrowPulse 1.5s infinite ease-in-out; }
+
+        .state-playing * { animation-play-state: running !important; }
+        .state-paused * { animation-play-state: paused !important; }
+        .state-off * { animation-play-state: paused !important; opacity: 0.3; transition: opacity 0.5s; }
+        .state-off .flash, .state-off .photon { opacity: 0 !important; }
+
+        .particle-text {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        /* iOS Toggle 自訂修正 */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6; /* blue-500 */
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center justify-center relative">
+
+<div class="max-w-4xl w-full bg-white p-6 md:p-8 rounded-2xl shadow-xl relative">
+    
+    <!-- iOS 語言切換 Toggle -->
+    <div class="absolute top-6 right-6 flex items-center gap-2">
+        <span id="langLabelZH" class="text-sm font-bold text-slate-800 transition-colors">中</span>
+        <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+            <input type="checkbox" name="toggle" id="langToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-transform duration-200 ease-in-out z-10 top-0 left-0" onchange="toggleLanguage()"/>
+            <label for="langToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer transition-colors duration-200 ease-in-out"></label>
+        </div>
+        <span id="langLabelEN" class="text-sm font-bold text-slate-400 transition-colors">EN</span>
+    </div>
+
+    <h1 id="title" class="text-2xl md:text-3xl font-extrabold text-slate-800 text-center mb-2 tracking-tight">LED 發光原理模擬器</h1>
+    <div id="subtitle" class="text-center text-slate-500 text-sm md:text-base mb-6">模擬電子與空穴在 PN 接面複合並釋放光子</div>
+
+    <!-- 控制面板 -->
+    <div class="flex flex-wrap justify-center items-center mb-6 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <div class="flex gap-3">
+            <button id="btnOn" class="sim-btn bg-emerald-500 border-emerald-700 text-white font-bold py-2 px-4 rounded-lg" onclick="setSimState('playing')">接通電源</button>
+            <button id="btnPause" class="sim-btn bg-amber-500 border-amber-700 text-white font-bold py-2 px-4 rounded-lg" onclick="setSimState('paused')">暫停</button>
+            <button id="btnOff" class="sim-btn bg-rose-500 border-rose-700 text-white font-bold py-2 px-4 rounded-lg" onclick="setSimState('off')">斷開電源</button>
+        </div>
+        
+        <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+            <label id="lblVoltage" for="voltageRange" class="font-semibold text-slate-600 text-sm">電壓:</label>
+            <input type="range" id="voltageRange" class="w-32 accent-blue-500 cursor-pointer" min="0" max="9" step="0.5" value="3" oninput="updateVoltage(this.value)">
+            <span id="voltageLabel" class="font-bold text-slate-700 w-12 text-right">3.0V</span>
+        </div>
+    </div>
+
+    <!-- SVG 動畫區 -->
+    <div class="svg-wrapper border-2 border-slate-100">
+        <svg viewBox="0 0 600 350" id="mainSvg" class="sim-active state-playing">
+            <defs>
+                <marker id="arrowHeadRed" markerWidth="8.4" markerHeight="4.2" refX="0" refY="2.1" orient="auto">
+                    <polygon points="0 0, 8.4 2.1, 0 4.2" fill="#e11d48" /> <!-- rose-600 -->
+                </marker>
+                <marker id="arrowHeadBlue" markerWidth="8.4" markerHeight="4.2" refX="0" refY="2.1" orient="auto">
+                    <polygon points="0 0, 8.4 2.1, 0 4.2" fill="#2563eb" /> <!-- blue-600 -->
+                </marker>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+
+            <!-- 1. 電路與電池 -->
+            <g stroke="#64748b" stroke-width="3" fill="none"> <!-- slate-500 -->
+                <path d="M 50 200 L 50 300 L 250 300" />
+                <path d="M 350 300 L 550 300 L 550 200" />
+            </g>
+
+            <!-- 能量顯示器 -->
+            <g transform="translate(300, 235)">
+                <rect x="-80" y="-18" width="160" height="36" rx="6" fill="#1e293b" stroke="#334155" stroke-width="2" /> <!-- slate-800 -->
+                <text id="energyDisplay" x="0" y="5" text-anchor="middle" fill="#10b981" font-family="monospace" font-size="14" font-weight="bold" letter-spacing="0.5px">光子能量: 3.00 eV</text>
+            </g>
+
+            <!-- 電池 -->
+            <g transform="translate(300, 300)">
+                <line x1="-20" y1="-15" x2="-20" y2="15" stroke="#0f172a" stroke-width="2" />
+                <line x1="20" y1="-8" x2="20" y2="8" stroke="#0f172a" stroke-width="4" />
+                <text x="-35" y="-20" fill="#e11d48" font-size="20" font-weight="bold" stroke="none">+</text> <!-- rose-600 -->
+                <text x="15" y="-20" fill="#2563eb" font-size="20" font-weight="bold" stroke="none">-</text> <!-- blue-600 -->
+                <line x1="-50" y1="0" x2="-20" y2="0" stroke="#64748b" stroke-width="3" />
+                <line x1="20" y1="0" x2="50" y2="0" stroke="#64748b" stroke-width="3" />
+            </g>
+
+            <!-- 2. 半導體塊結構 -->
+            <!-- P-Type -->
+            <rect x="50" y="50" width="225" height="150" fill="#ffe4e6" stroke="#e11d48" stroke-width="2" /> <!-- rose-100/600 -->
+            <text x="70" y="80" fill="#e11d48" font-weight="bold" font-family="Arial, sans-serif">P-Type</text>
+            
+            <!-- Depletion Region -->
+            <rect x="275" y="50" width="50" height="150" fill="#334155" stroke="#475569" stroke-width="2" /> <!-- slate-700 -->
+
+            <!-- N-Type -->
+            <rect x="325" y="50" width="225" height="150" fill="#dbeafe" stroke="#2563eb" stroke-width="2" /> <!-- blue-100/600 -->
+            <text x="470" y="80" fill="#2563eb" font-weight="bold" text-anchor="end" font-family="Arial, sans-serif">N-Type</text>
+            
+            <text id="svgTextPN" x="300" y="40" text-anchor="middle" fill="#64748b" font-size="12" font-weight="bold">PN 接面</text>
+
+            <!-- 3. 動態粒子層 -->
+            <g id="particleGroup"></g>
+
+            <!-- 4. 閃光層 -->
+            <g id="flashGroup"></g>
+
+            <!-- 5. 方向指示箭號 -->
+            <g class="arrow-indicator">
+                <!-- 空穴流向 -->
+                <line x1="115" y1="180" x2="145" y2="180" stroke="#e11d48" stroke-width="3" marker-end="url(#arrowHeadRed)" />
+                <text id="svgTextArrowH" x="130" y="170" fill="#e11d48" font-size="11" font-weight="bold" text-anchor="middle">空穴移動</text>
+
+                <!-- 電子流向 -->
+                <line x1="485" y1="180" x2="455" y2="180" stroke="#2563eb" stroke-width="3" marker-end="url(#arrowHeadBlue)" />
+                <text id="svgTextArrowE" x="470" y="170" fill="#2563eb" font-size="11" font-weight="bold" text-anchor="middle">電子移動</text>
+            </g>
+        </svg>
+    </div>
+
+    <!-- 圖例 -->
+    <div class="flex flex-wrap justify-center gap-6 mt-6 text-sm font-semibold text-slate-600">
+        <div class="flex items-center gap-2">
+            <div class="w-6 h-6 bg-blue-500 rounded-full text-white flex justify-center items-center font-bold text-base shadow-sm">—</div>
+            <span id="legE">電子 (Electron)</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-5 h-5 border-2 border-rose-500 rounded-full text-rose-500 flex justify-center items-center font-bold text-lg shadow-sm bg-white">+</div>
+            <span id="legH">空穴 (Hole)</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="text-amber-500 font-bold text-2xl drop-shadow-sm">↝</div>
+            <span id="legP">光子/能量釋放</span>
+        </div>
+    </div>
+
+    <!-- 教學重點 -->
+    <div class="mt-8 p-5 bg-blue-50/50 rounded-xl border border-blue-100 text-sm text-slate-700 leading-relaxed">
+        <strong id="expTitle" class="text-blue-800 text-base block mb-2">物理原理教學重點：</strong>
+        <ol class="list-decimal pl-5 space-y-1">
+            <li id="exp1"><span class="font-semibold">正向偏壓：</span> 電池正極連接 P 區，負極連接 N 區。</li>
+            <li id="exp2"><span class="font-semibold">載流子移動：</span> 電子由 N 區移向 PN 接面，空穴由 P 區移向 PN 接面。</li>
+            <li id="exp3"><span class="font-semibold">能量釋放：</span> 電子與空穴在接面結合時，能級下降，放出光子 (E = hf)。</li>
+        </ol>
+    </div>
+</div>
+
+<script>
+    const particleGroup = document.getElementById('particleGroup');
+    const flashGroup = document.getElementById('flashGroup');
+    const svgWrapper = document.getElementById('mainSvg');
+    const root = document.documentElement;
+    const ns = "http://www.w3.org/2000/svg";
+    const energyDisplay = document.getElementById('energyDisplay');
+    
+    // 語言配置
+    let currentLang = 'zh';
+    const translations = {
+        zh: {
+            title: "LED 發光原理模擬器",
+            subtitle: "模擬電子與空穴在 PN 接面複合並釋放光子",
+            btnOn: "接通電源",
+            btnPause: "暫停",
+            btnOff: "斷開電源",
+            lblVoltage: "電壓:",
+            energyPrefix: "光子能量: ",
+            legE: "電子 (Electron)",
+            legH: "空穴 (Hole)",
+            legP: "光子/能量釋放",
+            expTitle: "物理原理教學重點：",
+            exp1: "<span class='font-semibold'>正向偏壓：</span> 電池正極連接 P 區，負極連接 N 區。",
+            exp2: "<span class='font-semibold'>載流子移動：</span> 電子由 N 區移向 PN 接面，空穴由 P 區移向 PN 接面。",
+            exp3: "<span class='font-semibold'>能量釋放：</span> 電子與空穴在接面結合時，能級下降，放出光子 (E = hf)。",
+            svgTextPN: "PN 接面",
+            svgTextArrowH: "空穴移動",
+            svgTextArrowE: "電子移動"
+        },
+        en: {
+            title: "LED Physics Simulator",
+            subtitle: "Simulating electron-hole recombination and photon emission at the PN junction",
+            btnOn: "Power On",
+            btnPause: "Pause",
+            btnOff: "Power Off",
+            lblVoltage: "Voltage:",
+            energyPrefix: "Photon Energy: ",
+            legE: "Electron",
+            legH: "Hole",
+            legP: "Photon emission",
+            expTitle: "Physics Principles:",
+            exp1: "<span class='font-semibold'>Forward Bias:</span> Positive terminal to P-type, negative to N-type.",
+            exp2: "<span class='font-semibold'>Carrier Movement:</span> Electrons move from N to PN junction, holes from P to PN junction.",
+            exp3: "<span class='font-semibold'>Energy Release:</span> Recombination drops energy levels, releasing photons (E=hf).",
+            svgTextPN: "PN Junction",
+            svgTextArrowH: "Hole Flow",
+            svgTextArrowE: "Electron Flow"
+        }
+    };
+
+    // 粒子生成配置
+    const particleCount = 12; 
+    const startYMin = 90;
+    const startYMax = 160;
+
+    // 1. 生成電子 
+    for (let i = 0; i < particleCount; i++) {
+        let group = document.createElementNS(ns, "g");
+        let yPos = Math.random() * (startYMax - startYMin) + startYMin;
+        let delay = Math.random() * -3; 
+
+        group.setAttribute("class", "particle-e-group");
+        group.style.animationDelay = delay + "s";
+
+        let circle = document.createElementNS(ns, "circle");
+        circle.setAttribute("cx", 525); 
+        circle.setAttribute("cy", yPos);
+        circle.setAttribute("r", 12); 
+        circle.setAttribute("fill", "#3b82f6"); // blue-500
+        
+        let text = document.createElementNS(ns, "text");
+        text.textContent = "—";
+        text.setAttribute("x", 525); 
+        text.setAttribute("y", yPos);
+        text.setAttribute("fill", "white");
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dy", ".35em"); 
+        text.setAttribute("class", "particle-text");
+        text.setAttribute("style", "font-size: 20px;"); 
+
+        group.appendChild(circle);
+        group.appendChild(text);
+        particleGroup.appendChild(group);
+    }
+
+    // 2. 生成空穴 
+    for (let i = 0; i < particleCount; i++) {
+        let group = document.createElementNS(ns, "g");
+        let yPos = Math.random() * (startYMax - startYMin) + startYMin;
+        let delay = Math.random() * -3; 
+
+        group.setAttribute("class", "particle-h-group");
+        group.style.animationDelay = delay + "s";
+
+        let circle = document.createElementNS(ns, "circle");
+        circle.setAttribute("cx", 75); 
+        circle.setAttribute("cy", yPos);
+        circle.setAttribute("r", 10);
+        circle.setAttribute("fill", "white"); 
+        circle.setAttribute("stroke", "#f43f5e"); // rose-500
+        circle.setAttribute("stroke-width", "2");
+
+        let text = document.createElementNS(ns, "text");
+        text.textContent = "+";
+        text.setAttribute("x", 75); 
+        text.setAttribute("y", yPos);
+        text.setAttribute("fill", "#f43f5e");
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dy", ".35em"); 
+        text.setAttribute("class", "particle-text");
+        text.setAttribute("style", "font-size: 35px;"); 
+
+        group.appendChild(circle);
+        group.appendChild(text);
+        particleGroup.appendChild(group);
+    }
+
+    // 3. 生成隨機方向的光子
+    for (let i = 0; i < particleCount; i++) {
+        let delay = Math.random() * -3; 
+        let yPos = Math.random() * (startYMax - startYMin) + startYMin;
+
+        let flashContainer = document.createElementNS(ns, "g");
+        flashContainer.setAttribute("transform", `translate(300, ${yPos})`);
+        
+        let flash = document.createElementNS(ns, "circle");
+        flash.setAttribute("r", 8);
+        flash.setAttribute("fill", "#eab308"); // yellow-500
+        flash.setAttribute("filter", "url(#glow)");
+        flash.setAttribute("class", "flash");
+        flash.style.animationDelay = delay + "s";
+        flashContainer.appendChild(flash);
+
+        let angle = Math.random() * 360; 
+        let rotator = document.createElementNS(ns, "g");
+        rotator.setAttribute("transform", `rotate(${angle})`);
+        
+        let photon = document.createElementNS(ns, "text");
+        photon.textContent = "↝"; 
+        photon.setAttribute("fill", "#f59e0b"); // amber-500
+        photon.setAttribute("font-size", "25"); 
+        photon.setAttribute("text-anchor", "middle"); 
+        photon.setAttribute("dominant-baseline", "middle");
+        photon.setAttribute("class", "photon"); 
+        photon.style.animationDelay = delay + "s";
+        
+        rotator.appendChild(photon);
+        flashContainer.appendChild(rotator);
+        flashGroup.appendChild(flashContainer);
+    }
+
+    function updateVoltage(val) {
+        let voltage = parseFloat(val);
+        document.getElementById('voltageLabel').textContent = voltage.toFixed(1) + "V";
+        
+        // 可見光譜顏色變化: 0V (紅) -> 9V (紫)
+        let hue = (voltage / 9) * 280;
+        let color = `hsl(${hue}, 100%, 65%)`; // 提高亮度適應深色背景
+        
+        if (energyDisplay) {
+            let prefix = translations[currentLang].energyPrefix;
+            energyDisplay.textContent = prefix + voltage.toFixed(2) + " eV";
+            energyDisplay.setAttribute("fill", color);
+        }
+
+        if (voltage <= 0.1) {
+            root.style.setProperty('--anim-speed', '9999s'); 
+        } else {
+            let newDuration = (9 / voltage) + "s";
+            root.style.setProperty('--anim-speed', newDuration);
+        }
+    }
+
+    function setSimState(state) {
+        const btnOn = document.getElementById('btnOn');
+        const btnPause = document.getElementById('btnPause');
+        const btnOff = document.getElementById('btnOff');
+        
+        [btnOn, btnPause, btnOff].forEach(btn => btn.classList.remove('active'));
+        svgWrapper.classList.remove('state-playing', 'state-paused', 'state-off');
+
+        if (state === 'playing') {
+            svgWrapper.classList.add('state-playing');
+            btnOn.classList.add('active');
+        } else if (state === 'paused') {
+            svgWrapper.classList.add('state-paused');
+            btnPause.classList.add('active');
+        } else {
+            svgWrapper.classList.add('state-off');
+            btnOff.classList.add('active');
+        }
+    }
+
+    // 語言切換邏輯
+    function toggleLanguage() {
+        const isChecked = document.getElementById('langToggle').checked;
+        currentLang = isChecked ? 'en' : 'zh';
+        
+        // 更新標籤樣式
+        document.getElementById('langLabelZH').className = isChecked ? 'text-sm font-bold text-slate-400 transition-colors' : 'text-sm font-bold text-slate-800 transition-colors';
+        document.getElementById('langLabelEN').className = isChecked ? 'text-sm font-bold text-slate-800 transition-colors' : 'text-sm font-bold text-slate-400 transition-colors';
+
+        // 更新文本內容
+        const t = translations[currentLang];
+        document.getElementById('title').textContent = t.title;
+        document.getElementById('subtitle').textContent = t.subtitle;
+        document.getElementById('btnOn').textContent = t.btnOn;
+        document.getElementById('btnPause').textContent = t.btnPause;
+        document.getElementById('btnOff').textContent = t.btnOff;
+        document.getElementById('lblVoltage').textContent = t.lblVoltage;
+        
+        document.getElementById('legE').textContent = t.legE;
+        document.getElementById('legH').textContent = t.legH;
+        document.getElementById('legP').textContent = t.legP;
+        
+        document.getElementById('expTitle').textContent = t.expTitle;
+        document.getElementById('exp1').innerHTML = t.exp1;
+        document.getElementById('exp2').innerHTML = t.exp2;
+        document.getElementById('exp3').innerHTML = t.exp3;
+
+        document.getElementById('svgTextPN').textContent = t.svgTextPN;
+        document.getElementById('svgTextArrowH').textContent = t.svgTextArrowH;
+        document.getElementById('svgTextArrowE').textContent = t.svgTextArrowE;
+
+        // 重新觸發 Voltage 更新以應用正確的前綴
+        updateVoltage(document.getElementById('voltageRange').value);
+    }
+
+    // 初始化狀態：設定為 "接通電源" (playing)
+    setSimState('playing');
+    updateVoltage(document.getElementById('voltageRange').value);
+
+</script>
+
+</body>
+</html>

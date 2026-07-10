@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中物理運動學模擬器 (SVG)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+            background-color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        /* Mathematical Variables Font Style */
+        .math-font {
+            font-family: "Times New Roman", serif;
+            font-style: italic;
+            font-size: 1.25em; 
+        }
+        
+        .axis-label-text .math-font {
+            font-size: 1.4em;
+        }
+
+        /* Graph Styles */
+        .grid-line {
+            stroke: #e5e7eb;
+            stroke-width: 1;
+            stroke-dasharray: 4, 4;
+        }
+        .zero-line {
+            stroke: #9ca3af;
+            stroke-width: 1.5;
+            stroke-dasharray: 0;
+        }
+        .axis-line {
+            stroke: #374151;
+            stroke-width: 2;
+        }
+        .graph-path {
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .axis-text {
+            font-size: 10px;
+            fill: #4b5563;
+            font-family: monospace;
+        }
+        .axis-label-text {
+            font-size: 11px;
+            fill: #1f2937;
+            font-weight: bold;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        
+        /* Slope Label Animation */
+        .slope-label {
+            transition: top 0.1s ease-out;
+            pointer-events: none;
+            line-height: 1.4; /* Better spacing for multi-line */
+        }
+
+        /* Bird Animation */
+        @keyframes fly {
+            0% { transform: translateX(-100px) translateY(0); }
+            25% { transform: translateX(25vw) translateY(-20px); }
+            50% { transform: translateX(50vw) translateY(0); }
+            75% { transform: translateX(75vw) translateY(20px); }
+            100% { transform: translateX(110vw) translateY(0); }
+        }
+        .bird {
+            animation: fly 15s linear infinite;
+        }
+
+        /* Toggle Switch Styles (Header & Options) */
+        .toggle-checkbox {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        .toggle-label {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 50px;
+            height: 26px;
+            background-color: #4b5563;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            padding: 2px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toggle-label:hover {
+            background-color: #374151;
+        }
+        .toggle-ball {
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            width: 22px;
+            height: 22px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #2563eb; 
+        }
+        .toggle-checkbox:checked + .toggle-label .toggle-ball {
+            transform: translateX(24px);
+        }
+        .toggle-text {
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            user-select: none;
+            z-index: 5;
+            position: absolute;
+        }
+        .toggle-text-zh { right: 7px; }
+        .toggle-text-en { left: 7px; opacity: 0; }
+        
+        .toggle-checkbox:checked + .toggle-label .toggle-text-zh { opacity: 0; }
+        .toggle-checkbox:checked + .toggle-label .toggle-text-en { opacity: 1; }
+
+        /* Small Toggle for options */
+        .opt-toggle-label {
+            width: 36px;
+            height: 20px;
+        }
+        .opt-toggle-ball {
+            width: 16px;
+            height: 16px;
+        }
+        .opt-toggle-checkbox:checked + .opt-toggle-label .opt-toggle-ball {
+            transform: translateX(16px);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-slate-800 text-white p-3 shadow-md shrink-0 z-20">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-lg md:text-xl font-bold flex items-center gap-2 truncate">
+                <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
+                <span data-key="app_title">高中物理運動學模擬器</span>
+            </h1>
+            <div class="flex items-center gap-4">
+                <div class="text-xs text-gray-300 hidden sm:block" data-key="app_subtitle">s-t, v-t, a-t 圖表同步教學</div>
+                
+                <!-- Toggle Switch for Language -->
+                <div class="relative">
+                    <input type="checkbox" id="btn-lang-toggle" class="toggle-checkbox">
+                    <label for="btn-lang-toggle" class="toggle-label">
+                        <span class="toggle-text toggle-text-zh">中</span>
+                        <span class="toggle-text toggle-text-en">En</span>
+                        <div class="toggle-ball"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        
+        <!-- Left Panel: Controls & Simulation -->
+        <div class="w-full lg:w-1/3 bg-white border-r border-gray-200 flex flex-col z-10 shadow-lg shrink-0 h-1/2 lg:h-auto overflow-hidden">
+            
+            <!-- Controls -->
+            <div class="p-4 bg-gray-50 border-b border-gray-200 overflow-y-auto">
+                <h2 class="text-base font-bold text-gray-800 mb-3 border-l-4 border-blue-600 pl-2" data-key="settings_title">參數設定</h2>
+                
+                <div class="space-y-3">
+                    <!-- Initial Position -->
+                    <div class="bg-white p-2 md:p-3 rounded border border-gray-200 shadow-sm">
+                        <div class="flex justify-between mb-1">
+                            <label class="text-xs md:text-sm font-bold text-gray-700" data-key="label_s0">初位置 (<span class="math-font">s</span>)</label>
+                            <span class="text-xs md:text-sm font-bold text-blue-600 font-mono" id="val-s0">0 m</span>
+                        </div>
+                        <input type="range" id="input-s0" min="0" max="100" step="1" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                    </div>
+
+                    <!-- Initial Velocity -->
+                    <div class="bg-white p-2 md:p-3 rounded border border-gray-200 shadow-sm">
+                        <div class="flex justify-between mb-1">
+                            <label class="text-xs md:text-sm font-bold text-gray-700" data-key="label_v0">初速度 (<span class="math-font">v</span>)</label>
+                            <span class="text-xs md:text-sm font-bold text-green-600 font-mono" id="val-v0">5 m/s</span>
+                        </div>
+                        <input type="range" id="input-v0" min="-25" max="25" step="1" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600">
+                    </div>
+
+                    <!-- Acceleration -->
+                    <div class="bg-white p-2 md:p-3 rounded border border-gray-200 shadow-sm ring-red-100 transition-shadow" id="container-a">
+                        <div class="flex justify-between mb-1">
+                            <label class="text-xs md:text-sm font-bold text-gray-700" data-key="label_a">加速度 (<span class="math-font">a</span>)</label>
+                            <span class="text-xs md:text-sm font-bold text-red-600 font-mono" id="val-a">0 m/s²</span>
+                        </div>
+                        <input type="range" id="input-a" min="-10" max="10" step="0.5" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600">
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="flex gap-2 mt-4">
+                    <button id="btn-start" class="flex-1 bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded shadow transition flex items-center justify-center gap-2 text-sm md:text-base">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                        <span data-key="btn_start">開始</span>
+                    </button>
+                    <button id="btn-pause" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded shadow transition hidden flex items-center justify-center gap-2 text-sm md:text-base">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                        <span data-key="btn_pause">暫停</span>
+                    </button>
+                    <button id="btn-reset" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded shadow transition flex items-center justify-center gap-2 text-sm md:text-base">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path></svg>
+                        <span data-key="btn_reset">重置</span>
+                    </button>
+                </div>
+
+                <!-- Display Options -->
+                <div class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-4">
+                    <!-- Show Value Toggle -->
+                    <div class="flex items-center gap-2">
+                        <div class="relative">
+                            <input type="checkbox" id="chk-show-value" class="toggle-checkbox opt-toggle-checkbox" checked>
+                            <label for="chk-show-value" class="toggle-label opt-toggle-label">
+                                <div class="toggle-ball opt-toggle-ball"></div>
+                            </label>
+                        </div>
+                        <span class="text-xs font-bold text-gray-600 cursor-pointer select-none" onclick="document.getElementById('chk-show-value').click()" data-key="opt_show_value">顯示數值</span>
+                    </div>
+
+                    <!-- Show Slope Toggle -->
+                    <div class="flex items-center gap-2">
+                        <div class="relative">
+                            <input type="checkbox" id="chk-show-slope" class="toggle-checkbox opt-toggle-checkbox">
+                            <label for="chk-show-slope" class="toggle-label opt-toggle-label">
+                                <div class="toggle-ball opt-toggle-ball"></div>
+                            </label>
+                        </div>
+                        <span class="text-xs font-bold text-gray-600 cursor-pointer select-none" onclick="document.getElementById('chk-show-slope').click()" data-key="opt_show_slope">顯示斜率</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulation View (Car & Road) -->
+            <div class="flex-1 bg-sky-100 relative overflow-hidden flex flex-col justify-end border-b-4 border-gray-400 min-h-[150px]">
+                <div class="absolute top-2 left-2 right-2 bg-white/90 p-2 rounded backdrop-blur-sm text-2xl text-gray-700 shadow border border-gray-200 z-10">
+                    <div class="grid grid-cols-3 gap-2 text-center md:text-left">
+                        <div class="truncate"><span class="math-font">t</span>: <span id="disp-time" class="font-mono font-bold">0.00</span> s</div>
+                        <div class="truncate"><span class="math-font">s</span>: <span id="disp-pos" class="font-mono font-bold text-blue-600">0.00</span> m</div>
+                        <div class="truncate"><span class="math-font">v</span>: <span id="disp-vel" class="font-mono font-bold text-green-600">0.00</span> m/s</div>
+                    </div>
+                </div>
+
+                <!-- SVG Road and Car -->
+                <svg id="sim-svg" class="w-full h-full block select-none" preserveAspectRatio="xMidYMax slice">
+                    <!-- Background Sky -->
+                    <rect x="-10000" y="-1000" width="60000" height="2000" fill="#bae6fd" />
+                    
+                    <!-- Clouds Group -->
+                    <g id="clouds-group"></g>
+
+                    <!-- Birds Group -->
+                    <g id="birds-group"></g>
+
+                    <!-- Ground -->
+                    <rect x="-10000" y="60%" width="60000" height="40%" fill="#86efac" />
+
+                    <!-- Scenery (Trees, Houses) -->
+                    <g id="scenery-group"></g>
+
+                    <!-- Road -->
+                    <rect x="-10000" y="65%" width="60000" height="80" fill="#4b5563" stroke="#374151" stroke-width="2"/>
+                    <!-- Road Markings -->
+                    <line x1="-10000" y1="85%" x2="50000" y2="85%" stroke="#e5e7eb" stroke-width="2" stroke-dasharray="20, 20" />
+
+                    <!-- Distance Markers Group -->
+                    <g id="distance-markers" class="text-[10px] text-gray-600 select-none" style="font-family: monospace;">
+                        <!-- Generated by JS -->
+                    </g>
+
+                    <!-- The Detailed Red Car Group (Sleek Sedan) -->
+                    <g id="car-group">
+                        <g transform="scale(0.55) translate(0, -32)"> 
+                            <!-- Shadow -->
+                            <ellipse cx="0" cy="-2" rx="55" ry="6" fill="#000" opacity="0.3"/>
+
+                            <!-- Wheels moved here (behind body) to fix "overlap" -->
+                            <!-- Wheel Rear (Moved up slightly to -6 for overlap look) -->
+                            <g id="wheel-rear" transform="translate(-30, -6)">
+                                <circle cx="0" cy="0" r="12" fill="#1f2937" />
+                                <circle cx="0" cy="0" r="7" fill="#e5e7eb" stroke="#9ca3af" stroke-width="1"/>
+                                <!-- Spokes -->
+                                <g stroke="#9ca3af" stroke-width="1.5">
+                                    <line x1="0" y1="-7" x2="0" y2="7"/>
+                                    <line x1="-6" y1="-3.5" x2="6" y2="3.5"/>
+                                    <line x1="-6" y1="3.5" x2="6" y2="-3.5"/>
+                                </g>
+                            </g>
+                            
+                            <!-- Wheel Front (Moved up slightly to -6 for overlap look) -->
+                            <g id="wheel-front" transform="translate(30, -6)">
+                                <circle cx="0" cy="0" r="12" fill="#1f2937" />
+                                <circle cx="0" cy="0" r="7" fill="#e5e7eb" stroke="#9ca3af" stroke-width="1"/>
+                                <!-- Spokes -->
+                                <g stroke="#9ca3af" stroke-width="1.5">
+                                    <line x1="0" y1="-7" x2="0" y2="7"/>
+                                    <line x1="-6" y1="-3.5" x2="6" y2="3.5"/>
+                                    <line x1="-6" y1="3.5" x2="6" y2="-3.5"/>
+                                </g>
+                            </g>
+
+                            <!-- Car Body Main Shape (Drawn on top of wheels) -->
+                            <!-- Lower body -->
+                            <path d="M-55,-15 L-55,-28 L-45,-30 L-25,-32 L25,-32 L50,-28 L58,-15 L58,-12 L-55,-12 Z" fill="#dc2626" stroke="#991b1b" stroke-width="1"/>
+                            
+                            <!-- Upper Cabin (Curved Roof) -->
+                            <path d="M-30,-32 L-20,-50 L15,-50 L35,-32 Z" fill="#ef4444" stroke="#991b1b" stroke-width="1"/>
+
+                            <!-- Windows -->
+                            <path d="M-18,-34 L-12,-46 L12,-46 L12,-34 Z" fill="#bfdbfe" /> <!-- Rear window -->
+                            <path d="M16,-46 L30,-34 L16,-34 Z" fill="#bfdbfe" /> <!-- Front window slope -->
+                            <path d="M-18,-34 L12,-34 L12,-46 L-12,-46 Z" fill="#bae6fd" opacity="0.5"/>
+                            
+                            <!-- Front Hood slope -->
+                            <path d="M35,-32 Q50,-30 58,-15" fill="#ef4444" stroke="#991b1b" stroke-width="1"/>
+                            <!-- Rear Trunk slope -->
+                            <path d="M-30,-32 Q-45,-30 -55,-15" fill="#ef4444" stroke="#991b1b" stroke-width="1"/>
+                            
+                            <!-- Bumper/Trim -->
+                            <rect x="-56" y="-15" width="115" height="4" rx="1" fill="#7f1d1d" />
+
+                            <!-- Headlight -->
+                            <path d="M50,-25 Q55,-25 57,-20 L50,-20 Z" fill="#facc15" stroke="#ca8a04" stroke-width="0.5"/>
+                            <!-- Taillight -->
+                            <rect x="-56" y="-24" width="3" height="6" rx="1" fill="#7f1d1d" />
+
+                            <!-- Door lines -->
+                            <line x1="-10" y1="-32" x2="-10" y2="-15" stroke="#7f1d1d" stroke-width="1" />
+                            <line x1="15" y1="-32" x2="15" y2="-15" stroke="#7f1d1d" stroke-width="1" />
+                            <!-- Handle -->
+                            <line x1="-5" y1="-22" x2="2" y2="-22" stroke="#7f1d1d" stroke-width="2" stroke-linecap="round"/>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Right Panel: Graphs -->
+        <div class="w-full lg:w-2/3 bg-gray-50 flex flex-col h-1/2 lg:h-full overflow-hidden relative" id="graphs-container">
+            <!-- Sync Line Overlay -->
+            <div class="absolute top-0 left-0 w-full h-full pointer-events-none z-30" id="hover-line-container">
+                <div id="sync-line" class="hidden absolute top-0 bottom-0 border-l border-red-500 w-px bg-transparent z-50 transition-opacity duration-75">
+                    <div class="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded absolute top-0 -translate-x-1/2 mt-1 whitespace-nowrap z-50 shadow" id="sync-time-label">t=0s</div>
+                    
+                    <div id="slope-label-s" class="slope-label absolute left-2 bg-white/90 border border-blue-200 text-blue-800 text-[10px] px-1.5 py-0.5 rounded shadow whitespace-nowrap"></div>
+                    <div id="slope-label-v" class="slope-label absolute left-2 bg-white/90 border border-green-200 text-green-800 text-[10px] px-1.5 py-0.5 rounded shadow whitespace-nowrap"></div>
+                    <div id="slope-label-a" class="slope-label absolute left-2 bg-white/90 border border-red-200 text-red-800 text-[10px] px-1.5 py-0.5 rounded shadow whitespace-nowrap"></div>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col p-2 gap-2 h-full overflow-y-auto">
+                
+                <!-- s-t Graph -->
+                <div id="container-graph-s" class="flex-1 relative border border-gray-300 rounded bg-white shadow-sm flex flex-col min-h-[120px]">
+                    <div class="absolute top-2 right-2 font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded text-xs z-10" data-key="graph_st">位置-時間 (<span class="math-font">s-t</span>)</div>
+                    <svg id="graph-s" class="w-full h-full cursor-crosshair graph-svg"></svg>
+                    <!-- Red Dot for S -->
+                    <div id="dot-s" class="absolute w-2 h-2 bg-red-600 rounded-full hidden pointer-events-none transform -translate-x-1/2 -translate-y-1/2 z-40 border border-white"></div>
+                </div>
+
+                <!-- v-t Graph -->
+                <div id="container-graph-v" class="flex-1 relative border border-gray-300 rounded bg-white shadow-sm flex flex-col min-h-[120px]">
+                    <div class="absolute top-2 right-2 font-bold text-green-700 bg-green-50 border border-green-100 px-2 py-0.5 rounded text-xs z-10" data-key="graph_vt">速度-時間 (<span class="math-font">v-t</span>)</div>
+                    <svg id="graph-v" class="w-full h-full cursor-crosshair graph-svg"></svg>
+                    <!-- Red Dot for V -->
+                    <div id="dot-v" class="absolute w-2 h-2 bg-red-600 rounded-full hidden pointer-events-none transform -translate-x-1/2 -translate-y-1/2 z-40 border border-white"></div>
+                </div>
+
+                <!-- a-t Graph -->
+                <div id="container-graph-a" class="flex-1 relative border border-gray-300 rounded bg-white shadow-sm flex flex-col min-h-[120px]">
+                    <div class="absolute top-2 right-2 font-bold text-red-700 bg-red-50 border border-red-100 px-2 py-0.5 rounded text-xs z-10" data-key="graph_at">加速度-時間 (<span class="math-font">a-t</span>)</div>
+                    <svg id="graph-a" class="w-full h-full cursor-crosshair graph-svg"></svg>
+                    <!-- Red Dot for A -->
+                    <div id="dot-a" class="absolute w-2 h-2 bg-red-600 rounded-full hidden pointer-events-none transform -translate-x-1/2 -translate-y-1/2 z-40 border border-white"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Translations ---
+        const translations = {
+            zh: {
+                app_title: "高中物理運動學模擬器",
+                app_subtitle: "<span class='math-font'>s-t</span>, <span class='math-font'>v-t</span>, <span class='math-font'>a-t</span> 圖表同步教學",
+                settings_title: "參數設定",
+                label_s0: "初位置 (<span class='math-font'>s</span>)",
+                label_v0: "初速度 (<span class='math-font'>v</span>)",
+                label_a: "加速度 (<span class='math-font'>a</span>)",
+                btn_start: "開始",
+                btn_pause: "暫停",
+                btn_reset: "重置",
+                btn_resume: "繼續",
+                graph_st: "位置-時間 (<span class='math-font'>s-t</span>)",
+                graph_vt: "速度-時間 (<span class='math-font'>v-t</span>)",
+                graph_at: "加速度-時間 (<span class='math-font'>a-t</span>)",
+                opt_show_value: "顯示數值",
+                opt_show_slope: "顯示斜率",
+                slope: "斜率"
+            },
+            en: {
+                app_title: "Kinematics Simulator",
+                app_subtitle: "Synchronized <span class='math-font'>s-t</span>, <span class='math-font'>v-t</span>, <span class='math-font'>a-t</span> Graphs",
+                settings_title: "Parameters",
+                label_s0: "Initial Position (<span class='math-font'>s</span>)",
+                label_v0: "Initial Velocity (<span class='math-font'>v</span>)",
+                label_a: "Acceleration (<span class='math-font'>a</span>)",
+                btn_start: "Start",
+                btn_pause: "Pause",
+                btn_reset: "Reset",
+                btn_resume: "Resume",
+                graph_st: "Position-Time (<span class='math-font'>s-t</span>)",
+                graph_vt: "Velocity-Time (<span class='math-font'>v-t</span>)",
+                graph_at: "Acceleration-Time (<span class='math-font'>a-t</span>)",
+                opt_show_value: "Show Value",
+                opt_show_slope: "Show Slope",
+                slope: "Slope"
+            }
+        };
+        let currentLang = 'zh';
+
+        // --- State Management ---
+        const state = {
+            s0: 0,
+            v0: 5,
+            a: 0,
+            t: 0,
+            s: 0,
+            v: 5,
+            running: false,
+            paused: false,
+            dataPoints: [], 
+            maxTime: 20, 
+        };
+
+        let animationFrame;
+        // INCREASED MARGINS
+        const MARGIN = { top: 30, right: 50, bottom: 25, left: 45 };
+
+        // --- Elements ---
+        const inputs = {
+            s0: document.getElementById('input-s0'),
+            v0: document.getElementById('input-v0'),
+            a: document.getElementById('input-a')
+        };
+        const containers = {
+            a: document.getElementById('container-a')
+        };
+        const displays = {
+            s0: document.getElementById('val-s0'),
+            v0: document.getElementById('val-v0'),
+            a: document.getElementById('val-a'),
+            time: document.getElementById('disp-time'),
+            pos: document.getElementById('disp-pos'),
+            vel: document.getElementById('disp-vel')
+        };
+        const buttons = {
+            start: document.getElementById('btn-start'),
+            pause: document.getElementById('btn-pause'),
+            reset: document.getElementById('btn-reset'),
+            langToggle: document.getElementById('btn-lang-toggle')
+        };
+        const options = {
+            showValue: document.getElementById('chk-show-value'),
+            showSlope: document.getElementById('chk-show-slope')
+        };
+        
+        const carGroup = document.getElementById('car-group');
+        const wheelFront = document.getElementById('wheel-front');
+        const wheelRear = document.getElementById('wheel-rear');
+        const markerGroup = document.getElementById('distance-markers');
+        const sceneryGroup = document.getElementById('scenery-group');
+        const cloudsGroup = document.getElementById('clouds-group');
+        const birdsGroup = document.getElementById('birds-group');
+        
+        const syncLine = document.getElementById('sync-line');
+        const syncTimeLabel = document.getElementById('sync-time-label');
+        
+        const slopeLabels = {
+            s: document.getElementById('slope-label-s'),
+            v: document.getElementById('slope-label-v'),
+            a: document.getElementById('slope-label-a')
+        };
+        const graphContainers = {
+            s: document.getElementById('container-graph-s'),
+            v: document.getElementById('container-graph-v'),
+            a: document.getElementById('container-graph-a')
+        };
+        const dots = {
+            s: document.getElementById('dot-s'),
+            v: document.getElementById('dot-v'),
+            a: document.getElementById('dot-a')
+        };
+
+        // --- Initialization ---
+        function init() {
+            updateValuesFromInputs();
+            setupMarkers();
+            setupScenery();
+            setupClouds();
+            setupBirds();
+            drawGraphs(true); 
+            
+            // Event Listeners
+            inputs.s0.addEventListener('input', onInputChange);
+            inputs.v0.addEventListener('input', onInputChange);
+            inputs.a.addEventListener('input', onAccelerationChange); 
+
+            buttons.start.addEventListener('click', startSim);
+            buttons.pause.addEventListener('click', pauseSim);
+            buttons.reset.addEventListener('click', resetSim);
+            buttons.langToggle.addEventListener('change', toggleLanguage);
+
+            // Sync Line Logic
+            const graphsContainer = document.getElementById('graphs-container');
+            graphsContainer.addEventListener('mousemove', handleGraphHover);
+            graphsContainer.addEventListener('mouseleave', () => {
+                syncLine.classList.add('hidden');
+                dots.s.classList.add('hidden');
+                dots.v.classList.add('hidden');
+                dots.a.classList.add('hidden');
+            });
+            
+            // Responsive resize
+            window.addEventListener('resize', () => {
+               if(!state.running) drawGraphs(true); 
+            });
+        }
+
+        function toggleLanguage() {
+            currentLang = buttons.langToggle.checked ? 'en' : 'zh';
+            updateLanguage();
+        }
+
+        function updateLanguage() {
+            const t = translations[currentLang];
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (t[key]) {
+                    if (key.startsWith('btn_start')) {
+                         if(!state.running) el.innerHTML = t.btn_start;
+                         else if(state.paused) el.innerHTML = t.btn_resume;
+                    } else {
+                        el.innerHTML = t[key];
+                    }
+                }
+            });
+            
+            if (state.running && !state.paused) {
+                const span = buttons.pause.querySelector('span');
+                if(span) span.innerHTML = t.btn_pause;
+            } else if (state.paused) {
+                const span = buttons.start.querySelector('span');
+                if(span) span.innerHTML = t.btn_resume;
+            } else {
+                const span = buttons.start.querySelector('span');
+                if(span) span.innerHTML = t.btn_start;
+            }
+        }
+
+        // --- Physics Logic ---
+
+        function onInputChange() {
+            if (state.running || state.paused) return;
+            updateValuesFromInputs();
+            resetSimState(); 
+        }
+
+        function onAccelerationChange() {
+            const newA = parseFloat(inputs.a.value);
+            state.a = newA;
+            displays.a.textContent = `${state.a} m/s²`;
+            
+            if (!state.running && !state.paused) {
+                updateValuesFromInputs();
+            }
+        }
+
+        function updateValuesFromInputs() {
+            state.s0 = parseFloat(inputs.s0.value);
+            state.v0 = parseFloat(inputs.v0.value);
+            state.a = parseFloat(inputs.a.value);
+
+            displays.s0.textContent = `${state.s0} m`;
+            displays.v0.textContent = `${state.v0} m/s`;
+            displays.a.textContent = `${state.a} m/s²`;
+        }
+
+        function resetSimState() {
+            state.s = state.s0;
+            state.v = state.v0;
+            state.t = 0;
+            state.dataPoints = [];
+            updateDisplay();
+            updateCarPosition();
+            drawGraphs(true);
+        }
+
+        // --- Core Loop ---
+        function startSim() {
+            if (state.running && !state.paused) return;
+
+            state.running = true;
+            state.paused = false;
+            
+            const t = translations[currentLang];
+            buttons.start.classList.add('hidden');
+            buttons.pause.classList.remove('hidden');
+            const pauseSpan = buttons.pause.querySelector('span');
+            if(pauseSpan) pauseSpan.innerHTML = t.btn_pause;
+
+            setInputsState('running');
+
+            let lastTimestamp = performance.now();
+
+            function loop(timestamp) {
+                if (!state.running || state.paused) return;
+
+                const dt = (timestamp - lastTimestamp) / 1000; 
+                lastTimestamp = timestamp;
+
+                const safeDt = Math.min(dt, 0.1); 
+                
+                state.t += safeDt;
+                state.v += state.a * safeDt;
+                state.s += state.v * safeDt;
+
+                state.dataPoints.push({
+                    t: state.t,
+                    s: state.s,
+                    v: state.v,
+                    a: state.a
+                });
+
+                updateDisplay();
+                updateCarPosition();
+                drawGraphs(false);
+
+                if (state.t >= state.maxTime) {
+                    pauseSim();
+                    return;
+                }
+
+                animationFrame = requestAnimationFrame(loop);
+            }
+
+            animationFrame = requestAnimationFrame(loop);
+        }
+
+        function pauseSim() {
+            state.paused = true;
+            const t = translations[currentLang];
+            
+            buttons.start.classList.remove('hidden');
+            const startSpan = buttons.start.querySelector('span');
+            if(startSpan) startSpan.innerHTML = t.btn_resume;
+            
+            buttons.pause.classList.add('hidden');
+            cancelAnimationFrame(animationFrame);
+
+            setInputsState('paused');
+        }
+
+        function resetSim() {
+            state.running = false;
+            state.paused = false;
+            cancelAnimationFrame(animationFrame);
+
+            const t = translations[currentLang];
+            buttons.start.classList.remove('hidden');
+            const startSpan = buttons.start.querySelector('span');
+            if(startSpan) startSpan.innerHTML = t.btn_start;
+            
+            buttons.pause.classList.add('hidden');
+            
+            inputs.s0.value = 0;
+            inputs.v0.value = 0;
+            inputs.a.value = 0;
+
+            updateValuesFromInputs();
+            resetSimState();
+            setInputsState('reset');
+        }
+
+        function setInputsState(mode) {
+            const disabledOpacity = '0.5';
+            const enabledOpacity = '1';
+
+            const svDisabled = (mode === 'running' || mode === 'paused');
+            inputs.s0.disabled = svDisabled;
+            inputs.v0.disabled = svDisabled;
+            inputs.s0.style.opacity = svDisabled ? disabledOpacity : enabledOpacity;
+            inputs.v0.style.opacity = svDisabled ? disabledOpacity : enabledOpacity;
+
+            const aDisabled = (mode === 'running');
+            inputs.a.disabled = aDisabled;
+            inputs.a.style.opacity = aDisabled ? disabledOpacity : enabledOpacity;
+
+            if (mode === 'paused') {
+                containers.a.classList.add('ring-2', 'ring-red-400');
+            } else {
+                containers.a.classList.remove('ring-2', 'ring-red-400');
+            }
+        }
+
+        // --- Visuals & Graphs ---
+        function updateDisplay() {
+            displays.time.textContent = state.t.toFixed(2);
+            displays.pos.textContent = state.s.toFixed(2);
+            displays.vel.textContent = state.v.toFixed(2);
+        }
+
+        function updateCarPosition() {
+            const scale = 5; 
+            const roadY = 162; 
+            const xPos = state.s * scale;
+            
+            carGroup.setAttribute("transform", `translate(${xPos}, ${roadY})`);
+            
+            const rotation = (state.s * 40) % 360; 
+            wheelRear.setAttribute("transform", `translate(-30, -6) rotate(${rotation})`);
+            wheelFront.setAttribute("transform", `translate(30, -6) rotate(${rotation})`);
+            
+            const simSvg = document.getElementById('sim-svg');
+            const aspect = simSvg.clientWidth / simSvg.clientHeight;
+            const viewH = 200; 
+            const viewW = viewH * aspect;
+            
+            let camX = xPos - (viewW * 0.2);
+            simSvg.setAttribute("viewBox", `${camX} 0 ${viewW} ${viewH}`);
+        }
+
+        function setupClouds() {
+            cloudsGroup.innerHTML = '';
+            const cloudPath = "M20,60 Q30,40 50,50 Q60,30 80,50 Q100,40 110,60 Q120,70 100,70 L40,70 Q20,70 20,60 Z";
+            for(let i = -100; i < 600; i+= 100 + Math.random()*150) {
+                const cloud = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                cloud.setAttribute("d", cloudPath);
+                const scale = 0.8 + Math.random() * 1.5;
+                const y = 20 + Math.random() * 80;
+                const x = i * 5; 
+                cloud.setAttribute("transform", `translate(${x}, ${y}) scale(${scale})`);
+                cloud.setAttribute("fill", "#ffffff");
+                cloud.setAttribute("opacity", "0.9");
+                cloudsGroup.appendChild(cloud);
+            }
+        }
+
+        function setupBirds() {
+            const birdPath = "M0,0 Q5,-5 10,0 M10,0 Q15,-5 20,0";
+            for(let i=0; i<5; i++) {
+                const b = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                b.setAttribute("d", birdPath);
+                b.setAttribute("stroke", "#000");
+                b.setAttribute("fill", "none");
+                b.setAttribute("stroke-width", "2");
+                const bx = i * 200 * 5 + Math.random() * 500;
+                const by = 30 + Math.random() * 50;
+                b.setAttribute("transform", `translate(${bx}, ${by}) scale(0.8)`);
+                birdsGroup.appendChild(b);
+            }
+        }
+
+        function setupScenery() {
+            sceneryGroup.innerHTML = '';
+            const groundY = 130; 
+            for(let m = -50; m < 550; m += 30 + Math.random()*50) {
+                const type = Math.random() > 0.75 ? 'house' : 'tree';
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                const x = m * 5;
+                const y = groundY; 
+
+                if(type === 'tree') {
+                    const trunk = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    trunk.setAttribute("x", "-3"); trunk.setAttribute("y", "-15");
+                    trunk.setAttribute("width", "6"); trunk.setAttribute("height", "15");
+                    trunk.setAttribute("fill", "#5d4037");
+                    const leavesGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                    leavesGroup.innerHTML = `<circle cx="0" cy="-25" r="12" fill="#15803d" /><circle cx="-8" cy="-18" r="10" fill="#16a34a" /><circle cx="8" cy="-18" r="10" fill="#16a34a" />`;
+                    g.appendChild(trunk); g.appendChild(leavesGroup);
+                    g.setAttribute("transform", `translate(${x}, ${y}) scale(${1 + Math.random()*0.5})`);
+                } else {
+                    const body = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    body.setAttribute("x", "-15"); body.setAttribute("y", "-20");
+                    body.setAttribute("width", "30"); body.setAttribute("height", "20");
+                    body.setAttribute("fill", "#fef3c7"); body.setAttribute("stroke", "#78350f"); body.setAttribute("stroke-width", "1");
+                    const roof = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    roof.setAttribute("d", "M-18,-20 L18,-20 L0,-35 Z"); roof.setAttribute("fill", "#b91c1c");
+                    const door = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    door.setAttribute("x", "-5"); door.setAttribute("y", "-15");
+                    door.setAttribute("width", "10"); door.setAttribute("height", "15"); door.setAttribute("fill", "#92400e");
+                    const window = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                    window.innerHTML = `<rect x="-12" y="-15" width="6" height="6" fill="#bfdbfe" stroke="#3b82f6" stroke-width="0.5"/><line x1="-9" y1="-15" x2="-9" y2="-9" stroke="#3b82f6" stroke-width="0.5"/><line x1="-12" y1="-12" x2="-6" y2="-12" stroke="#3b82f6" stroke-width="0.5"/><rect x="6" y="-15" width="6" height="6" fill="#bfdbfe" stroke="#3b82f6" stroke-width="0.5"/><line x1="9" y1="-15" x2="9" y2="-9" stroke="#3b82f6" stroke-width="0.5"/><line x1="6" y1="-12" x2="12" y2="-12" stroke="#3b82f6" stroke-width="0.5"/>`;
+                    const chimney = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    chimney.setAttribute("x", "8"); chimney.setAttribute("y", "-30");
+                    chimney.setAttribute("width", "4"); chimney.setAttribute("height", "10"); chimney.setAttribute("fill", "#78350f");
+                    g.appendChild(chimney); g.appendChild(body); g.appendChild(door); g.appendChild(window); g.appendChild(roof);
+                    g.setAttribute("transform", `translate(${x}, ${y}) scale(1.2)`);
+                }
+                sceneryGroup.appendChild(g);
+            }
+        }
+        
+        function setupMarkers() {
+            markerGroup.innerHTML = '';
+            const totalMeters = 500; 
+            const pixelPerMeter = 5; 
+            
+            for(let m = -100; m <= totalMeters; m += 10) {
+                const x = m * pixelPerMeter;
+                
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", x);
+                line.setAttribute("y1", "90%");
+                line.setAttribute("x2", x);
+                line.setAttribute("y2", "100%");
+                line.setAttribute("stroke", "#6b7280");
+                line.setAttribute("stroke-width", "1");
+
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", x);
+                text.setAttribute("y", "95%");
+                text.setAttribute("fill", "#4b5563");
+                text.setAttribute("text-anchor", "middle");
+                text.textContent = `${m}`;
+
+                markerGroup.appendChild(line);
+                markerGroup.appendChild(text);
+            }
+        }
+
+        function drawGraphs(reset) {
+            drawSingleGraph('graph-s', 's', '#2563eb', reset);
+            drawSingleGraph('graph-v', 'v', '#16a34a', reset);
+            drawSingleGraph('graph-a', 'a', '#dc2626', reset);
+        }
+
+        function drawSingleGraph(svgId, key, color, reset) {
+            const svg = document.getElementById(svgId);
+            const w = svg.clientWidth;
+            const h = svg.clientHeight;
+            const plotW = w - MARGIN.left - MARGIN.right;
+            const plotH = h - MARGIN.top - MARGIN.bottom;
+            const maxTime = state.maxTime;
+            
+            let minVal = 0, maxVal = 0;
+            if (key === 's') {
+                let maxS = Math.max(...state.dataPoints.map(p => p.s), state.s0 + 20);
+                let minS = Math.min(...state.dataPoints.map(p => p.s), state.s0);
+                maxVal = Math.ceil(maxS / 10) * 10; minVal = Math.floor(minS / 10) * 10;
+                if (maxVal - minVal < 20) { maxVal = minVal + 50; } 
+            } else if (key === 'v') {
+                let maxV = Math.max(...state.dataPoints.map(p => Math.abs(p.v)), 10);
+                maxVal = Math.ceil(maxV / 5) * 5; minVal = -maxVal;
+            } else if (key === 'a') {
+                maxVal = 10; minVal = -10;
+            }
+
+            const mapX = (t) => MARGIN.left + (t / maxTime) * plotW;
+            const mapY = (val) => {
+                const range = maxVal - minVal;
+                const normalized = (val - minVal) / range;
+                return (MARGIN.top + plotH) - (normalized * plotH);
+            };
+
+            svg.innerHTML = ''; 
+            
+            const xLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            xLabel.setAttribute("x", w - 5); 
+            xLabel.setAttribute("y", h - 5); 
+            xLabel.setAttribute("class", "axis-label-text");
+            xLabel.setAttribute("text-anchor", "end");
+            xLabel.innerHTML = `<tspan class="math-font">t</tspan> (s)`;
+            svg.appendChild(xLabel);
+
+            const yLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            yLabel.setAttribute("x", MARGIN.left - 10);
+            yLabel.setAttribute("y", MARGIN.top - 10); 
+            yLabel.setAttribute("class", "axis-label-text");
+            yLabel.setAttribute("text-anchor", "start");
+            
+            if(key === 's') yLabel.innerHTML = `<tspan class="math-font">s</tspan> (m)`;
+            else if(key === 'v') yLabel.innerHTML = `<tspan class="math-font">v</tspan> (m/s)`;
+            else if(key === 'a') yLabel.innerHTML = `<tspan class="math-font">a</tspan> (m/s²)`;
+            svg.appendChild(yLabel);
+
+            for(let t = 0; t <= maxTime; t += 2) { 
+                const x = mapX(t);
+                if (t > 0) svg.appendChild(createLine(x, MARGIN.top, x, MARGIN.top + plotH, 'grid-line'));
+                svg.appendChild(createLine(x, MARGIN.top + plotH, x, MARGIN.top + plotH + 5, 'axis-line'));
+                const label = createText(x, h - 5, t.toString(), '#4b5563');
+                svg.appendChild(label);
+            }
+
+            const range = maxVal - minVal;
+            let step = range <= 10 ? 2 : range <= 20 ? 5 : range <= 50 ? 10 : 20;
+
+            for(let v = minVal; v <= maxVal; v += step) {
+                const y = mapY(v);
+                if (y < MARGIN.top - 1 || y > MARGIN.top + plotH + 1) continue;
+                if (Math.abs(v - minVal) > 0.1) {
+                    const lineClass = (Math.abs(v) < 0.01) ? 'zero-line' : 'grid-line';
+                    svg.appendChild(createLine(MARGIN.left, y, w - MARGIN.right, y, lineClass));
+                }
+                svg.appendChild(createLine(MARGIN.left - 5, y, MARGIN.left, y, 'axis-line'));
+                const label = createText(MARGIN.left - 8, y + 4, v.toString(), '#4b5563');
+                label.setAttribute('text-anchor', 'end'); 
+                svg.appendChild(label);
+            }
+
+            svg.appendChild(createLine(MARGIN.left, MARGIN.top, MARGIN.left, MARGIN.top + plotH, 'axis-line'));
+            svg.appendChild(createLine(MARGIN.left, MARGIN.top + plotH, w - MARGIN.right, MARGIN.top + plotH, 'axis-line'));
+
+            if (state.dataPoints.length > 0) {
+                let pathD = `M ${mapX(state.dataPoints[0].t)} ${mapY(state.dataPoints[0][key])}`;
+                for (let i = 1; i < state.dataPoints.length; i++) {
+                    pathD += ` L ${mapX(state.dataPoints[i].t)} ${mapY(state.dataPoints[i][key])}`;
+                }
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("class", "graph-path");
+                path.setAttribute("stroke", color);
+                path.setAttribute("d", pathD);
+                svg.appendChild(path);
+            }
+        }
+
+        function createLine(x1, y1, x2, y2, className) {
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x1); line.setAttribute("y1", y1); line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+            line.setAttribute("class", className); return line;
+        }
+
+        function createText(x, y, content, fill) {
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", x); text.setAttribute("y", y); text.setAttribute("fill", fill);
+            text.setAttribute("text-anchor", "middle"); text.setAttribute("class", "axis-text");
+            text.textContent = content; return text;
+        }
+
+        function handleGraphHover(e) {
+            const showVal = options.showValue.checked;
+            const showSlope = options.showSlope.checked;
+
+            const container = document.getElementById('graphs-container');
+            const containerRect = container.getBoundingClientRect();
+            const graphSvg = document.getElementById('graph-s');
+            if(!graphSvg) return;
+            const svgRect = graphSvg.getBoundingClientRect();
+            const relativeX = e.clientX - svgRect.left;
+            const graphWidth = svgRect.width - MARGIN.left - MARGIN.right;
+            const plotH = svgRect.height - MARGIN.top - MARGIN.bottom;
+            
+            if (relativeX >= MARGIN.left && relativeX <= (svgRect.width - MARGIN.right)) {
+                const timeRatio = (relativeX - MARGIN.left) / graphWidth;
+                const timeVal = Math.max(0, Math.min(state.maxTime, timeRatio * state.maxTime));
+                const containerX = e.clientX - containerRect.left;
+                
+                syncLine.classList.remove('hidden');
+                syncLine.style.left = `${containerX}px`;
+                syncTimeLabel.textContent = `t=${timeVal.toFixed(1)}s`;
+
+                const closest = state.dataPoints.reduce((prev, curr) => {
+                    return (Math.abs(curr.t - timeVal) < Math.abs(prev.t - timeVal) ? curr : prev);
+                }, state.dataPoints[0] || {t:0, s:0, v:0, a:0});
+
+                const currentV = closest ? closest.v : 0;
+                const currentA = closest ? closest.a : 0;
+                const currentS = closest ? closest.s : 0;
+
+                const t = translations[currentLang];
+                
+                const getMapY = (key, val) => {
+                    let minVal = 0, maxVal = 0;
+                    if (key === 's') {
+                        let maxS = Math.max(...state.dataPoints.map(p => p.s), state.s0 + 20);
+                        let minS = Math.min(...state.dataPoints.map(p => p.s), state.s0);
+                        maxVal = Math.ceil(maxS / 10) * 10; minVal = Math.floor(minS / 10) * 10;
+                        if (maxVal - minVal < 20) { maxVal = minVal + 50; } 
+                    } else if (key === 'v') {
+                        let maxV = Math.max(...state.dataPoints.map(p => Math.abs(p.v)), 10);
+                        maxVal = Math.ceil(maxV / 5) * 5; minVal = -maxVal;
+                    } else if (key === 'a') {
+                        maxVal = 10; minVal = -10;
+                    }
+                    const range = maxVal - minVal;
+                    const normalized = (val - minVal) / range;
+                    return (MARGIN.top + plotH) - (normalized * plotH);
+                };
+
+                const updateLabelAndDot = (key, val, slopeVal, unit, slopeUnit) => {
+                    const label = slopeLabels[key];
+                    const gContainer = graphContainers[key];
+                    const dot = dots[key];
+                    
+                    const gRect = gContainer.getBoundingClientRect();
+                    const relativeTop = gRect.top - containerRect.top;
+                    
+                    label.style.top = `${relativeTop + (gRect.height / 2)}px`;
+                    
+                    let htmlContent = '';
+                    
+                    if (showVal) {
+                        let displayVal = val.toFixed(2);
+                        if (Number.isInteger(val)) displayVal = val.toString();
+                        htmlContent += `<span class="math-font">${key}</span> = <span class="font-mono font-bold">${displayVal}</span> ${unit}`;
+                    }
+
+                    if (showSlope) {
+                        if (showVal) htmlContent += '<br>';
+                        let displaySlope = slopeVal.toFixed(2);
+                        htmlContent += `${t.slope} = <span class="font-mono font-bold">${displaySlope}</span> ${slopeUnit}`;
+                    }
+
+                    label.innerHTML = htmlContent;
+
+                    if (!showVal && !showSlope) {
+                        label.style.display = 'none';
+                    } else {
+                        label.style.display = 'block';
+                    }
+
+                    const yPos = getMapY(key, val);
+                    dot.style.top = `${yPos}px`;
+                    dot.style.left = `${relativeX}px`; 
+                    dot.classList.remove('hidden');
+                };
+
+                // For s-t graph: value is S, slope is V
+                updateLabelAndDot('s', currentS, currentV, 'm', 'm/s');
+                // For v-t graph: value is V, slope is A
+                updateLabelAndDot('v', currentV, currentA, 'm/s', 'm/s²');
+                // For a-t graph: value is A, slope is Jerk (0)
+                updateLabelAndDot('a', currentA, 0, 'm/s²', 'm/s³');
+
+            } else {
+                syncLine.classList.add('hidden');
+                dots.s.classList.add('hidden');
+                dots.v.classList.add('hidden');
+                dots.a.classList.add('hidden');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

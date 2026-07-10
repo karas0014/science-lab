@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>萌萌水電解實驗室</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: #FFF8E1;
+            color: #5D4037;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 擬人化表情 */
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+        .face {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .eyes { display: flex; gap: 12px; }
+        .eye { width: 12px; height: 12px; background-color: #333; border-radius: 50%; animation: blink 4s infinite; }
+        .mouth { width: 20px; height: 10px; border-bottom: 3px solid #333; border-radius: 50%; margin-top: 4px; transition: 0.3s; }
+
+        /* 實驗器材 */
+        .beaker {
+            width: 280px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.4);
+            border: 4px solid #4FC3F7;
+            border-top: none;
+            border-radius: 0 0 30px 30px;
+            position: relative;
+            margin: 0 auto;
+            overflow: visible;
+            transition: all 0.5s ease;
+            z-index: 5;
+        }
+
+        .water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(to top, #4FC3F7, #B3E5FC);
+            transition: height 1.5s ease-in-out, background-color 0.5s;
+            z-index: 1;
+            border-radius: 0 0 26px 26px;
+            overflow: hidden;
+        }
+
+        /* 試管與電極 */
+        .tube-container {
+            position: absolute;
+            bottom: 20px;
+            width: 60px;
+            height: 160px;
+            border: 3px solid #CFD8DC;
+            border-bottom: none;
+            border-radius: 30px 30px 0 0;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 20;
+            overflow: hidden;
+            display: none;
+            pointer-events: auto;
+            transition: box-shadow 0.3s;
+        }
+        .tube-left { left: 40px; }
+        .tube-right { right: 40px; }
+
+        .tube-container.testing:hover {
+            box-shadow: 0 0 15px #FFEB3B;
+            border-color: #FFEB3B;
+            cursor: pointer;
+        }
+
+        .tube-container.tested {
+            opacity: 0.6;
+        }
+
+        .electrode {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 140px;
+            background: #78909C;
+            border-radius: 5px;
+            z-index: 3;
+            display: none;
+        }
+
+        /* 氣體與氣泡 */
+        .gas-pocket {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 0px;
+            background: rgba(255, 255, 255, 0.95);
+            transition: height 0.2s linear;
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #333;
+            font-weight: 800;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        @keyframes bubbleRise {
+            0% { bottom: 10px; opacity: 0; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(2px); }
+            100% { bottom: 140px; opacity: 0; transform: translateX(-2px); }
+        }
+        .bubble {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* 電路組件 */
+        .circuit-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            /* 提高層級讓線路顯示在燒杯之上 */
+            z-index: 25; 
+        }
+        
+        .circuit-wire {
+            fill: none;
+            stroke: #424242;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.3s;
+        }
+        .wire-active { stroke: #FF5722; }
+        .connection-dot {
+            fill: #333;
+        }
+
+        /* 電池模組 */
+        .battery-pack {
+            position: absolute;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 30; /* 比線路更高 */
+        }
+        .battery-terminal {
+            width: 20px;
+            height: 20px;
+            background: #555;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            position: relative;
+            z-index: -1;
+        }
+        .battery-body {
+            width: 140px;
+            height: 70px;
+            background: linear-gradient(135deg, #FF7043, #F4511E);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 6px 0 #BF360C;
+            position: relative;
+            border: 2px solid #FFF;
+        }
+        .battery-nipple {
+            position: absolute;
+            right: -8px;
+            top: 20px;
+            width: 8px;
+            height: 30px;
+            background: #555;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* 安培計 */
+        .ammeter {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: #ECEFF1;
+            border: 4px solid #455A64;
+            border-radius: 50%;
+            /* 調整位置以配合 SVG */
+            top: 35%; /* y approx 175-200 */
+            right: 25%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 20px;
+            color: #455A64;
+            z-index: 30;
+            opacity: 0;
+            transition: opacity 0.5s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .ammeter-needle {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            width: 3px;
+            height: 28px;
+            background: #D32F2F;
+            transform-origin: bottom center;
+            transform: rotate(-45deg);
+            transition: transform 0.5s cubic-bezier(0.4, 2.5, 0.6, 0.8);
+            z-index: 2;
+        }
+        .ammeter-center {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #333;
+            border-radius: 50%;
+            z-index: 3;
+        }
+
+        /* 開關 */
+        .switch-container {
+            position: absolute;
+            bottom: 60px; /* y approx 440-40 = 400 */
+            right: 20%;
+            left: auto;
+            z-index: 30;
+            opacity: 0;
+            transition: opacity 0.5s;
+            cursor: pointer;
+        }
+        .switch-base {
+            width: 60px;
+            height: 30px;
+            background: #5D4037;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .switch-lever {
+            width: 80px;
+            height: 8px;
+            background: #BCAAA4;
+            position: absolute;
+            left: 0;
+            top: 10px;
+            transform-origin: 5px center;
+            transform: rotate(-30deg);
+            transition: transform 0.2s;
+            border-radius: 4px;
+            border: 1px solid #8D6E63;
+        }
+        .switch-closed .switch-lever { transform: rotate(0deg); }
+
+        /* 互動選項面板 */
+        .choice-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 4px solid #FFB74D;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 50;
+            text-align: center;
+            display: none;
+            width: 90%;
+            max-width: 400px;
+        }
+        .choice-btn {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px;
+            border: 2px solid #EEE;
+            border-radius: 10px;
+            background: #FAFAFA;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .choice-btn:hover { background: #FFF3E0; border-color: #FFB74D; transform: scale(1.02); }
+
+        /* 道具 */
+        .prop-item {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 30;
+        }
+        .prop-item:hover { transform: scale(1.1); }
+        .prop-icon { font-size: 50px; }
+        .prop-label { font-size: 12px; font-weight: bold; background: rgba(255,255,255,0.9); padding: 2px 6px; border-radius: 4px; }
+
+        /* 底部 UI */
+        .bottom-ui {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            border: 4px solid #B3E5FC;
+        }
+        .highlight { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 183, 77, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(255, 183, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 183, 77, 0); } }
+
+        /* 測試工具 */
+        .test-tool {
+            width: 80px;
+            height: 12px;
+            background: #D7CCC8;
+            position: absolute;
+            border-radius: 5px;
+            cursor: none;
+            display: none;
+            z-index: 100;
+            transform-origin: left center;
+            pointer-events: none;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        .flame {
+            width: 18px;
+            height: 18px;
+            background: orange;
+            border-radius: 50% 50% 20% 20%;
+            position: absolute;
+            right: -5px;
+            top: -6px;
+            box-shadow: 0 0 10px yellow;
+            animation: flicker 0.15s infinite alternate;
+        }
+        .glow {
+            width: 12px;
+            height: 12px;
+            background: #FF5722;
+            border-radius: 50%;
+            position: absolute;
+            right: -2px;
+            top: 0;
+            box-shadow: 0 0 8px red;
+            animation: breathe 1s infinite alternate;
+        }
+        @keyframes flicker { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.1); opacity: 1; } }
+        @keyframes breathe { from { opacity: 0.6; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center p-4">
+
+    <!-- 標題 -->
+    <header class="absolute top-4 w-full text-center z-50">
+        <h1 class="text-3xl md:text-4xl font-bold text-sky-600 tracking-wider drop-shadow-sm">⚡ 水電解實驗模擬器 🧪</h1>
+    </header>
+
+    <!-- 實驗主區域 -->
+    <div class="relative w-full max-w-4xl h-[500px] flex justify-center items-center mt-4">
+        
+        <!-- 電路層 SVG (座標系統 800x500) -->
+        <svg class="circuit-layer" id="circuit-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+            <!-- 負極線路 (左)：電池負極 -> 連接到左電極底部 -->
+            <!-- y=445 (電池) -> y=360 (電極底部) -->
+            <path id="wire-negative" d="M 318 445 L 326 445 L 326 360" class="circuit-wire" />
+            <circle cx="326" cy="360" r="4" class="connection-dot" /> <!-- 連接點改到底部 -->
+            
+            <!-- 正極線路 (右)：電池正極 -> 開關 -->
+            <path id="wire-positive" d="M 482 445 L 640 445 L 640 400" class="circuit-wire" /> 
+            
+            <!-- 開關 -> 安培計 -->
+            <path id="wire-switch-ammeter" d="M 640 370 L 640 200 L 600 200" class="circuit-wire" />
+            
+            <!-- 安培計 -> 右電極底部 -->
+            <!-- y=200 (安培計) -> y=360 (電極底部) -->
+            <path id="wire-ammeter-electrode" d="M 530 200 L 530 360 L 478 360" class="circuit-wire" />
+            <circle cx="478" cy="360" r="4" class="connection-dot" /> <!-- 連接點改到底部 -->
+        </svg>
+
+        <!-- 燒杯與裝置 -->
+        <div class="beaker" id="beaker">
+            <div class="water" id="water"></div>
+            <!-- 燒杯臉部 -->
+            <div class="face">
+                <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+                <div class="mouth" id="beaker-mouth"></div>
+            </div>
+            <!-- 試管 -->
+            <div class="tube-container tube-left" id="tube-left">
+                <div class="gas-pocket" id="gas-h2"><span style="display:none">H₂</span></div>
+            </div>
+            <div class="tube-container tube-right" id="tube-right">
+                <div class="gas-pocket" id="gas-o2"><span style="display:none">O₂</span></div>
+            </div>
+            <!-- 電極 -->
+            <div class="electrode" id="electrode-left" style="left: 60px;"></div>
+            <div class="electrode" id="electrode-right" style="left: 212px;"></div>
+        </div>
+
+        <!-- 電源 -->
+        <div class="battery-pack" id="battery-pack">
+            <div class="battery-terminal">-</div>
+            <div class="battery-body">
+                DC 電源
+                <div class="battery-nipple"></div>
+            </div>
+            <div class="battery-terminal">+</div>
+        </div>
+
+        <!-- 開關 -->
+        <div class="switch-container" id="switch">
+            <div class="switch-base"></div>
+            <div class="switch-lever" id="switch-lever"></div>
+            <div class="text-center text-sm font-bold mt-2 text-gray-600">開關</div>
+        </div>
+
+        <!-- 安培計 -->
+        <div class="ammeter" id="ammeter">
+            <span class="text-xs mt-8">Ammeter</span>
+            <div class="ammeter-needle" id="ammeter-needle"></div>
+            <div class="ammeter-center"></div>
+        </div>
+
+        <!-- 道具 (絕對定位) -->
+        <div id="prop-water" class="prop-item hidden" style="top: 20px; right: 20px;">
+            <div class="prop-icon">🚰</div>
+            <div class="prop-label text-sky-600">加入純水</div>
+        </div>
+
+        <div id="prop-tubes" class="prop-item hidden" style="top: 20px; right: 20px;">
+            <div class="prop-icon">🧪</div>
+            <div class="prop-label text-gray-600">安裝裝置</div>
+        </div>
+
+        <!-- 選擇面板 -->
+        <div id="electrolyte-panel" class="choice-panel">
+            <h3 class="text-xl font-bold mb-4 text-orange-600">🤔 該加入什麼才能導電？</h3>
+            <button class="choice-btn" onclick="chooseElectrolyte('sugar')">🍬 蔗糖 (Sucrose)</button>
+            <button class="choice-btn" onclick="chooseElectrolyte('acid')">⚗️ 稀硫酸 (H₂SO₄)</button>
+            <button class="choice-btn" onclick="chooseElectrolyte('alcohol')">🍷 酒精 (Alcohol)</button>
+        </div>
+
+        <!-- 測試工具跟隨鼠標 -->
+        <div id="tool-splint" class="test-tool">
+            <div class="glow" id="splint-tip"></div>
+        </div>
+
+    </div>
+
+    <!-- 底部控制 -->
+    <div class="bottom-ui w-full max-w-3xl flex flex-col md:flex-row items-center justify-between p-4 rounded-3xl mt-2 z-50 shadow-lg">
+        <div class="flex items-center gap-4 md:w-3/4 w-full">
+            <div class="mascot-img w-20 h-20 bg-sky-200 rounded-full flex items-center justify-center text-4xl border-4 border-white shadow-md">
+                💡
+            </div>
+            <div class="bg-white p-4 rounded-r-2xl rounded-bl-2xl shadow-sm border-2 border-sky-100 flex-1">
+                <p id="dialogue-text" class="text-lg font-bold text-gray-700">準備好開始實驗了嗎？</p>
+                <p id="principle-text" class="text-sm text-gray-500 mt-1">讓我們一起探索水的奧秘！</p>
+            </div>
+        </div>
+        <div class="md:w-1/4 w-full flex justify-end mt-4 md:mt-0">
+            <button id="main-btn" class="bg-amber-400 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-full shadow-lg transition transform active:scale-95 w-full md:w-auto">
+                開始實驗
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const ui = {
+            dialogue: document.getElementById('dialogue-text'),
+            principle: document.getElementById('principle-text'),
+            btn: document.getElementById('main-btn'),
+            beaker: document.getElementById('beaker'),
+            water: document.getElementById('water'),
+            mouth: document.getElementById('beaker-mouth'),
+            tubes: [document.getElementById('tube-left'), document.getElementById('tube-right')],
+            electrodes: [document.getElementById('electrode-left'), document.getElementById('electrode-right')],
+            battery: document.getElementById('battery-pack'),
+            switch: document.getElementById('switch'),
+            switchLever: document.getElementById('switch-lever'),
+            ammeter: document.getElementById('ammeter'),
+            needle: document.getElementById('ammeter-needle'),
+            wires: document.querySelectorAll('.circuit-wire'),
+            svg: document.getElementById('circuit-svg'),
+            
+            // Props & Panels
+            propWater: document.getElementById('prop-water'),
+            propTubes: document.getElementById('prop-tubes'),
+            choicePanel: document.getElementById('electrolyte-panel'),
+            
+            // Gas
+            gasH2: document.getElementById('gas-h2'),
+            gasO2: document.getElementById('gas-o2'),
+            
+            // Tool
+            tool: document.getElementById('tool-splint'),
+            toolTip: document.getElementById('splint-tip')
+        };
+
+        // State
+        let state = {
+            step: 0,
+            electrolyte: null,
+            isSwitchClosed: false,
+            reactionInterval: null,
+            h2: 0,
+            o2: 0,
+            testedGases: { h2: false, o2: false } 
+        };
+
+        const MAX_GAS = 100;
+
+        // Steps Logic
+        const steps = [
+            {
+                id: 0,
+                text: "實驗準備：首先，我們需要將純水加入燒杯中。",
+                principle: "水 (H₂O) 是共價化合物，純水很難導電。",
+                btnText: "加入純水",
+                action: () => {
+                    ui.btn.style.display = 'none';
+                    ui.propWater.classList.remove('hidden');
+                    ui.propWater.classList.add('highlight');
+                    ui.propWater.onclick = () => {
+                        ui.water.style.height = "70%";
+                        ui.propWater.classList.add('hidden');
+                        nextStep();
+                    };
+                }
+            },
+            {
+                id: 1,
+                text: "純水不導電，我們需要加入電解質。請選擇正確的物質！",
+                principle: "電解質在水中會解離出離子，幫助導電。",
+                btnText: "選擇電解質",
+                action: () => {
+                    ui.btn.style.display = 'none';
+                    ui.choicePanel.style.display = 'block';
+                }
+            },
+            {
+                id: 2,
+                text: "選擇正確！稀硫酸會解離出離子(H⁺, SO₄²⁻)。現在架設裝置吧。",
+                principle: "現在水溶液變成了導體。",
+                btnText: "架設裝置",
+                action: () => {
+                    ui.choicePanel.style.display = 'none';
+                    ui.water.style.background = "linear-gradient(to top, #81D4FA, #E1F5FE)"; 
+                    ui.btn.style.display = 'none';
+                    ui.propTubes.classList.remove('hidden');
+                    ui.propTubes.classList.add('highlight');
+                    
+                    ui.propTubes.onclick = () => {
+                        ui.propTubes.classList.add('hidden');
+                        ui.tubes.forEach(t => t.style.display = 'block');
+                        ui.electrodes.forEach(e => e.style.display = 'block');
+                        
+                        // 調整電池位置使其對接電線 (y=445)
+                        ui.battery.style.opacity = 1;
+                        ui.battery.style.bottom = "20px"; 
+
+                        ui.switch.style.opacity = 1;
+                        ui.ammeter.style.opacity = 1;
+                        
+                        nextStep();
+                    };
+                }
+            },
+            {
+                id: 3,
+                text: "電路連接完成！請注意電池正負極，按下開關接通電路。",
+                principle: "觀察安培計指針和電極周圍的變化。",
+                btnText: "等待操作...",
+                action: () => {
+                    ui.btn.style.display = 'none'; 
+                    ui.switch.classList.add('highlight');
+                    ui.switch.onclick = toggleSwitch;
+                }
+            },
+            {
+                id: 4,
+                text: "正在電解中... 觀察兩極的氣泡速率！",
+                principle: "負極產生氫氣，正極產生氧氣。體積比約 2:1。",
+                btnText: "觀察中...",
+                action: () => {
+                    ui.switch.classList.remove('highlight');
+                }
+            },
+            {
+                id: 5,
+                text: "氣體收集完畢！讓我們來測試氣體的性質。",
+                principle: "點擊試管進行測試！氫氣有爆鳴聲，氧氣會助燃。",
+                btnText: "開始氣體測試",
+                action: () => {
+                    ui.btn.style.display = 'block';
+                    ui.btn.onclick = startGasTest;
+                    ui.switch.onclick = null; 
+                }
+            }
+        ];
+
+        // Main Controller
+        ui.btn.onclick = nextStep;
+
+        function nextStep() {
+            if (state.step < steps.length - 1) {
+                state.step++;
+                renderStep();
+            }
+        }
+
+        function renderStep() {
+            const current = steps[state.step];
+            ui.dialogue.textContent = current.text;
+            ui.principle.textContent = current.principle;
+            ui.btn.textContent = current.btnText;
+            if(current.action) current.action();
+        }
+
+        // Electrolyte Selection
+        window.chooseElectrolyte = function(type) {
+            state.electrolyte = type;
+            
+            if (type === 'acid') {
+                steps[2].text = "太棒了！稀硫酸 (Dilute H₂SO₄) 是強電解質。";
+                nextStep();
+            } else {
+                let msg = type === 'sugar' ? "蔗糖是分子化合物，溶於水不產生離子。" : "酒精是非電解質，無法導電。";
+                ui.dialogue.textContent = `哎呀！${msg} 電路無法接通喔。再試一次！`;
+                ui.mouth.style.borderRadius = "50% 50% 0 0"; 
+                ui.mouth.style.borderBottom = "none";
+                ui.mouth.style.borderTop = "3px solid #333";
+                setTimeout(() => {
+                    ui.mouth.style.borderRadius = "50%"; 
+                    ui.mouth.style.borderBottom = "3px solid #333";
+                    ui.mouth.style.borderTop = "none";
+                }, 2000);
+            }
+        };
+
+        // Switch Logic
+        function toggleSwitch() {
+            if (state.isSwitchClosed) return; 
+
+            state.isSwitchClosed = true;
+            ui.switch.classList.add('switch-closed');
+            
+            if (state.electrolyte === 'acid') {
+                ui.needle.style.transform = "rotate(30deg)"; 
+                ui.wires.forEach(w => w.classList.add('wire-active'));
+                ui.mouth.style.height = "15px"; 
+                
+                nextStep(); 
+                startReaction();
+            } else {
+                ui.dialogue.textContent = "電路沒有反應... 檢查一下是不是選錯電解質了？";
+            }
+        }
+
+        function startReaction() {
+            state.reactionInterval = setInterval(() => {
+                if (state.h2 >= MAX_GAS) {
+                    stopReaction();
+                    return;
+                }
+
+                state.h2 += 0.4;
+                state.o2 += 0.2;
+
+                ui.gasH2.style.height = `${state.h2}%`;
+                ui.gasO2.style.height = `${state.o2}%`;
+
+                if(state.h2 > 15) {
+                    ui.gasH2.querySelector('span').style.display = 'block';
+                    ui.gasO2.querySelector('span').style.display = 'block';
+                }
+
+                createBubble(ui.tubes[0], 2); 
+                createBubble(ui.tubes[1], 1); 
+
+            }, 50);
+        }
+
+        function createBubble(container, count) {
+            if(Math.random() > 0.4) return;
+            
+            for(let i=0; i<count; i++) {
+                const b = document.createElement('div');
+                b.className = 'bubble';
+                const size = Math.random() * 5 + 3;
+                b.style.width = size + 'px';
+                b.style.height = size + 'px';
+                b.style.left = (Math.random() * 40 + 10) + 'px';
+                b.style.animation = `bubbleRise ${Math.random() + 1.5}s linear forwards`;
+                container.appendChild(b);
+                setTimeout(() => b.remove(), 2500);
+            }
+        }
+
+        function stopReaction() {
+            clearInterval(state.reactionInterval);
+            ui.wires.forEach(w => w.classList.remove('wire-active'));
+            ui.switch.classList.remove('switch-closed'); 
+            ui.needle.style.transform = "rotate(-45deg)";
+            ui.dialogue.textContent = "試管滿了！電路自動斷開。";
+            state.isSwitchClosed = false;
+            nextStep();
+        }
+
+        // Gas Testing
+        function startGasTest() {
+            ui.btn.style.display = 'none';
+            ui.dialogue.textContent = "請「點擊」試管進行測試！(左邊：爆鳴聲，右邊：復燃)";
+            ui.tool.style.display = 'block';
+            
+            document.body.addEventListener('mousemove', moveTool);
+            
+            ui.tubes[0].classList.add('testing');
+            ui.tubes[1].classList.add('testing');
+            
+            ui.tubes[0].onclick = () => { if(!state.testedGases.h2) testGas('h2'); };
+            ui.tubes[1].onclick = () => { if(!state.testedGases.o2) testGas('o2'); };
+        }
+
+        function moveTool(e) {
+            ui.tool.style.left = (e.pageX + 10) + 'px';
+            ui.tool.style.top = (e.pageY + 10) + 'px';
+        }
+
+        function testGas(type) {
+            state.testedGases[type] = true;
+
+            if(type === 'h2') {
+                setToolType('flame');
+                ui.dialogue.textContent = "測試負極氣體...";
+                ui.tubes[0].style.boxShadow = "0 0 20px #FF5722";
+                
+                setTimeout(() => {
+                    ui.gasH2.style.background = "#FFCCBC";
+                    ui.gasH2.innerHTML = "<span style='font-size:20px; color:red;'>💥 POP!</span>";
+                    ui.dialogue.textContent = "聽到「波」的一聲 (爆鳴聲)！證明是氫氣 (H₂)。";
+                    ui.tubes[0].classList.add('tested');
+                    ui.tubes[0].classList.remove('testing');
+                    checkCompletion();
+                }, 600);
+            } else {
+                setToolType('glow');
+                ui.dialogue.textContent = "測試正極氣體...";
+                ui.tubes[1].style.boxShadow = "0 0 20px #FFEB3B";
+                
+                setTimeout(() => {
+                    setToolType('flame'); 
+                    ui.gasO2.style.background = "#FFF9C4";
+                    ui.gasO2.innerHTML = "<span style='font-size:20px; color:orange;'>🔥</span>";
+                    ui.dialogue.textContent = "帶火星的木條復燃了！證明是氧氣 (O₂)。";
+                    ui.tubes[1].classList.add('tested');
+                    ui.tubes[1].classList.remove('testing');
+                    checkCompletion();
+                }, 600);
+            }
+        }
+
+        function checkCompletion() {
+            if (state.testedGases.h2 && state.testedGases.o2) {
+                setTimeout(() => {
+                     ui.dialogue.textContent = "恭喜你！成功完成了水電解實驗並驗證了產物。";
+                     ui.principle.textContent = "負極產生氫氣，正極產生氧氣，比例 2:1。";
+                     finishGame();
+                }, 1500);
+            } else {
+                setTimeout(() => {
+                    ui.dialogue.textContent = "做得好！但還有另一管氣體沒測試喔，快去試試看！";
+                    setToolType(''); 
+                }, 1500);
+            }
+        }
+
+        function setToolType(type) {
+            ui.toolTip.className = '';
+            if(type === 'glow') ui.toolTip.classList.add('glow');
+            if(type === 'flame') ui.toolTip.classList.add('flame');
+        }
+
+        function finishGame() {
+            document.body.removeEventListener('mousemove', moveTool);
+            ui.tool.style.display = 'none';
+            ui.tubes[0].onclick = null;
+            ui.tubes[1].onclick = null;
+            ui.tubes[0].style.boxShadow = "none";
+            ui.tubes[1].style.boxShadow = "none";
+            
+            ui.btn.style.display = 'block';
+            ui.btn.textContent = "重新開始實驗";
+            ui.btn.onclick = () => location.reload();
+        }
+
+        // Init
+        renderStep();
+
+    </script>
+</body>
+</html>

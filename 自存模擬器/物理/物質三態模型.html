@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D States of Matter Simulator</title>
+    <!-- Babylon.js Core -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- Reset & Layout --- */
+        html, body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            font-family: 'Roboto', sans-serif;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none; /* Prevent browser zooming */
+            outline: none;
+        }
+
+        /* --- UI Overlay (Glassmorphism) --- */
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 320px;
+            max-width: calc(100% - 40px);
+            padding: 24px;
+            background: rgba(30, 30, 30, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        /* Header Layout */
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #e0e0e0;
+        }
+
+        /* --- iOS Toggle Button --- */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .toggle-label {
+            font-size: 12px;
+            color: #aaaaaa;
+            font-weight: 500;
+        }
+
+        .ios-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .ios-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-round {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4a4a4a; /* Off state */
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider-round:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider-round {
+            background-color: #30d158; /* iOS Green */
+        }
+
+        input:checked + .slider-round:before {
+            transform: translateX(22px);
+        }
+
+        /* --- Controls --- */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #cfcfcf;
+            font-weight: 500;
+        }
+
+        /* Custom Dropdown */
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            appearance: none;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        select:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Custom Slider */
+        .range-container {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: linear-gradient(90deg, #3b82f6 0%, #22c55e 50%, #ef4444 100%);
+            border-radius: 2px;
+        }
+
+        .value-display {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #a0a0a0;
+        }
+
+        #temp-value {
+            font-weight: bold;
+            color: white;
+            font-size: 16px;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            #ui-container {
+                left: 10px;
+                right: 10px;
+                width: auto;
+                bottom: 20px;
+                top: auto; /* Move to bottom on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <div class="header-row">
+            <h1 id="app-title">物質三態模型</h1>
+            <div class="toggle-wrapper">
+                <span class="toggle-label" id="lang-label">EN</span>
+                <label class="ios-toggle">
+                    <!-- Default to Checked for Chinese -->
+                    <input type="checkbox" id="lang-toggle" checked>
+                    <span class="slider-round"></span>
+                </label>
+                <span class="toggle-label" id="lang-label-zh">中</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="state-select" id="lbl-state">物質形態</label>
+            <select id="state-select">
+                <option value="solid">固體 (Solid)</option>
+                <option value="liquid">液體 (Liquid)</option>
+                <option value="gas">氣體 (Gas)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="temp-slider" id="lbl-temp">溫度</label>
+            <div class="range-container">
+                <input type="range" id="temp-slider" min="-200" max="500" value="0">
+            </div>
+            <div class="value-display">
+                <span>-200°C</span>
+                <span id="temp-value">0°C</span>
+                <span>500°C</span>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="renderCanvas"></canvas>
+
+    <script>
+        // --- Localization Data ---
+        const texts = {
+            en: {
+                title: "States of Matter",
+                state: "State of Matter",
+                temp: "Temperature",
+                options: ["Solid", "Liquid", "Gas"]
+            },
+            zh: {
+                title: "物質三態模型",
+                state: "物質形態",
+                temp: "溫度",
+                options: ["固體 (Solid)", "液體 (Liquid)", "氣體 (Gas)"]
+            }
+        };
+
+        // --- Configuration & State ---
+        const config = {
+            particleCount: 125, // 5x5x5 cube equivalent
+            boxSize: 10,
+            particleRadius: 0.4,
+            currentState: 'solid',
+            currentTemp: 0 // Celsius
+        };
+
+        // --- Babylon.js Setup ---
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+        let scene, particles = [];
+
+        // Helper: Convert Temperature to RGB Color
+        function getHeatColor(temp) {
+            let r = 0, g = 0, b = 0;
+            
+            if (temp <= -100) {
+                const t = (temp + 200) / 100; 
+                r = 0; g = t * 0.5; b = 1; 
+            } else if (temp <= 0) {
+                const t = (temp + 100) / 100;
+                r = 0; g = 0.5 + t * 0.5; b = 1 - t * 0.5;
+            } else if (temp <= 200) {
+                const t = temp / 200;
+                r = t; g = 1; b = 0.5 - t * 0.5;
+            } else {
+                const t = (temp - 200) / 300;
+                r = 1; g = 1 - t; b = 0;
+            }
+            
+            return new BABYLON.Color3(r, g, b);
+        }
+
+        const createScene = function () {
+            const scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+
+            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 25, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
+            camera.lowerRadiusLimit = 10;
+            camera.upperRadiusLimit = 50;
+            camera.wheelPrecision = 50;
+
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+            light.intensity = 0.3;
+
+            const pointLight = new BABYLON.PointLight("pl", new BABYLON.Vector3(0, 0, 0), scene);
+            pointLight.intensity = 0.8;
+
+            const box = BABYLON.MeshBuilder.CreateBox("box", {size: config.boxSize * 2}, scene);
+            box.visibility = 0.1;
+            box.isPickable = false;
+            const boxMat = new BABYLON.StandardMaterial("boxMat", scene);
+            boxMat.wireframe = true;
+            boxMat.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+            box.material = boxMat;
+
+            const sphereMaster = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter: config.particleRadius * 2, segments: 16}, scene);
+            sphereMaster.isVisible = false;
+            
+            const countPerSide = Math.cbrt(config.particleCount);
+
+            for (let i = 0; i < config.particleCount; i++) {
+                const p = sphereMaster.createInstance("p" + i);
+                p.simData = {
+                    basePos: new BABYLON.Vector3(0, 0, 0),
+                    velocity: new BABYLON.Vector3(
+                        (Math.random() - 0.5) * 0.5, 
+                        (Math.random() - 0.5) * 0.5, 
+                        (Math.random() - 0.5) * 0.5
+                    ),
+                    phaseOffset: Math.random() * Math.PI * 2
+                };
+                particles.push(p);
+            }
+
+            scene.resetLayout = () => {
+                const spacing = 2.0;
+                let idx = 0;
+                const limit = Math.ceil(Math.cbrt(config.particleCount));
+                const startOffset = -((limit - 1) * spacing) / 2;
+
+                if (config.currentState === 'solid') {
+                    for (let x = 0; x < limit; x++) {
+                        for (let y = 0; y < limit; y++) {
+                            for (let z = 0; z < limit; z++) {
+                                if (idx >= particles.length) break;
+                                const p = particles[idx];
+                                p.simData.basePos.set(
+                                    startOffset + x * spacing,
+                                    startOffset + y * spacing,
+                                    startOffset + z * spacing
+                                );
+                                p.position.copyFrom(p.simData.basePos);
+                                idx++;
+                            }
+                        }
+                    }
+                } else if (config.currentState === 'liquid') {
+                    particles.forEach(p => {
+                        p.simData.basePos.set(
+                            (Math.random() - 0.5) * config.boxSize,
+                            -config.boxSize + 2 + Math.random() * 5,
+                            (Math.random() - 0.5) * config.boxSize
+                        );
+                        p.position.copyFrom(p.simData.basePos);
+                    });
+                } else {
+                     particles.forEach(p => {
+                        p.position.set(
+                            (Math.random() - 0.5) * config.boxSize * 1.8,
+                            (Math.random() - 0.5) * config.boxSize * 1.8,
+                            (Math.random() - 0.5) * config.boxSize * 1.8
+                        );
+                        p.simData.velocity = new BABYLON.Vector3(
+                            (Math.random() - 0.5), 
+                            (Math.random() - 0.5), 
+                            (Math.random() - 0.5)
+                        ).normalize();
+                    });
+                }
+            };
+
+            const particleMat = new BABYLON.StandardMaterial("particleMat", scene);
+            particleMat.specularColor = new BABYLON.Color3(0, 0, 0);
+            sphereMaster.material = particleMat;
+
+            scene.registerBeforeRender(() => {
+                const dt = engine.getDeltaTime() / 1000;
+                const time = performance.now() / 1000;
+                
+                let activityLevel = (config.currentTemp + 220) / 100;
+                if (activityLevel < 0.1) activityLevel = 0.1;
+
+                const color = getHeatColor(config.currentTemp);
+                particleMat.emissiveColor = color;
+                particleMat.diffuseColor = color;
+
+                particles.forEach(p => {
+                    if (config.currentState === 'solid') {
+                        const amp = 0.05 * activityLevel; 
+                        p.position.x = p.simData.basePos.x + Math.sin(time * 10 + p.simData.phaseOffset) * amp;
+                        p.position.y = p.simData.basePos.y + Math.cos(time * 12 + p.simData.phaseOffset) * amp;
+                        p.position.z = p.simData.basePos.z + Math.sin(time * 8 + p.simData.phaseOffset) * amp;
+                    } 
+                    else if (config.currentState === 'liquid') {
+                        const speed = 0.05 * activityLevel;
+                        p.simData.basePos.x += (Math.random() - 0.5) * speed * 0.5;
+                        p.simData.basePos.z += (Math.random() - 0.5) * speed * 0.5;
+                        if(p.simData.basePos.y > -2) p.simData.basePos.y -= 0.1;
+                        if(p.simData.basePos.y < -config.boxSize + 1) p.simData.basePos.y += 0.1;
+                        if (Math.abs(p.simData.basePos.x) > 4) p.simData.basePos.x *= 0.95;
+                        if (Math.abs(p.simData.basePos.z) > 4) p.simData.basePos.z *= 0.95;
+                        p.position.x = BABYLON.Scalar.Lerp(p.position.x, p.simData.basePos.x, 0.1);
+                        p.position.y = BABYLON.Scalar.Lerp(p.position.y, p.simData.basePos.y, 0.1);
+                        p.position.z = BABYLON.Scalar.Lerp(p.position.z, p.simData.basePos.z, 0.1);
+                    } 
+                    else if (config.currentState === 'gas') {
+                        const speed = 5.0 * activityLevel * dt;
+                        p.position.addInPlace(p.simData.velocity.scale(speed));
+                        const limit = config.boxSize;
+                        if (p.position.x > limit || p.position.x < -limit) p.simData.velocity.x *= -1;
+                        if (p.position.y > limit || p.position.y < -limit) p.simData.velocity.y *= -1;
+                        if (p.position.z > limit || p.position.z < -limit) p.simData.velocity.z *= -1;
+                    }
+                });
+            });
+
+            scene.resetLayout();
+            return scene;
+        };
+
+        scene = createScene();
+
+        const ui = {
+            toggle: document.getElementById('lang-toggle'),
+            select: document.getElementById('state-select'),
+            slider: document.getElementById('temp-slider'),
+            tempDisplay: document.getElementById('temp-value'),
+            labels: {
+                title: document.getElementById('app-title'),
+                state: document.getElementById('lbl-state'),
+                temp: document.getElementById('lbl-temp'),
+                lang: document.getElementById('lang-label')
+            }
+        };
+
+        // Extracted update logic for initial load
+        function updateLanguage(lang) {
+            ui.labels.title.textContent = texts[lang].title;
+            ui.labels.state.textContent = texts[lang].state;
+            ui.labels.temp.textContent = texts[lang].temp;
+            const ops = ui.select.options;
+            ops[0].text = texts[lang].options[0];
+            ops[1].text = texts[lang].options[1];
+            ops[2].text = texts[lang].options[2];
+        }
+
+        ui.toggle.addEventListener('change', (e) => {
+            const lang = e.target.checked ? 'zh' : 'en';
+            updateLanguage(lang);
+        });
+
+        ui.select.addEventListener('change', (e) => {
+            config.currentState = e.target.value;
+            scene.resetLayout();
+        });
+
+        ui.slider.addEventListener('input', (e) => {
+            config.currentTemp = parseInt(e.target.value);
+            ui.tempDisplay.textContent = config.currentTemp + "°C";
+        });
+
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+
+        // Initialize Language on Startup
+        updateLanguage(ui.toggle.checked ? 'zh' : 'en');
+    </script>
+</body>
+</html>

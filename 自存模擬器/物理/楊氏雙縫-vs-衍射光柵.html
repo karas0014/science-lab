@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DSE Physics: Wave Optics Pro Simulator</title>
+
+    
+
+    <!-- Libraries (移除 Babel，改用純淨依賴) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Katex for Formulas -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+HK:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans HK', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .math-var {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        /* Custom Scrollbar for Sidebar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 8px 0;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 0 2px #0f172a;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+        input[type=range]:disabled::-webkit-slider-thumb {
+            background: #64748b;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- 改用原生 JavaScript 標籤，不依賴 Babel 編譯 -->
+    <script>
+        const { useState, useEffect, useRef, useMemo, createElement: e, Fragment } = React;
+
+        // --- Dictionaries & Constants ---
+        const Dictionary = {
+            en: {
+                title: "Wave Optics Pro",
+                sourceType: "Source Type",
+                mono: "Monochromatic",
+                white: "White Light",
+                monoBtn: "Mono",
+                whiteBtn: "White",
+                mode: "Apparatus",
+                doubleSlit: "Young's Double Slit",
+                grating: "Diffraction Grating",
+                wavelength: "Wavelength",
+                screenDist: "Screen Distance",
+                slitSep: "Slit Separation",
+                linesPerMM: "Lines per mm",
+                intensity: "Intensity",
+                formulaTitle: "Reference Formulas",
+                constructive: "Maxima:",
+                fringeSep: "Fringe Sep:",
+                view2D: "2D Screen Pattern (Front View)",
+                view3D: "3D Experiment Setup"
+            },
+            zh: {
+                title: "波動光學 Pro",
+                sourceType: "光源類型",
+                mono: "單色光",
+                white: "白光",
+                monoBtn: "單色光",
+                whiteBtn: "白光",
+                mode: "實驗裝置",
+                doubleSlit: "楊氏雙縫 (Young's Double Slit)",
+                grating: "衍射光柵 (Diffraction Grating)",
+                wavelength: "波長",
+                screenDist: "屏幕距離",
+                slitSep: "狹縫間距",
+                linesPerMM: "光柵密度 (Lines/mm)",
+                intensity: "光強度",
+                formulaTitle: "參考公式",
+                constructive: "強點位置 (Maxima):",
+                fringeSep: "條紋間距 (Fringe Sep):",
+                view2D: "2D 屏幕圖樣 (正面視角)",
+                view3D: "3D 實驗裝置"
+            }
+        };
+
+        const nmToRGB = (w) => {
+            let r, g, b;
+            if (w >= 380 && w < 440) { r = -(w - 440) / (440 - 380); g = 0; b = 1; }
+            else if (w >= 440 && w < 490) { r = 0; g = (w - 440) / (490 - 440); b = 1; }
+            else if (w >= 490 && w < 510) { r = 0; g = 1; b = -(w - 510) / (510 - 490); }
+            else if (w >= 510 && w < 580) { r = (w - 510) / (580 - 510); g = 1; b = 0; }
+            else if (w >= 580 && w < 645) { r = 1; g = -(w - 645) / (645 - 580); b = 0; }
+            else if (w >= 645 && w < 781) { r = 1; g = 0; b = 0; }
+            else { r = 0; g = 0; b = 0; }
+            return { r, g, b };
+        };
+
+        // --- SHARED SHADER CODE ---
+        const commonFragmentShader = `
+            uniform float wavelength;      // Primary wavelength (meters)
+            uniform float d;               // Slit separation or grating spacing (meters)
+            uniform float D;               // Screen distance (meters)
+            uniform float intensity;
+            uniform int mode;              // 0=Double, 1=Grating
+            uniform int isWhiteLight;      // 0=No, 1=Yes
+            uniform vec3 color;            // Color for mono
+            uniform float screenWidthPhysical; 
+            uniform float screenHeightPhysical; 
+
+            varying vec2 vUv;
+            const float PI = 3.14159265359;
+
+            // Function to calculate intensity factor
+            float getIntensity(float lambda, float xPos, float zPos) {
+                float theta = atan(xPos, D);
+                float sinTheta = sin(theta);
+                
+                // --- Beam Profile (Vertical) ---
+                float beamRadius = 0.08 * D; 
+                float verticalDecay = exp(-pow(zPos / beamRadius, 2.0));
+
+                if (mode == 0) {
+                    // --- Double Slit (Separation is 'a' conceptually, passed as 'd' uniform) ---
+                    float beta = (PI * d * sinTheta) / lambda;
+                    
+                    // Diffraction Envelope (single slit width)
+                    float slitWidth = d / 12.0; 
+                    float alpha = (PI * slitWidth * sinTheta) / lambda;
+                    float env = 1.0;
+                    if (abs(alpha) > 0.001) env = pow(sin(alpha)/alpha, 2.0);
+                    
+                    return pow(cos(beta), 2.0) * env * verticalDecay;
+
+                } else {
+                    // --- Grating (Spacing is 'd') ---
+                    float I_sum = 0.0;
+                    float n_max = floor(d / lambda);
+                    
+                    float spotSize = 0.015 * D; 
+                    float slitWidth = d / 3.5; 
+
+                    for (float n = -5.0; n <= 5.0; n += 1.0) {
+                        if (abs(n) > n_max) continue;
+                        
+                        float targetSin = n * lambda / d;
+                        if (abs(targetSin) >= 1.0) continue;
+                        
+                        float alpha_n = (PI * slitWidth * targetSin) / lambda;
+                        float env_n = 1.0;
+                        if (abs(alpha_n) > 0.001) env_n = pow(sin(alpha_n)/alpha_n, 2.0);
+
+                        float targetX = D * tan(asin(targetSin));
+                        float distSq = pow(xPos - targetX, 2.0) + pow(zPos, 2.0);
+                        
+                        I_sum += exp(-distSq / pow(spotSize, 2.0)) * env_n;
+                    }
+                    return I_sum;
+                }
+            }
+
+            void main() {
+                float xPhysical = (vUv.x - 0.5) * screenWidthPhysical;
+                float zPhysical = (vUv.y - 0.5) * screenHeightPhysical;
+                
+                vec3 finalColor = vec3(0.0);
+
+                if (isWhiteLight == 1) {
+                    float iR = getIntensity(650.0e-9, xPhysical, zPhysical);
+                    float iG = getIntensity(530.0e-9, xPhysical, zPhysical);
+                    float iB = getIntensity(450.0e-9, xPhysical, zPhysical);
+                    
+                    finalColor = vec3(iR, iG, iB);
+                    if (length(finalColor) > 1.2) finalColor = mix(finalColor, vec3(1.0), 0.4);
+
+                } else {
+                    float I = getIntensity(wavelength, xPhysical, zPhysical);
+                    finalColor = color * I;
+                    if (I > 0.95) finalColor = mix(finalColor, vec3(1.0), (I - 0.95)*10.0);
+                }
+
+                float vignette = smoothstep(0.48, 0.5, abs(vUv.y - 0.5));
+                gl_FragColor = vec4(finalColor * intensity * (1.0 - vignette), 1.0);
+            }
+        `;
+
+        const vertexShader = `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+
+        // --- 2D Pattern View Component ---
+        const PatternView = ({ params }) => {
+            const mountRef = useRef(null);
+            const rendererRef = useRef(null);
+            const materialRef = useRef(null);
+            const cameraRef = useRef(null);
+
+            useEffect(() => {
+                const scene = new THREE.Scene();
+                const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+                cameraRef.current = camera;
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                rendererRef.current = renderer;
+                mountRef.current.appendChild(renderer.domElement);
+
+                const geometry = new THREE.PlaneGeometry(2, 2);
+                const uniforms = {
+                    wavelength: { value: params.wavelength },
+                    d: { value: params.d },
+                    D: { value: params.D },
+                    intensity: { value: params.intensity },
+                    mode: { value: params.mode },
+                    isWhiteLight: { value: params.isWhiteLight ? 1 : 0 },
+                    color: { value: params.color },
+                    screenWidthPhysical: { value: 2.0 }, 
+                    screenHeightPhysical: { value: 1.0 } 
+                };
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: uniforms,
+                    vertexShader: vertexShader,
+                    fragmentShader: commonFragmentShader
+                });
+                materialRef.current = material;
+
+                const plane = new THREE.Mesh(geometry, material);
+                scene.add(plane);
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    renderer.render(scene, camera);
+                };
+                animate();
+
+                const resizeObserver = new ResizeObserver((entries) => {
+                    if (!rendererRef.current || !mountRef.current) return;
+                    for (let entry of entries) {
+                        const { width, height } = entry.contentRect;
+                        if (width > 0 && height > 0) {
+                            rendererRef.current.setSize(width, height);
+                        }
+                    }
+                });
+                resizeObserver.observe(mountRef.current);
+
+                return () => {
+                    resizeObserver.disconnect();
+                    mountRef.current && mountRef.current.removeChild(renderer.domElement);
+                    renderer.dispose();
+                };
+            }, []);
+
+            useEffect(() => {
+                if(materialRef.current) {
+                    const u = materialRef.current.uniforms;
+                    u.wavelength.value = params.wavelength;
+                    u.d.value = params.d;
+                    u.D.value = params.D;
+                    u.intensity.value = params.intensity;
+                    u.mode.value = params.mode;
+                    u.isWhiteLight.value = params.isWhiteLight ? 1 : 0;
+                    u.color.value = params.color;
+                }
+            }, [params]);
+
+            return e('div', { ref: mountRef, className: "w-full h-full bg-black shadow-inner" });
+        };
+
+        // --- 3D Scene Component ---
+        const ThreeScene = ({ params }) => {
+            const mountRef = useRef(null);
+            const sceneRef = useRef(null);
+            const raysRef = useRef(null);
+            const rendererRef = useRef(null);
+            const cameraRef = useRef(null);
+
+            useEffect(() => {
+                const scene = new THREE.Scene();
+                
+                const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+                camera.position.set(-5, 3, 1); 
+                camera.lookAt(0, 0, 1.5);
+                cameraRef.current = camera;
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                rendererRef.current = renderer;
+                renderer.setPixelRatio(window.devicePixelRatio);
+                mountRef.current.appendChild(renderer.domElement);
+
+                const grid = new THREE.GridHelper(10, 10, 0x334155, 0x0f172a);
+                scene.add(grid);
+
+                const laserGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.6, 32);
+                const laserMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x333333, roughness: 0.4, metalness: 0.8
+                });
+                const laserBody = new THREE.Mesh(laserGeo, laserMat);
+                laserBody.rotation.x = Math.PI / 2;
+                laserBody.position.set(0, 0.6, -0.8);
+                scene.add(laserBody);
+
+                const emitterGeo = new THREE.CircleGeometry(0.08, 32);
+                const emitterMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const emitter = new THREE.Mesh(emitterGeo, emitterMat);
+                emitter.position.set(0, 0.31, 0); 
+                emitter.rotation.x = -Math.PI / 2; 
+                laserBody.add(emitter);
+
+                const holderFrame = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.2, 1.2, 0.1), 
+                    new THREE.MeshStandardMaterial({ color: 0x64748b })
+                );
+                holderFrame.position.set(0, 0.6, 0);
+                scene.add(holderFrame);
+                
+                const holderInset = new THREE.Mesh(
+                    new THREE.PlaneGeometry(1.0, 1.0),
+                    new THREE.MeshBasicMaterial({ color: 0x000000 })
+                );
+                holderInset.position.set(0, 0.6, 0.06);
+                scene.add(holderInset);
+
+                const screenGeo = new THREE.PlaneGeometry(2.0, 1.0);
+                const screenMat = new THREE.ShaderMaterial({
+                    uniforms: {
+                        wavelength: { value: 500e-9 },
+                        d: { value: 0.0001 },
+                        D: { value: 2.0 },
+                        intensity: { value: 1.0 },
+                        mode: { value: 1 },
+                        isWhiteLight: { value: 0 },
+                        color: { value: new THREE.Color(0,1,0) },
+                        screenWidthPhysical: { value: 2.0 },
+                        screenHeightPhysical: { value: 1.0 }
+                    },
+                    vertexShader: vertexShader,
+                    fragmentShader: commonFragmentShader,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+                screenMesh.position.set(0, 0.6, 2.0); 
+                scene.add(screenMesh);
+
+                const rayGroup = new THREE.Group();
+                scene.add(rayGroup);
+                raysRef.current = rayGroup;
+
+                const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambient);
+                const point = new THREE.PointLight(0xffffff, 1);
+                point.position.set(2,5,2);
+                scene.add(point);
+
+                sceneRef.current = { scene, camera, renderer, screenMesh, screenMat };
+
+                let isDrag = false;
+                let camAngle = -Math.PI / 2 - 0.2; 
+                
+                const handleDown = () => isDrag = true;
+                const handleUp = () => isDrag = false;
+                const handleMove = (e) => {
+                    if(!isDrag) return;
+                    const delta = e.movementX * 0.01;
+                    camAngle -= delta;
+                    camera.position.x = 6 * Math.sin(camAngle);
+                    camera.position.z = 6 * Math.cos(camAngle);
+                    camera.lookAt(0, 0.5, params.D/2);
+                };
+
+                mountRef.current.addEventListener('mousedown', handleDown);
+                window.addEventListener('mouseup', handleUp);
+                window.addEventListener('mousemove', handleMove);
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    renderer.render(scene, camera);
+                };
+                animate();
+
+                const resizeObserver = new ResizeObserver((entries) => {
+                    if (!rendererRef.current || !mountRef.current || !cameraRef.current) return;
+                    for (let entry of entries) {
+                        const { width, height } = entry.contentRect;
+                        if (width > 0 && height > 0) {
+                            rendererRef.current.setSize(width, height);
+                            cameraRef.current.aspect = width / height;
+                            cameraRef.current.updateProjectionMatrix();
+                        }
+                    }
+                });
+                resizeObserver.observe(mountRef.current);
+
+                return () => {
+                    resizeObserver.disconnect();
+                    window.removeEventListener('mouseup', handleUp);
+                    window.removeEventListener('mousemove', handleMove);
+                    mountRef.current && mountRef.current.removeChild(renderer.domElement);
+                };
+            }, []);
+
+            useEffect(() => {
+                if(!sceneRef.current) return;
+                const { screenMesh, screenMat } = sceneRef.current;
+                
+                screenMesh.position.z = params.D;
+
+                screenMat.uniforms.wavelength.value = params.wavelength;
+                screenMat.uniforms.d.value = params.d; 
+                screenMat.uniforms.D.value = params.D;
+                screenMat.uniforms.intensity.value = params.intensity;
+                screenMat.uniforms.mode.value = params.mode;
+                screenMat.uniforms.isWhiteLight.value = params.isWhiteLight ? 1 : 0;
+                screenMat.uniforms.color.value = params.color;
+
+                const group = raysRef.current;
+                group.clear();
+
+                const startPos = new THREE.Vector3(0, 0.6, 0);
+                const sourcePos = new THREE.Vector3(0, 0.6, -0.5);
+
+                const incMat = new THREE.LineBasicMaterial({ 
+                    color: params.isWhiteLight ? 0xffffff : params.color, 
+                    opacity: 0.8, transparent: true 
+                });
+                const incGeo = new THREE.BufferGeometry().setFromPoints([sourcePos, startPos]);
+                group.add(new THREE.Line(incGeo, incMat));
+
+                const drawRay = (targetY, colorHex, opacity=0.6) => {
+                    const endPos = new THREE.Vector3(targetY, 0.6, params.D);
+                    const geo = new THREE.BufferGeometry().setFromPoints([startPos, endPos]);
+                    const mat = new THREE.LineBasicMaterial({ 
+                        color: colorHex, opacity: opacity * params.intensity, transparent: true 
+                    });
+                    group.add(new THREE.Line(geo, mat));
+                };
+
+                if (params.mode === 0) {
+                    const colorHex = params.isWhiteLight ? 0xffffff : params.color;
+                    const VISUAL_GAIN = 40.0; 
+
+                    for(let i=-8; i<=8; i++) {
+                        const alpha_ray = (Math.PI * i) / 12.0;
+                        let env_ray = 1.0;
+                        if (i !== 0) {
+                            env_ray = Math.pow(Math.sin(alpha_ray) / alpha_ray, 2.0);
+                        }
+
+                        const y = params.D * (params.wavelength / params.d) * i * VISUAL_GAIN;
+                        
+                        if (Math.abs(y) <= 1.5 && env_ray > 0.01) {
+                            drawRay(y, colorHex, 0.4 * env_ray); 
+                        }
+                    }
+                } else {
+                    const maxOrder = Math.floor(params.d / 500e-9); 
+                    const loopLimit = Math.min(maxOrder, 3);
+                    const slitWidth = params.d / 3.5; 
+
+                    for (let n = -loopLimit; n <= loopLimit; n++) {
+                        if (n === 0) {
+                            const c = params.isWhiteLight ? 0xffffff : params.color;
+                            drawRay(0, c, 0.8);
+                        } else {
+                            if (params.isWhiteLight) {
+                                const waves = [
+                                    {l: 450e-9, c: 0x0000ff},
+                                    {l: 530e-9, c: 0x00ff00},
+                                    {l: 650e-9, c: 0xff0000} 
+                                ];
+                                waves.forEach(wave => {
+                                    const sinT = (n * wave.l) / params.d;
+                                    if(Math.abs(sinT) < 1) {
+                                        const alpha = (Math.PI * slitWidth * sinT) / wave.l;
+                                        let env = 1.0;
+                                        if (Math.abs(alpha) > 0.001) env = Math.pow(Math.sin(alpha)/alpha, 2.0);
+                                        
+                                        const y = params.D * Math.tan(Math.asin(sinT));
+                                        if(Math.abs(y) < 1.5) drawRay(y, wave.c, 0.6 * env);
+                                    }
+                                });
+                            } else {
+                                const sinT = (n * params.wavelength) / params.d;
+                                if(Math.abs(sinT) < 1) {
+                                    const alpha = (Math.PI * slitWidth * sinT) / params.wavelength;
+                                    let env = 1.0;
+                                    if (Math.abs(alpha) > 0.001) env = Math.pow(Math.sin(alpha)/alpha, 2.0);
+
+                                    const y = params.D * Math.tan(Math.asin(sinT));
+                                    if(Math.abs(y) < 1.5) drawRay(y, params.color, 0.6 * env);
+                                }
+                            }
+                        }
+                    }
+                }
+            }, [params]);
+
+            return e('div', { ref: mountRef, className: "w-full h-full relative" });
+        };
+
+        // --- Main App Component ---
+        const App = () => {
+            const [lang, setLang] = useState('zh');
+            
+            const [sourceType, setSourceType] = useState('mono'); 
+            const [mode, setMode] = useState('grating'); 
+            const [wavelength, setWavelength] = useState(532); 
+            const [intensity, setIntensity] = useState(1.0);
+            const [distanceD, setDistanceD] = useState(2.0); 
+            const [slitSepMm, setSlitSepMm] = useState(0.15); 
+            const [linesPerMm, setLinesPerMm] = useState(300); 
+
+            const t = Dictionary[lang];
+
+            const params = useMemo(() => {
+                const isWhite = sourceType === 'white';
+                const lambdaM = wavelength * 1e-9;
+                
+                let dVal;
+                if (mode === 'double') dVal = slitSepMm * 1e-3;
+                else dVal = (1e-3) / linesPerMm;
+
+                const rgb = nmToRGB(wavelength);
+                const colorObj = new THREE.Color(rgb.r, rgb.g, rgb.b);
+
+                return {
+                    isWhiteLight: isWhite,
+                    mode: mode === 'double' ? 0 : 1,
+                    wavelength: lambdaM,
+                    d: dVal,
+                    D: distanceD,
+                    intensity,
+                    color: colorObj,
+                    linesPerMm
+                };
+            }, [sourceType, mode, wavelength, intensity, distanceD, slitSepMm, linesPerMm]);
+
+            // 使用原生的 React.createElement 來取代 JSX
+            return e('div', { className: "flex w-screen h-screen bg-slate-900 text-slate-200" },
+                
+                // Left Sidebar
+                e('aside', { className: "w-80 flex-shrink-0 flex flex-col border-r border-slate-700 bg-slate-800/50 backdrop-blur overflow-y-auto" },
+                    e('div', { className: "p-6 border-b border-slate-700" },
+                        e('h1', { className: "text-xl font-bold text-sky-400 mb-2" }, t.title),
+                        e('button', {
+                            onClick: () => setLang(l => l === 'en' ? 'zh' : 'en'),
+                            className: "text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded transition"
+                        }, lang === 'en' ? '中文 / English' : 'English / 中文')
+                    ),
+                    e('div', { className: "p-6 space-y-8" },
+                        
+                        // Mode
+                        e('div', null,
+                            e('div', { className: "section-title" }, t.mode),
+                            e('div', { className: "flex flex-col gap-2" },
+                                e('label', { className: "flex items-center gap-2 cursor-pointer" },
+                                    e('input', { type: "radio", name: "mode", checked: mode === 'double', onChange: () => setMode('double'), className: "accent-sky-500" }),
+                                    e('span', null, t.doubleSlit)
+                                ),
+                                e('label', { className: "flex items-center gap-2 cursor-pointer" },
+                                    e('input', { type: "radio", name: "mode", checked: mode === 'grating', onChange: () => setMode('grating'), className: "accent-sky-500" }),
+                                    e('span', null, t.grating)
+                                )
+                            )
+                        ),
+
+                        // Source
+                        e('div', null,
+                            e('div', { className: "section-title" }, t.sourceType),
+                            e('div', { className: "bg-slate-700/50 p-1 rounded-lg flex text-sm" },
+                                e('button', {
+                                    className: `flex-1 py-1.5 rounded ${sourceType === 'mono' ? 'bg-sky-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`,
+                                    onClick: () => setSourceType('mono')
+                                }, t.monoBtn),
+                                e('button', {
+                                    className: `flex-1 py-1.5 rounded ${sourceType === 'white' ? 'bg-white text-black font-bold shadow' : 'text-slate-400 hover:text-slate-200'}`,
+                                    onClick: () => setSourceType('white')
+                                }, t.whiteBtn)
+                            )
+                        ),
+
+                        // Wavelength
+                        e('div', { className: `transition-opacity duration-300 ${sourceType === 'white' ? 'opacity-40 pointer-events-none' : 'opacity-100'}` },
+                            e('div', { className: "flex justify-between text-sm mb-1" },
+                                e('label', null, t.wavelength, " ", e('span', { className: "math-var" }, "λ")),
+                                e('span', { className: "text-sky-300 font-mono" }, `${wavelength} nm`)
+                            ),
+                            e('input', { type: "range", min: "400", max: "700", step: "1", value: wavelength, onChange: (e) => setWavelength(Number(e.target.value)) }),
+                            e('div', { className: "h-1.5 rounded w-full mt-1", style: { background: 'linear-gradient(to right, #5000ff, #0000ff, #00ff00, #ffff00, #ff0000)' } })
+                        ),
+
+                        // Geometry
+                        e('div', null,
+                            e('div', { className: "section-title" }, "Geometry"),
+                            e('div', { className: "mb-4" },
+                                e('div', { className: "flex justify-between text-sm mb-1" },
+                                    e('label', null, t.screenDist, " ", e('span', { className: "math-var" }, "D")),
+                                    e('span', { className: "text-sky-300 font-mono" }, `${distanceD.toFixed(1)} m`)
+                                ),
+                                e('input', { type: "range", min: "1.0", max: "5.0", step: "0.1", value: distanceD, onChange: (e) => setDistanceD(Number(e.target.value)) })
+                            ),
+                            mode === 'grating' ? 
+                            e('div', null,
+                                e('div', { className: "flex justify-between text-sm mb-1" },
+                                    e('label', null, t.linesPerMM, " ", e('span', { className: "math-var" }, "N")),
+                                    e('span', { className: "text-sky-300 font-mono" }, linesPerMm)
+                                ),
+                                e('input', { type: "range", min: "100", max: "600", step: "10", value: linesPerMm, onChange: (e) => setLinesPerMm(Number(e.target.value)) }),
+                                e('div', { className: "text-xs text-slate-500 text-right mt-1" }, 
+                                    e('span', { className: "math-var" }, "d"), ` = ${(1000/linesPerMm).toFixed(2)} μm`
+                                )
+                            ) : 
+                            e('div', null,
+                                e('div', { className: "flex justify-between text-sm mb-1" },
+                                    e('label', null, t.slitSep, " ", e('span', { className: "math-var" }, "a")),
+                                    e('span', { className: "text-sky-300 font-mono" }, `${slitSepMm.toFixed(2)} mm`)
+                                ),
+                                e('input', { type: "range", min: "0.01", max: "0.5", step: "0.01", value: slitSepMm, onChange: (e) => setSlitSepMm(Number(e.target.value)) })
+                            )
+                        ),
+
+                        // Intensity
+                        e('div', { className: "pb-4 border-b border-slate-700" },
+                            e('div', { className: "flex justify-between text-sm mb-1" },
+                                e('label', null, t.intensity, " ", e('span', { className: "math-var" }, "I")),
+                                e('span', { className: "text-sky-300 font-mono" }, `${(intensity*100).toFixed(0)}%`)
+                            ),
+                            e('input', { type: "range", min: "0", max: "1", step: "0.05", value: intensity, onChange: (e) => setIntensity(Number(e.target.value)) })
+                        ),
+
+                        // Reference Formulas
+                        e('div', { className: "space-y-3" },
+                            e('div', { className: "section-title text-sky-400" }, t.formulaTitle),
+                            mode === 'double' ? 
+                            e(Fragment, null,
+                                e('div', { className: "bg-slate-900/50 p-3 rounded-lg border border-slate-700" },
+                                    e('p', { className: "text-xs text-slate-400 mb-1" }, t.constructive),
+                                    e('p', { className: "text-sm font-mono text-white text-center" }, 
+                                        e('span', { className: "math-var" }, "a"), " sin", e('span', { className: "math-var" }, "θ"), " = ", e('span', { className: "math-var" }, "nλ")
+                                    )
+                                ),
+                                e('div', { className: "bg-slate-900/50 p-3 rounded-lg border border-slate-700" },
+                                    e('p', { className: "text-xs text-slate-400 mb-1" }, t.fringeSep),
+                                    e('p', { className: "text-sm font-mono text-white text-center" }, 
+                                        e('span', { className: "math-var" }, "Δy"), " = ", e('span', { className: "math-var" }, "λD"), " / ", e('span', { className: "math-var" }, "a")
+                                    )
+                                )
+                            ) : 
+                            e('div', { className: "bg-slate-900/50 p-3 rounded-lg border border-slate-700" },
+                                e('p', { className: "text-xs text-slate-400 mb-1" }, t.constructive),
+                                e('p', { className: "text-sm font-mono text-white text-center" }, 
+                                    e('span', { className: "math-var" }, "d"), " sin", e('span', { className: "math-var" }, "θ"), " = ", e('span', { className: "math-var" }, "nλ")
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                // Right Main Area
+                e('main', { className: "flex-1 flex flex-col min-w-0" },
+                    
+                    // Top: 3D Scene
+                    e('div', { className: "flex-grow relative border-b border-slate-700 bg-slate-900" },
+                        e('div', { className: "absolute top-4 left-4 z-10 bg-black/40 px-3 py-1 rounded text-xs font-mono text-sky-400 border border-sky-500/30" }, t.view3D),
+                        e(ThreeScene, { params: params })
+                    ),
+
+                    // Bottom: 2D Pattern View
+                    e('div', { className: "h-64 relative bg-black flex-shrink-0" },
+                        e('div', { className: "absolute top-4 left-4 z-10 bg-black/40 px-3 py-1 rounded text-xs font-mono text-yellow-400 border border-yellow-500/30" }, t.view2D),
+                        e(PatternView, { params: params }),
+                        
+                        // Ruler
+                        e('div', { className: "absolute bottom-0 w-full h-6 pointer-events-none flex justify-between px-4 text-[10px] text-slate-500 font-mono border-t border-slate-800 bg-slate-900/80" },
+                            e('span', null, "-1.0m"),
+                            e('span', null, "-0.5m"),
+                            e('span', null, "0"),
+                            e('span', null, "+0.5m"),
+                            e('span', null, "+1.0m")
+                        )
+                    )
+                )
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(e(App));
+    </script>
+</body>
+</html>

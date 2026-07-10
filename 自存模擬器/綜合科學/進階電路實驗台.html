@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DSE 物理電路實驗台 | Advanced Circuit Lab</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- MathJax for Physics Formulas (Removed Polyfill as requested) -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans HK', sans-serif;
+            background-color: #f8fafc;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Physics Variables Italic Font */
+        .phys-var {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+            font-weight: bold;
+        }
+
+        /* Custom iOS-style Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 9999px;
+            transition: all 0.2s ease;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #3b82f6;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.1);
+        }
+
+        /* Current Animation */
+        .wire-bg {
+            fill: none;
+            stroke: #cbd5e1;
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .wire-current {
+            fill: none;
+            stroke: #ef4444; /* Red dots for conventional current */
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 0 24; /* Dots */
+            animation: flow linear infinite;
+        }
+        @keyframes flow {
+            from { stroke-dashoffset: 24; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Smooth UI Transitions */
+        .fade-enter-active { 
+            animation: fadeIn 300ms ease-out forwards; 
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col items-center p-4 md:p-8">
+        <!-- Header -->
+        <header class="w-full max-w-6xl flex justify-between items-center mb-6">
+            <div>
+                <h1 id="ui-title" class="text-2xl md:text-3xl font-bold text-slate-800">進階電路實驗台</h1>
+                <p id="ui-subtitle" class="text-sm md:text-base text-slate-500">探索歐姆定律與串並聯電路</p>
+            </div>
+            
+            <!-- Pill-shaped Language Toggle -->
+            <button id="btn-lang" class="relative inline-flex h-8 w-20 items-center rounded-full bg-slate-200 p-1 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <span id="lang-toggle-thumb" class="absolute left-1 flex h-6 w-8 items-center justify-center rounded-full bg-white text-xs font-bold text-slate-700 shadow transition-transform duration-200 translate-x-0">
+                    中文
+                </span>
+                <span class="w-full flex justify-between px-2 text-[10px] font-bold text-slate-400">
+                    <span>中</span>
+                    <span>EN</span>
+                </span>
+            </button>
+        </header>
+
+        <!-- Main Content Layout -->
+        <div class="w-full max-w-6xl flex flex-col gap-6 flex-grow">
+            
+            <!-- 1. Top: Circuit Mode Selector -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex bg-slate-100 p-1 rounded-xl max-w-md mx-auto">
+                    <button id="mode-simple" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all bg-white text-blue-600 shadow-sm">簡單電路</button>
+                    <button id="mode-series" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-500 hover:text-slate-700">串聯電路</button>
+                    <button id="mode-parallel" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-500 hover:text-slate-700">並聯電路</button>
+                </div>
+            </div>
+
+            <!-- 2. Middle-Top: Simulator Canvas -->
+            <div class="w-full h-[400px] md:h-[500px] lg:h-[600px] bg-white rounded-2xl shadow-inner border border-slate-200 overflow-hidden relative">
+                <svg id="circuit-canvas" viewBox="0 0 800 550" class="w-full h-full" preserveAspectRatio="xMidYMid meet">
+                    <!-- SVG Content Generated via JS -->
+                </svg>
+            </div>
+
+            <!-- 3. Middle-Bottom: Sliders Controls -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-8">
+                
+                <!-- Voltage Slider -->
+                <div class="flex-1">
+                    <div class="flex justify-between mb-2">
+                        <label id="ui-voltage-label" class="text-sm font-semibold text-slate-700">電池電壓</label>
+                        <span class="text-blue-600 font-bold font-mono"><span id="val-voltage">9.0</span> <span class="phys-var">V</span></span>
+                    </div>
+                    <input type="range" id="slider-voltage" min="1" max="24" step="0.5" value="9">
+                </div>
+
+                <!-- Resistor 1 Slider -->
+                <div class="flex-1">
+                    <div class="flex justify-between mb-2">
+                        <label id="ui-r1-label" class="text-sm font-semibold text-slate-700">電阻</label>
+                        <span class="text-emerald-600 font-bold font-mono"><span id="val-r1">10.0</span> <span class="phys-var">Ω</span></span>
+                    </div>
+                    <input type="range" id="slider-r1" min="1" max="50" step="1" value="10">
+                </div>
+
+                <!-- Resistor 2 Slider -->
+                <div id="container-r2" class="flex-1 hidden">
+                    <div class="flex justify-between mb-2">
+                        <label id="ui-r2-label" class="text-sm font-semibold text-slate-700">燈泡 R2</label>
+                        <span class="text-emerald-600 font-bold font-mono"><span id="val-r2">10.0</span> <span class="phys-var">Ω</span></span>
+                    </div>
+                    <input type="range" id="slider-r2" min="1" max="50" step="1" value="10">
+                </div>
+            </div>
+
+            <!-- 4. Bottom: Theory Box -->
+            <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-blue-800 font-bold mb-2 flex items-center gap-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <span id="ui-theory-title">理論驗證</span>
+                    </h3>
+                    <p id="ui-theory-desc" class="text-sm text-blue-700">觀察電子流動速度與燈泡亮度。嘗試改變電阻，驗證歐姆定律：</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl text-center shadow-sm min-w-[200px]">
+                    <span class="text-xl font-bold text-slate-800">
+                        <span class="phys-var text-blue-600">V</span> = <span class="phys-var text-red-500">I</span> × <span class="phys-var text-emerald-600">R</span>
+                    </span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Application Logic (Vanilla JS) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- State Management ---
+            const state = {
+                lang: 'zh',
+                mode: 'simple',
+                voltage: 9,
+                r1: 10,
+                r2: 10
+            };
+
+            // --- Bilingual Dictionary ---
+            const i18n = {
+                zh: {
+                    title: "進階電路實驗台",
+                    subtitle: "探索歐姆定律與串並聯電路",
+                    mode_simple: "簡單電路",
+                    mode_series: "串聯電路",
+                    mode_parallel: "並聯電路",
+                    voltage: "電池電壓",
+                    resistance: "電阻",
+                    bulb: "燈泡",
+                    readings: "實時測量數據",
+                    v_total: "總電壓",
+                    i_total: "總電流",
+                    theory: "理論驗證",
+                    desc: "觀察電子流動速度與燈泡亮度。嘗試改變電阻，驗證歐姆定律：",
+                    lang_toggle: "中文"
+                },
+                en: {
+                    title: "Advanced Circuit Lab",
+                    subtitle: "Explore Ohm's Law & Circuits",
+                    mode_simple: "Simple Circuit",
+                    mode_series: "Series Circuit",
+                    mode_parallel: "Parallel Circuit",
+                    voltage: "Battery Voltage",
+                    resistance: "Resistance",
+                    bulb: "Bulb",
+                    readings: "Real-time Readings",
+                    v_total: "Total Voltage",
+                    i_total: "Total Current",
+                    theory: "Theory Check",
+                    desc: "Observe the current flow speed and bulb brightness. Change resistance to verify Ohm's Law:",
+                    lang_toggle: "EN"
+                }
+            };
+
+            // --- DOM Elements ---
+            const els = {
+                title: document.getElementById('ui-title'),
+                subtitle: document.getElementById('ui-subtitle'),
+                btnLang: document.getElementById('btn-lang'),
+                langThumb: document.getElementById('lang-toggle-thumb'),
+                modeSimple: document.getElementById('mode-simple'),
+                modeSeries: document.getElementById('mode-series'),
+                modeParallel: document.getElementById('mode-parallel'),
+                canvas: document.getElementById('circuit-canvas'),
+                lblVoltage: document.getElementById('ui-voltage-label'),
+                valVoltage: document.getElementById('val-voltage'),
+                sliderVoltage: document.getElementById('slider-voltage'),
+                lblR1: document.getElementById('ui-r1-label'),
+                valR1: document.getElementById('val-r1'),
+                sliderR1: document.getElementById('slider-r1'),
+                containerR2: document.getElementById('container-r2'),
+                lblR2: document.getElementById('ui-r2-label'),
+                valR2: document.getElementById('val-r2'),
+                sliderR2: document.getElementById('slider-r2'),
+                theoryTitle: document.getElementById('ui-theory-title'),
+                theoryDesc: document.getElementById('ui-theory-desc')
+            };
+
+            // --- Event Listeners ---
+            els.btnLang.addEventListener('click', () => {
+                state.lang = state.lang === 'zh' ? 'en' : 'zh';
+                updateUI();
+            });
+
+            ['simple', 'series', 'parallel'].forEach(mode => {
+                document.getElementById(`mode-${mode}`).addEventListener('click', () => {
+                    state.mode = mode;
+                    updateUI();
+                });
+            });
+
+            els.sliderVoltage.addEventListener('input', (e) => {
+                state.voltage = parseFloat(e.target.value);
+                updateValues();
+                renderCanvas();
+            });
+
+            els.sliderR1.addEventListener('input', (e) => {
+                state.r1 = parseFloat(e.target.value);
+                updateValues();
+                renderCanvas();
+            });
+
+            els.sliderR2.addEventListener('input', (e) => {
+                state.r2 = parseFloat(e.target.value);
+                updateValues();
+                renderCanvas();
+            });
+
+            // --- UI Update Functions ---
+            function updateUI() {
+                const t = i18n[state.lang];
+                
+                // Update Texts
+                els.title.innerText = t.title;
+                els.subtitle.innerText = t.subtitle;
+                els.langThumb.innerText = t.lang_toggle;
+                els.modeSimple.innerText = t.mode_simple;
+                els.modeSeries.innerText = t.mode_series;
+                els.modeParallel.innerText = t.mode_parallel;
+                els.lblVoltage.innerText = t.voltage;
+                els.lblR1.innerText = state.mode === 'simple' ? t.resistance : `${t.bulb} R1`;
+                els.lblR2.innerText = `${t.bulb} R2`;
+                els.theoryTitle.innerText = t.theory;
+                els.theoryDesc.innerText = t.desc;
+
+                // Lang Toggle Styling
+                if (state.lang === 'en') {
+                    els.langThumb.classList.remove('translate-x-0');
+                    els.langThumb.classList.add('translate-x-10');
+                } else {
+                    els.langThumb.classList.remove('translate-x-10');
+                    els.langThumb.classList.add('translate-x-0');
+                }
+
+                // Mode Buttons Styling
+                const activeClasses = ['bg-white', 'text-blue-600', 'shadow-sm'];
+                const inactiveClasses = ['text-slate-500', 'hover:text-slate-700'];
+                
+                ['simple', 'series', 'parallel'].forEach(m => {
+                    const btn = document.getElementById(`mode-${m}`);
+                    if (m === state.mode) {
+                        btn.classList.add(...activeClasses);
+                        btn.classList.remove(...inactiveClasses);
+                    } else {
+                        btn.classList.add(...inactiveClasses);
+                        btn.classList.remove(...activeClasses);
+                    }
+                });
+
+                // Show/Hide R2 Slider
+                if (state.mode === 'simple') {
+                    els.containerR2.classList.add('hidden');
+                    els.containerR2.classList.remove('fade-enter-active');
+                } else {
+                    els.containerR2.classList.remove('hidden');
+                    els.containerR2.classList.add('fade-enter-active');
+                }
+
+                updateValues();
+                renderCanvas();
+
+                // Re-render MathJax if present
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise().catch(err => console.warn(err));
+                }
+            }
+
+            function updateValues() {
+                els.valVoltage.innerText = state.voltage.toFixed(1);
+                els.valR1.innerText = state.r1.toFixed(1);
+                els.valR2.innerText = state.r2.toFixed(1);
+                
+                // Sync sliders with state
+                els.sliderVoltage.value = state.voltage;
+                els.sliderR1.value = state.r1;
+                els.sliderR2.value = state.r2;
+            }
+
+            // --- SVG Generation Helpers ---
+            const Battery = (x, y, v) => `
+                <g transform="translate(${x}, ${y})">
+                    <rect x="-30" y="-15" width="60" height="30" rx="4" fill="#334155" />
+                    <rect x="-35" y="-5" width="5" height="10" fill="#94a3b8" />
+                    <rect x="30" y="-5" width="5" height="10" fill="#94a3b8" />
+                    <text x="-15" y="5" fill="white" font-size="16" font-weight="bold" text-anchor="middle">-</text>
+                    <text x="15" y="5" fill="white" font-size="16" font-weight="bold" text-anchor="middle">+</text>
+                    <text x="0" y="35" fill="#1e293b" font-size="14" font-weight="bold" text-anchor="middle">${v.toFixed(1)} <tspan class="phys-var">V</tspan></text>
+                </g>
+            `;
+
+            const Bulb = (x, y, brightness, label, v, i) => `
+                <g transform="translate(${x}, ${y})">
+                    <circle cx="0" cy="0" r="25" fill="#fef08a" opacity="${brightness * 0.8}" filter="blur(8px)" />
+                    <circle cx="0" cy="0" r="20" fill="${brightness > 0.05 ? '#fef08a' : '#f1f5f9'}" stroke="#64748b" stroke-width="2" />
+                    <path d="M -10 10 L -5 -5 L 5 -5 L 10 10" fill="none" stroke="${brightness > 0.05 ? '#eab308' : '#94a3b8'}" stroke-width="2" />
+                    <text x="0" y="-35" fill="#1e293b" font-size="14" font-weight="bold" text-anchor="middle">${label}</text>
+                    
+                    <rect x="-40" y="25" width="80" height="35" rx="4" fill="rgba(255,255,255,0.9)" stroke="#cbd5e1" />
+                    <text x="0" y="40" fill="#3b82f6" font-size="12" text-anchor="middle"><tspan class="phys-var">V</tspan>=${v.toFixed(1)}V</text>
+                    <text x="0" y="55" fill="#ef4444" font-size="12" text-anchor="middle"><tspan class="phys-var">I</tspan>=${i.toFixed(2)}A</text>
+                </g>
+            `;
+
+            const Meter = (x, y, type, value) => `
+                <g transform="translate(${x}, ${y})">
+                    <circle cx="0" cy="0" r="18" fill="white" stroke="${type === 'V' ? '#3b82f6' : '#ef4444'}" stroke-width="3" />
+                    <text x="0" y="5" fill="${type === 'V' ? '#3b82f6' : '#ef4444'}" font-size="16" font-weight="bold" text-anchor="middle">${type}</text>
+                    <rect x="-25" y="22" width="50" height="20" rx="4" fill="#1e293b" />
+                    <text x="0" y="36" fill="#10b981" font-size="12" font-family="monospace" text-anchor="middle">${value.toFixed(2)}</text>
+                </g>
+            `;
+
+            const AnimStyle = (current) => {
+                const duration = current > 0 ? Math.max(0.2, 2 / current) : 0;
+                const statePlay = current > 0 ? 'running' : 'paused';
+                const opacity = current > 0.01 ? 1 : 0;
+                return `animation-duration: ${duration}s; animation-play-state: ${statePlay}; opacity: ${opacity};`;
+            };
+
+            // --- Render Physics & SVG Canvas ---
+            function renderCanvas() {
+                let req, i_total, i1, i2, v1, v2;
+                const safeR1 = Math.max(0.1, state.r1);
+                const safeR2 = Math.max(0.1, state.r2);
+
+                if (state.mode === 'simple') {
+                    req = safeR1;
+                    i_total = state.voltage / req;
+                    i1 = i_total; i2 = 0; v1 = state.voltage; v2 = 0;
+                } else if (state.mode === 'series') {
+                    req = safeR1 + safeR2;
+                    i_total = state.voltage / req;
+                    i1 = i_total; i2 = i_total;
+                    v1 = i_total * safeR1; v2 = i_total * safeR2;
+                } else if (state.mode === 'parallel') {
+                    req = 1 / ((1 / safeR1) + (1 / safeR2));
+                    i_total = state.voltage / req;
+                    v1 = state.voltage; v2 = state.voltage;
+                    i1 = state.voltage / safeR1; i2 = state.voltage / safeR2;
+                }
+
+                const getBrightness = (i, r) => Math.min(1, (i * i * r) / 20);
+                let svgContent = '';
+
+                if (state.mode === 'simple') {
+                    svgContent = `
+                        <g>
+                            <path class="wire-bg" d="M 400 450 L 600 450 L 600 150 L 200 150 L 200 450 L 400 450" />
+                            <path class="wire-current" d="M 400 450 L 600 450 L 600 150 L 200 150 L 200 450 L 400 450" style="${AnimStyle(i_total)}" />
+                            
+                            ${Battery(400, 450, state.voltage)}
+                            ${Bulb(400, 150, getBrightness(i_total, safeR1), 'R1', v1, i1)}
+                            ${Meter(200, 300, 'A', i_total)}
+                            
+                            <path class="wire-bg" d="M 320 150 L 320 50 L 480 50 L 480 150" stroke-width="2" />
+                            ${Meter(400, 50, 'V', v1)}
+                        </g>
+                    `;
+                } else if (state.mode === 'series') {
+                    svgContent = `
+                        <g>
+                            <path class="wire-bg" d="M 400 450 L 650 450 L 650 200 L 150 200 L 150 450 L 400 450" />
+                            <path class="wire-current" d="M 400 450 L 650 450 L 650 200 L 150 200 L 150 450 L 400 450" style="${AnimStyle(i_total)}" />
+                            
+                            ${Battery(400, 450, state.voltage)}
+                            ${Bulb(300, 200, getBrightness(i_total, safeR1), 'R1', v1, i_total)}
+                            ${Bulb(500, 200, getBrightness(i_total, safeR2), 'R2', v2, i_total)}
+                            ${Meter(150, 325, 'A', i_total)}
+                            
+                            <path class="wire-bg" d="M 230 200 L 230 100 L 370 100 L 370 200" stroke-width="2" />
+                            ${Meter(300, 100, 'V', v1)}
+                        </g>
+                    `;
+                } else if (state.mode === 'parallel') {
+                    svgContent = `
+                        <g>
+                            <path class="wire-bg" d="M 400 450 L 650 450 L 650 150 L 150 150 L 150 450 L 400 450" />
+                            <path class="wire-bg" d="M 150 300 L 650 300" />
+                            
+                            <path class="wire-current" d="M 400 450 L 650 450 L 650 300 L 400 300" style="${AnimStyle(i_total)}" />
+                            <path class="wire-current" d="M 650 300 L 650 150 L 150 150 L 150 300" style="${AnimStyle(i1)}" />
+                            <path class="wire-current" d="M 650 300 L 150 300" style="${AnimStyle(i2)}" />
+                            <path class="wire-current" d="M 400 300 L 150 300 L 150 450 L 400 450" style="${AnimStyle(i_total)}" />
+                            
+                            ${Battery(400, 450, state.voltage)}
+                            
+                            ${Bulb(400, 150, getBrightness(i1, safeR1), 'R1', v1, i1)}
+                            ${Bulb(400, 300, getBrightness(i2, safeR2), 'R2', v2, i2)}
+                            
+                            ${Meter(150, 380, 'A', i_total)}
+                            
+                            <path class="wire-bg" d="M 100 150 L 100 50 L 400 50" stroke-width="2" />
+                            <path class="wire-bg" d="M 700 150 L 700 50 L 400 50" stroke-width="2" />
+                            <path class="wire-bg" d="M 150 150 L 100 150" stroke-width="2" />
+                            <path class="wire-bg" d="M 650 150 L 700 150" stroke-width="2" />
+                            ${Meter(400, 50, 'V', state.voltage)}
+                        </g>
+                    `;
+                }
+
+                els.canvas.innerHTML = svgContent;
+            }
+
+            // --- Initial Boot ---
+            updateUI();
+        });
+    </script>
+</body>
+</html>

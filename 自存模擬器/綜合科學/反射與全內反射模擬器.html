@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>反射定律與全內反射模擬器 | Reflection & TIR Simulator - HK Junior Science S1-S3</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0f172a; touch-action: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+        
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .floating-window {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            width: 340px;
+            cursor: default;
+            user-select: none;
+            transition: height 0.3s ease;
+        }
+
+        .window-header {
+            cursor: grab;
+            background: rgba(59, 130, 246, 0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .window-header:active { cursor: grabbing; }
+        
+        /* Toggle Switch */
+        .toggle-checkbox:checked { right: 0; border-color: #3b82f6; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #3b82f6; }
+        
+        /* Disabled Button State */
+        .btn-disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body class="text-slate-200">
+
+    <!-- Top Navigation Bar -->
+    <div class="absolute top-0 left-0 w-full glass-panel flex justify-between items-center px-4 py-3 z-50">
+        <div class="flex items-center gap-3">
+            <h1 id="app-title" class="text-xl md:text-2xl font-bold text-white tracking-wide">反射與全內反射模擬器</h1>
+            <button id="toggle-panel-btn" class="p-2 rounded-full hover:bg-slate-700 transition" title="Toggle Control Panel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300 hover:text-white"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- Language Toggle Pill -->
+            <button id="lang-toggle" class="relative inline-flex items-center justify-center w-24 h-8 rounded-full bg-slate-700 hover:bg-slate-600 transition overflow-hidden border border-slate-500">
+                <div class="absolute w-1/2 h-full bg-blue-500 rounded-full shadow transition-transform duration-300 ease-in-out left-0" id="lang-slider"></div>
+                <span class="relative z-10 w-1/2 text-center text-xs font-bold text-white">中</span>
+                <span class="relative z-10 w-1/2 text-center text-xs font-bold text-white">EN</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Collapsible Control Panel (Left) -->
+    <div id="control-panel" class="absolute top-20 left-4 glass-panel rounded-xl p-4 w-64 z-40 transition-transform duration-300 origin-top-left">
+        <h2 id="control-title" class="text-lg font-bold mb-4 text-blue-400 border-b border-slate-600 pb-2">控制面板</h2>
+        
+        <div class="space-y-3">
+            <button id="add-mirror-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded shadow transition flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span id="txt-add-mirror">新增平面鏡 (1/6)</span>
+            </button>
+
+            <button id="add-prism-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-2 px-4 rounded shadow transition flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 20 2 20"></polygon></svg>
+                <span id="txt-add-prism">新增三稜鏡 (0/3)</span>
+            </button>
+            
+            <div class="flex items-center justify-between pt-2">
+                <span id="txt-show-normal" class="text-sm">顯示法線及角度</span>
+                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="toggle" id="toggle-normal" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 top-0 left-0 transition-all duration-300"/>
+                    <label for="toggle-normal" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-600 cursor-pointer"></label>
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-600 grid grid-cols-2 gap-2">
+                <button id="undo-btn" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-2 rounded shadow transition flex items-center justify-center gap-1 btn-disabled">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+                    <span id="txt-undo" class="text-sm">復原</span>
+                </button>
+                <button id="reset-btn" class="w-full bg-red-900/60 hover:bg-red-600 text-white font-semibold py-2 px-2 rounded shadow transition flex items-center justify-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                    <span id="txt-reset" class="text-sm">重設</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Concept Window -->
+    <div id="concept-window" class="floating-window glass-panel rounded-xl overflow-hidden z-40 flex flex-col shadow-2xl shadow-blue-900/20">
+        <div id="window-header" class="window-header px-4 py-2 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <span id="txt-concept-title" class="font-bold text-sm text-blue-300">反射定律與全內反射</span>
+            </div>
+            <button id="minimize-window-btn" class="text-slate-400 hover:text-white transition p-1">
+                <svg id="icon-minimize" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+        </div>
+        <div id="window-body" class="p-4 text-sm space-y-3 bg-slate-800/50">
+            <p id="txt-concept-1" class="leading-relaxed">1. 平面鏡：入射角 (<em class="text-yellow-400 font-serif">i</em>) = 反射角 (<em class="text-green-400 font-serif">r</em>)。</p>
+            <p id="txt-concept-2" class="leading-relaxed border-l-2 border-cyan-500 pl-2">
+                2. <strong>三稜鏡 (45°-90°-45°)</strong>：當光線進入玻璃並以大於臨界角的角度撞擊斜邊時，會發生<strong class="text-cyan-400">全內反射 (TIR)</strong>，表現等同完美平面鏡！
+            </p>
+            
+            <div class="mt-3 p-3 bg-red-900/40 border border-red-500/30 rounded-lg">
+                <div class="flex items-start gap-2">
+                    <span class="text-red-400 font-bold mt-0.5">⚠️</span>
+                    <p id="txt-concept-alert" class="text-red-200 text-xs leading-relaxed">
+                        陷阱：量度任何角度時，必須由<strong class="text-white">虛線法線 (Normal)</strong> 開始量度，而非物件表面！
+                    </p>
+                </div>
+            </div>
+            <p id="txt-instruction" class="text-slate-400 text-xs italic mt-2 text-center">💡 提示：拖曳鏡子或三稜鏡的「藍點」移動，「橙點」旋轉</p>
+        </div>
+    </div>
+
+    <!-- Interactive Canvas -->
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // --- 1. Language Configuration ---
+        const translations = {
+            zh: {
+                title: "反射與全內反射模擬器",
+                controlPanel: "控制面板",
+                addMirror: "新增平面鏡",
+                addPrism: "新增三稜鏡",
+                showNormal: "顯示法線及角度",
+                undo: "復原",
+                reset: "重設",
+                conceptTitle: "反射定律與全內反射",
+                concept1: "1. 平面鏡：入射角 (<em class='text-yellow-400 font-serif'>i</em>) = 反射角 (<em class='text-green-400 font-serif'>r</em>)。",
+                concept2: "2. <strong>三稜鏡 (45°-90°-45°)</strong>：當光線進入玻璃並以大於臨界角的角度撞擊斜邊時，會發生<strong class='text-cyan-400'>全內反射 (TIR)</strong>，表現等同完美平面鏡！",
+                conceptAlert: "陷阱：量度任何角度時，必須由<strong class='text-white'>虛線法線 (Normal)</strong> 開始量度，而非物件表面！",
+                instruction: "💡 提示：拖曳鏡子或三稜鏡的「藍點」移動，「橙點」旋轉"
+            },
+            en: {
+                title: "Reflection & TIR Simulator",
+                controlPanel: "Control Panel",
+                addMirror: "Add Plane Mirror",
+                addPrism: "Add Prism",
+                showNormal: "Show Normal & Angles",
+                undo: "Undo",
+                reset: "Reset",
+                conceptTitle: "Law of Reflection & TIR",
+                concept1: "1. Plane Mirror: Angle of Incidence (<em class='text-yellow-400 font-serif'>i</em>) = Angle of Reflection (<em class='text-green-400 font-serif'>r</em>).",
+                concept2: "2. <strong>Prism (45°-90°-45°)</strong>: When light hits the hypotenuse from inside at an angle > critical angle, <strong class='text-cyan-400'>Total Internal Reflection (TIR)</strong> occurs, acting like a perfect mirror!",
+                conceptAlert: "Trap: ALL angles must be measured from the <strong class='text-white'>dashed Normal line</strong>, NOT the surface!",
+                instruction: "💡 Hint: Drag 'Blue dots' to move, 'Orange dots' to rotate."
+            }
+        };
+
+        let currentLang = 'zh';
+
+        function updateLanguage() {
+            const t = translations[currentLang];
+            document.getElementById('app-title').innerText = t.title;
+            document.getElementById('control-title').innerText = t.controlPanel;
+            document.getElementById('txt-add-mirror').innerText = `${t.addMirror} (${mirrors.length}/${MAX_MIRRORS})`;
+            document.getElementById('txt-add-prism').innerText = `${t.addPrism} (${prisms.length}/${MAX_PRISMS})`;
+            document.getElementById('txt-show-normal').innerText = t.showNormal;
+            document.getElementById('txt-undo').innerText = t.undo;
+            document.getElementById('txt-reset').innerText = t.reset;
+            document.getElementById('txt-concept-title').innerText = t.conceptTitle;
+            document.getElementById('txt-concept-1').innerHTML = t.concept1;
+            document.getElementById('txt-concept-2').innerHTML = t.concept2;
+            document.getElementById('txt-concept-alert').innerHTML = t.conceptAlert;
+            document.getElementById('txt-instruction').innerHTML = t.instruction;
+
+            const slider = document.getElementById('lang-slider');
+            slider.style.transform = currentLang === 'zh' ? 'translateX(0)' : 'translateX(100%)';
+        }
+
+        document.getElementById('lang-toggle').addEventListener('click', () => {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            updateLanguage();
+        });
+
+        // --- 2. UI Interactivity & Window Management ---
+        let panelOpen = true;
+        document.getElementById('toggle-panel-btn').addEventListener('click', () => {
+            const panel = document.getElementById('control-panel');
+            panelOpen = !panelOpen;
+            panel.style.transform = panelOpen ? 'scale(1)' : 'scale(0)';
+            panel.style.opacity = panelOpen ? '1' : '0';
+        });
+
+        let windowOpen = true;
+        const minimizeBtn = document.getElementById('minimize-window-btn');
+        const iconMinimize = document.getElementById('icon-minimize');
+        
+        minimizeBtn.addEventListener('click', () => {
+            const body = document.getElementById('window-body');
+            windowOpen = !windowOpen;
+            body.style.display = windowOpen ? 'block' : 'none';
+            
+            // Toggle between Minus and Plus icons
+            if (windowOpen) {
+                iconMinimize.innerHTML = '<line x1="5" y1="12" x2="19" y2="12"></line>';
+            } else {
+                iconMinimize.innerHTML = '<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>';
+            }
+        });
+
+        const floatingWindow = document.getElementById('concept-window');
+        const windowHeader = document.getElementById('window-header');
+        let isDraggingWindow = false;
+        let winOffsetX, winOffsetY;
+
+        windowHeader.addEventListener('pointerdown', (e) => {
+            // Prevent dragging if clicking the minimize button
+            if (e.target.closest('#minimize-window-btn')) return;
+            
+            isDraggingWindow = true;
+            const rect = floatingWindow.getBoundingClientRect();
+            winOffsetX = e.clientX - rect.left;
+            winOffsetY = e.clientY - rect.top;
+            windowHeader.setPointerCapture(e.pointerId);
+        });
+        windowHeader.addEventListener('pointermove', (e) => {
+            if (!isDraggingWindow) return;
+            let newX = Math.max(0, Math.min(e.clientX - winOffsetX, window.innerWidth - floatingWindow.offsetWidth));
+            let newY = Math.max(0, Math.min(e.clientY - winOffsetY, window.innerHeight - windowHeader.offsetHeight));
+            floatingWindow.style.left = `${newX}px`;
+            floatingWindow.style.top = `${newY}px`;
+            floatingWindow.style.right = 'auto';
+        });
+        windowHeader.addEventListener('pointerup', (e) => {
+            isDraggingWindow = false;
+            windowHeader.releasePointerCapture(e.pointerId);
+        });
+
+        // --- 3. Physics Simulation Setup & State Management ---
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        const MAX_MIRRORS = 6;
+        const MAX_PRISMS = 3;
+        const MAX_BOUNCES = 30;
+
+        let showNormal = true;
+        document.getElementById('toggle-normal').addEventListener('change', (e) => {
+            showNormal = e.target.checked;
+            requestAnimationFrame(draw);
+        });
+
+        // App State
+        let laser = { x: 150, y: 0, angle: Math.PI / 6, radius: 25 };
+        let mirrors = [];
+        let prisms = [];
+        let stateHistory = []; // Array to hold history for Undo
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            if(laser.y === 0) laser.y = height / 2;
+            requestAnimationFrame(draw);
+        }
+        window.addEventListener('resize', resize);
+
+        // --- State Management (Undo/Reset) ---
+        function saveState() {
+            stateHistory.push({
+                laser: JSON.parse(JSON.stringify(laser)),
+                mirrors: JSON.parse(JSON.stringify(mirrors)),
+                prisms: JSON.parse(JSON.stringify(prisms))
+            });
+            // Keep maximum 20 steps of history
+            if (stateHistory.length > 20) {
+                stateHistory.shift();
+            }
+            updateUndoBtn();
+        }
+
+        function updateUndoBtn() {
+            const undoBtn = document.getElementById('undo-btn');
+            if (stateHistory.length > 1) {
+                undoBtn.classList.remove('btn-disabled');
+                undoBtn.disabled = false;
+            } else {
+                undoBtn.classList.add('btn-disabled');
+                undoBtn.disabled = true;
+            }
+        }
+
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            if (stateHistory.length <= 1) return;
+            
+            stateHistory.pop(); // Remove current state
+            const previousState = stateHistory[stateHistory.length - 1]; // Get previous
+            
+            // Restore state
+            laser = JSON.parse(JSON.stringify(previousState.laser));
+            mirrors = JSON.parse(JSON.stringify(previousState.mirrors));
+            prisms = JSON.parse(JSON.stringify(previousState.prisms));
+            
+            updateAddBtns();
+            updateUndoBtn();
+            requestAnimationFrame(draw);
+        });
+
+        function resetScene() {
+            laser = { x: 150, y: height / 2, angle: Math.PI / 8, radius: 25 };
+            mirrors = [{ cx: width/2, cy: height - 150, length: 300, angle: 0 }];
+            prisms = [];
+            
+            stateHistory = []; // Clear history
+            saveState();       // Save initial state
+            
+            updateAddBtns();
+            requestAnimationFrame(draw);
+        }
+
+        document.getElementById('reset-btn').addEventListener('click', resetScene);
+
+        document.getElementById('add-mirror-btn').addEventListener('click', () => {
+            if (mirrors.length >= MAX_MIRRORS) return;
+            mirrors.push({ cx: width/2 + (Math.random()*100-50), cy: height/2 + (Math.random()*100-50), length: 200, angle: (Math.random()-0.5)*Math.PI });
+            updateAddBtns();
+            saveState(); // Save state after adding
+            requestAnimationFrame(draw);
+        });
+
+        document.getElementById('add-prism-btn').addEventListener('click', () => {
+            if (prisms.length >= MAX_PRISMS) return;
+            prisms.push({ cx: width/2 + (Math.random()*100-50), cy: height/2 + (Math.random()*100-50), size: 160, angle: 0 });
+            updateAddBtns();
+            saveState(); // Save state after adding
+            requestAnimationFrame(draw);
+        });
+
+        function updateAddBtns() {
+            const t = translations[currentLang];
+            document.getElementById('txt-add-mirror').innerText = `${t.addMirror} (${mirrors.length}/${MAX_MIRRORS})`;
+            document.getElementById('add-mirror-btn').style.opacity = mirrors.length >= MAX_MIRRORS ? '0.5' : '1';
+            document.getElementById('txt-add-prism').innerText = `${t.addPrism} (${prisms.length}/${MAX_PRISMS})`;
+            document.getElementById('add-prism-btn').style.opacity = prisms.length >= MAX_PRISMS ? '0.5' : '1';
+        }
+
+        // --- 4. Math & Geometry ---
+        function getMirrorEnds(m) {
+            const dx = Math.cos(m.angle) * m.length / 2;
+            const dy = Math.sin(m.angle) * m.length / 2;
+            return { A: { x: m.cx - dx, y: m.cy - dy }, B: { x: m.cx + dx, y: m.cy + dy } };
+        }
+        function getMirrorNormal(A, B) {
+            const dx = B.x - A.x, dy = B.y - A.y;
+            const len = Math.hypot(dx, dy);
+            return { x: -dy / len, y: dx / len };
+        }
+
+        function getPrismPts(p) {
+            const s = p.size;
+            let pts = [ {x: -s/3, y: -s/3}, {x: 2*s/3, y: -s/3}, {x: -s/3, y: 2*s/3} ];
+            const cos = Math.cos(p.angle), sin = Math.sin(p.angle);
+            return pts.map(pt => ({
+                x: pt.x * cos - pt.y * sin + p.cx,
+                y: pt.x * sin + pt.y * cos + p.cy
+            }));
+        }
+
+        function getPrismEdges(p) {
+            const pts = getPrismPts(p);
+            let edges = [];
+            for (let i = 0; i < 3; i++) {
+                let j = (i + 1) % 3;
+                let A = pts[i], B = pts[j];
+                let dx = B.x - A.x, dy = B.y - A.y;
+                let len = Math.hypot(dx, dy);
+                let N = { x: dy / len, y: -dx / len }; // Outward normal
+                edges.push({ A, B, N, type: 'prism', parent: p });
+            }
+            return edges;
+        }
+
+        function getIntersection(rayOrigin, rayDir, segmentA, segmentB) {
+            const v1 = rayOrigin, v2 = { x: rayOrigin.x + rayDir.x * 4000, y: rayOrigin.y + rayDir.y * 4000 };
+            const v3 = segmentA, v4 = segmentB;
+            const den = (v1.x - v2.x) * (v3.y - v4.y) - (v1.y - v2.y) * (v3.x - v4.x);
+            if (den === 0) return null;
+            const t = ((v1.x - v3.x) * (v3.y - v4.y) - (v1.y - v3.y) * (v3.x - v4.x)) / den;
+            const u = -((v1.x - v2.x) * (v1.y - v3.y) - (v1.y - v2.y) * (v1.x - v3.x)) / den;
+            if (t > 0.0001 && t < 1 && u >= 0 && u <= 1) { 
+                return { x: v1.x + t * (v2.x - v1.x), y: v1.y + t * (v2.y - v1.y), dist: t };
+            }
+            return null;
+        }
+
+        function dot(v1, v2) { return v1.x * v2.x + v1.y * v2.y; }
+
+        function calculateRefractionOrTIR(dir, N_eff, n1, n2) {
+            let r = n1 / n2;
+            let c = -dot(dir, N_eff); 
+            let k = 1.0 - r * r * (1.0 - c * c);
+
+            if (k < 0) { // TIR
+                return { type: 'TIR', dir: { x: dir.x + 2 * c * N_eff.x, y: dir.y + 2 * c * N_eff.y } };
+            } else { // Refraction
+                let coeff = r * c - Math.sqrt(k);
+                return { type: 'REFRACT', dir: { x: r * dir.x + coeff * N_eff.x, y: r * dir.y + coeff * N_eff.y } };
+            }
+        }
+
+        // --- 5. Interaction ---
+        let dragState = { type: null, index: -1, offsetX: 0, offsetY: 0 };
+        let hasDragged = false; // To track if a save state is needed
+        const handleRadius = 15;
+
+        function getHoverTarget(mx, my) {
+            const lx = laser.x + Math.cos(laser.angle) * 60, ly = laser.y + Math.sin(laser.angle) * 60;
+            if (Math.hypot(mx - lx, my - ly) < handleRadius + 10) return { type: 'laser-dir' };
+            if (Math.hypot(mx - laser.x, my - laser.y) < laser.radius) return { type: 'laser' };
+
+            for (let i = prisms.length - 1; i >= 0; i--) {
+                if (Math.hypot(mx - prisms[i].cx, my - prisms[i].cy) < handleRadius + 5) return { type: 'prism-center', index: i };
+                const pts = getPrismPts(prisms[i]);
+                if (Math.hypot(mx - pts[2].x, my - pts[2].y) < handleRadius + 5) return { type: 'prism-rotate', index: i };
+            }
+
+            for (let i = mirrors.length - 1; i >= 0; i--) {
+                const ends = getMirrorEnds(mirrors[i]);
+                if (Math.hypot(mx - ends.A.x, my - ends.A.y) < handleRadius + 5) return { type: 'mirror-A', index: i };
+                if (Math.hypot(mx - ends.B.x, my - ends.B.y) < handleRadius + 5) return { type: 'mirror-B', index: i };
+                if (Math.hypot(mx - mirrors[i].cx, my - mirrors[i].cy) < handleRadius + 15) return { type: 'mirror-center', index: i };
+            }
+            return null;
+        }
+
+        canvas.addEventListener('pointerdown', (e) => {
+            const target = getHoverTarget(e.clientX, e.clientY);
+            hasDragged = false;
+            if (target) {
+                dragState.type = target.type; dragState.index = target.index;
+                if (target.type === 'laser') { dragState.offsetX = laser.x - e.clientX; dragState.offsetY = laser.y - e.clientY; }
+                else if (target.type === 'mirror-center') { dragState.offsetX = mirrors[target.index].cx - e.clientX; dragState.offsetY = mirrors[target.index].cy - e.clientY; }
+                else if (target.type === 'prism-center') { dragState.offsetX = prisms[target.index].cx - e.clientX; dragState.offsetY = prisms[target.index].cy - e.clientY; }
+                canvas.setPointerCapture(e.pointerId);
+            }
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            const target = getHoverTarget(e.clientX, e.clientY);
+            canvas.style.cursor = dragState.type ? 'grabbing' : (target ? 'pointer' : 'crosshair');
+            if (!dragState.type) return;
+
+            hasDragged = true;
+
+            if (dragState.type === 'laser') {
+                laser.x = e.clientX + dragState.offsetX; laser.y = e.clientY + dragState.offsetY;
+            } else if (dragState.type === 'laser-dir') {
+                laser.angle = Math.atan2(e.clientY - laser.y, e.clientX - laser.x);
+            } else if (dragState.type === 'mirror-center') {
+                mirrors[dragState.index].cx = e.clientX + dragState.offsetX; mirrors[dragState.index].cy = e.clientY + dragState.offsetY;
+            } else if (dragState.type === 'mirror-A' || dragState.type === 'mirror-B') {
+                const m = mirrors[dragState.index];
+                const fixedPoint = dragState.type === 'mirror-A' ? getMirrorEnds(m).B : getMirrorEnds(m).A;
+                const dx = e.clientX - fixedPoint.x, dy = e.clientY - fixedPoint.y;
+                let newAngle = Math.atan2(dy, dx);
+                if (dragState.type === 'mirror-A') newAngle += Math.PI;
+                m.angle = newAngle;
+                const newA = dragState.type === 'mirror-A' ? { x: fixedPoint.x + Math.cos(newAngle + Math.PI)*m.length, y: fixedPoint.y + Math.sin(newAngle + Math.PI)*m.length } : fixedPoint;
+                const newB = dragState.type === 'mirror-B' ? { x: fixedPoint.x + Math.cos(newAngle)*m.length, y: fixedPoint.y + Math.sin(newAngle)*m.length } : fixedPoint;
+                m.cx = (newA.x + newB.x) / 2; m.cy = (newA.y + newB.y) / 2;
+            } else if (dragState.type === 'prism-center') {
+                prisms[dragState.index].cx = e.clientX + dragState.offsetX; prisms[dragState.index].cy = e.clientY + dragState.offsetY;
+            } else if (dragState.type === 'prism-rotate') {
+                const p = prisms[dragState.index];
+                p.angle = Math.atan2(e.clientY - p.cy, e.clientX - p.cx) - Math.atan2(2, -1);
+            }
+            requestAnimationFrame(draw);
+        });
+
+        canvas.addEventListener('pointerup', (e) => {
+            if (dragState.type && hasDragged) {
+                saveState(); // Save state only if an actual drag movement happened
+            }
+            dragState.type = null; 
+            canvas.releasePointerCapture(e.pointerId); 
+            requestAnimationFrame(draw);
+        });
+
+        // --- 6. Rendering & Engine ---
+        function draw() {
+            ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)'; ctx.lineWidth = 1; ctx.beginPath();
+            for(let x=0; x<width; x+=50) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+            for(let y=0; y<height; y+=50) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+            ctx.stroke();
+
+            // Draw Mirrors
+            mirrors.forEach(m => {
+                const ends = getMirrorEnds(m);
+                ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.beginPath();
+                const normal = getMirrorNormal(ends.A, ends.B);
+                for (let j = 0; j <= m.length; j += 10) {
+                    const px = ends.A.x + Math.cos(m.angle) * j, py = ends.A.y + Math.sin(m.angle) * j;
+                    ctx.moveTo(px, py); ctx.lineTo(px - normal.x * 10 - Math.cos(m.angle)*5, py - normal.y * 10 - Math.sin(m.angle)*5);
+                }
+                ctx.stroke();
+
+                ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(ends.A.x, ends.A.y); ctx.lineTo(ends.B.x, ends.B.y); ctx.stroke();
+
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.5)'; ctx.beginPath(); ctx.arc(m.cx, m.cy, 8, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'rgba(245, 158, 11, 0.8)';
+                ctx.beginPath(); ctx.arc(ends.A.x, ends.A.y, 6, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(ends.B.x, ends.B.y, 6, 0, Math.PI*2); ctx.fill();
+            });
+
+            // Draw Prisms
+            prisms.forEach(p => {
+                const pts = getPrismPts(p);
+                ctx.fillStyle = 'rgba(6, 182, 212, 0.2)'; // Glassy cyan
+                ctx.strokeStyle = 'rgba(6, 182, 212, 0.8)'; ctx.lineWidth = 3; ctx.lineJoin = 'miter';
+                ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y); ctx.lineTo(pts[1].x, pts[1].y); ctx.lineTo(pts[2].x, pts[2].y); ctx.closePath();
+                ctx.fill(); ctx.stroke();
+                
+                // 90 deg marker at V0
+                const v0 = pts[0], v1 = pts[1], v2 = pts[2];
+                const d1 = {x: v1.x-v0.x, y: v1.y-v0.y}, d2 = {x: v2.x-v0.x, y: v2.y-v0.y};
+                const len1 = Math.hypot(d1.x, d1.y), len2 = Math.hypot(d2.x, d2.y);
+                const s = 15;
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1; ctx.beginPath();
+                ctx.moveTo(v0.x + d1.x/len1*s, v0.y + d1.y/len1*s);
+                ctx.lineTo(v0.x + d1.x/len1*s + d2.x/len2*s, v0.y + d1.y/len1*s + d2.y/len2*s);
+                ctx.lineTo(v0.x + d2.x/len2*s, v0.y + d2.y/len2*s); ctx.stroke();
+
+                // Handles
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.5)'; ctx.beginPath(); ctx.arc(p.cx, p.cy, 8, 0, Math.PI*2); ctx.fill(); // Move
+                ctx.fillStyle = 'rgba(245, 158, 11, 0.8)'; ctx.beginPath(); ctx.arc(pts[2].x, pts[2].y, 6, 0, Math.PI*2); ctx.fill(); // Rotate
+            });
+
+            // Ray Tracing
+            let segments = [];
+            mirrors.forEach(m => {
+                const ends = getMirrorEnds(m);
+                segments.push({ A: ends.A, B: ends.B, N: getMirrorNormal(ends.A, ends.B), type: 'mirror' });
+            });
+            prisms.forEach(p => { segments.push(...getPrismEdges(p)); });
+
+            let currentP = { x: laser.x, y: laser.y };
+            let currentDir = { x: Math.cos(laser.angle), y: Math.sin(laser.angle) };
+            let rayPoints = [currentP];
+            let events = []; // Store reflection/refraction events for UI
+
+            for (let bounce = 0; bounce < MAX_BOUNCES; bounce++) {
+                let closestHit = null;
+                let hitSeg = null;
+                let minDist = Infinity;
+
+                segments.forEach(seg => {
+                    const hit = getIntersection(currentP, currentDir, seg.A, seg.B);
+                    if (hit && hit.dist < minDist) {
+                        if (seg.type === 'mirror' && dot(currentDir, seg.N) > 0) return; // Ignore back of mirror
+                        minDist = hit.dist; closestHit = hit; hitSeg = seg;
+                    }
+                });
+
+                if (closestHit) {
+                    rayPoints.push(closestHit);
+                    if (hitSeg.type === 'mirror') {
+                        const dDotN = dot(currentDir, hitSeg.N);
+                        const refDir = { x: currentDir.x - 2 * dDotN * hitSeg.N.x, y: currentDir.y - 2 * dDotN * hitSeg.N.y };
+                        events.push({ p: closestHit, N: hitSeg.N, incDir: currentDir, outDir: refDir, type: 'MIRROR' });
+                        currentDir = refDir;
+                    } else if (hitSeg.type === 'prism') {
+                        let dotN = dot(currentDir, hitSeg.N);
+                        let N_eff, n1, n2;
+                        if (dotN < 0) { // Entering
+                            N_eff = hitSeg.N; n1 = 1.0; n2 = 1.5;
+                        } else { // Exiting
+                            N_eff = { x: -hitSeg.N.x, y: -hitSeg.N.y }; n1 = 1.5; n2 = 1.0;
+                        }
+                        let result = calculateRefractionOrTIR(currentDir, N_eff, n1, n2);
+                        events.push({ p: closestHit, N: N_eff, incDir: currentDir, outDir: result.dir, type: result.type });
+                        currentDir = result.dir;
+                    }
+                    currentP = closestHit;
+                } else {
+                    rayPoints.push({ x: currentP.x + currentDir.x * 3000, y: currentP.y + currentDir.y * 3000 });
+                    break;
+                }
+            }
+
+            // Draw Normals and Arcs
+            if (showNormal) {
+                events.forEach(ev => {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.moveTo(ev.p.x - ev.N.x*80, ev.p.y - ev.N.y*80); ctx.lineTo(ev.p.x + ev.N.x*80, ev.p.y + ev.N.y*80); ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    const normalAngle = Math.atan2(ev.N.y, ev.N.x);
+                    const incAngleReversed = Math.atan2(-ev.incDir.y, -ev.incDir.x);
+                    const outAngle = Math.atan2(ev.outDir.y, ev.outDir.x);
+
+                    const radius = 35; ctx.lineWidth = 2;
+                    
+                    // Draw incident arc (i)
+                    ctx.strokeStyle = '#fbbf24'; ctx.beginPath();
+                    let a1 = normalAngle < 0 ? normalAngle + Math.PI*2 : normalAngle;
+                    let a2 = incAngleReversed < 0 ? incAngleReversed + Math.PI*2 : incAngleReversed;
+                    let start = Math.min(a1, a2), end = Math.max(a1, a2);
+                    if (end - start > Math.PI) { start = Math.max(a1, a2); end = Math.min(a1, a2) + Math.PI*2; }
+                    ctx.arc(ev.p.x, ev.p.y, radius, start, end); ctx.stroke();
+
+                    // Draw output arc (r)
+                    ctx.strokeStyle = ev.type === 'REFRACT' ? '#60a5fa' : '#34d399'; // Blue for refract, Green for reflect
+                    ctx.beginPath();
+                    let a3 = outAngle < 0 ? outAngle + Math.PI*2 : outAngle;
+                    let outStart = Math.min(a1, a3), outEnd = Math.max(a1, a3);
+                    if (outEnd - outStart > Math.PI) { outStart = Math.max(a1, a3); outEnd = Math.min(a1, a3) + Math.PI*2; }
+                    ctx.arc(ev.p.x, ev.p.y, radius + (ev.type==='REFRACT'? 0 : 5), outStart, outEnd); ctx.stroke();
+
+                    // Text labels
+                    ctx.font = 'italic 16px serif'; ctx.fillStyle = '#fbbf24';
+                    ctx.fillText('i', ev.p.x + Math.cos(incAngleReversed)*20 + ev.N.x*20, ev.p.y + Math.sin(incAngleReversed)*20 + ev.N.y*20);
+                    ctx.fillStyle = ev.type === 'REFRACT' ? '#60a5fa' : '#34d399';
+                    ctx.fillText('r', ev.p.x + Math.cos(outAngle)*20 + ev.N.x*20, ev.p.y + Math.sin(outAngle)*20 + ev.N.y*20);
+                });
+            }
+
+            // Draw Laser Beam
+            ctx.shadowBlur = 15; ctx.shadowColor = '#ef4444';
+            ctx.strokeStyle = '#f87171'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+            ctx.beginPath(); ctx.moveTo(rayPoints[0].x, rayPoints[0].y);
+            for (let i = 1; i < rayPoints.length; i++) ctx.lineTo(rayPoints[i].x, rayPoints[i].y);
+            ctx.stroke();
+            ctx.shadowBlur = 0; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.stroke();
+
+            // Draw Laser Source
+            ctx.translate(laser.x, laser.y); ctx.rotate(laser.angle);
+            ctx.fillStyle = '#1e293b'; ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.roundRect(-30, -15, 50, 30, 8); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#ef4444'; ctx.fillRect(20, -5, 10, 10);
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.4)'; ctx.beginPath(); ctx.arc(60, 0, handleRadius, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fca5a5'; ctx.beginPath(); ctx.arc(60, 0, 4, 0, Math.PI*2); ctx.fill();
+            ctx.rotate(-laser.angle); ctx.translate(-laser.x, -laser.y);
+        }
+
+        // Initialize Call
+        resize();
+        resetScene(); // This will also save the initial state for Undo
+        updateLanguage();
+
+    </script>
+</body>
+</html>

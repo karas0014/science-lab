@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>距離與位移模擬器</title>
+    
+    <!-- 引入 Tailwind CSS 恢復現代化排版與風格 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 針對特定行為的少量原生 CSS 補充 */
+        body {
+            overscroll-behavior: none; /* 防止手機上下滑動干擾拖曳 */
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+        }
+        
+        /* 隱藏不必要的滾動條並保持版面乾淨 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="p-2 md:p-6 min-h-screen flex items-start justify-center font-sans">
+
+    <div class="w-full max-w-4xl bg-white rounded-xl shadow-lg border border-gray-100 flex flex-col select-none overflow-hidden">
+        
+        <!-- 標題區塊 -->
+        <div class="p-4 md:p-5 text-center bg-gray-50 border-b border-gray-100">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800 tracking-tight">物理概念模擬器：距離 vs 位移</h1>
+            <p class="text-xs md:text-sm text-gray-500 mt-1">香港高中物理 (HKDSE Physics)</p>
+        </div>
+
+        <!-- 儀表板：數據顯示區 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 md:p-6 bg-white">
+            
+            <!-- 距離 Distance (藍色卡片) -->
+            <div class="bg-blue-50/50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-sm transition-all hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base md:text-lg font-bold text-blue-800">距離 (Distance)</h2>
+                    <span class="text-[10px] md:text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium border border-blue-200">標量 Scalar</span>
+                </div>
+                <p class="text-3xl md:text-4xl font-mono mt-2 text-blue-600 tracking-tight">
+                    d = <span id="val-distance">0.0</span> <span class="text-base font-sans text-blue-500 ml-1">m</span>
+                </p>
+                <p class="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                    實際軌跡的總長度
+                </p>
+            </div>
+
+            <!-- 位移 Displacement (紅色卡片) -->
+            <div class="bg-red-50/50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm transition-all hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base md:text-lg font-bold text-red-800">位移 (Displacement)</h2>
+                    <span class="text-[10px] md:text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-medium border border-red-200">矢量 Vector</span>
+                </div>
+                <div class="flex flex-wrap justify-between items-end mt-2 gap-2">
+                    <p class="text-3xl md:text-4xl font-mono text-red-600 tracking-tight">
+                        s = <span id="val-displacement">0.0</span> <span class="text-base font-sans text-red-500 ml-1">m</span>
+                    </p>
+                    <span id="val-bearing" class="text-sm md:text-base font-mono font-bold text-gray-700 bg-white px-3 py-1.5 rounded-md border shadow-sm flex items-center gap-1">
+                        ---
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    起點至終點的直線 (大小 + 方向)
+                </p>
+            </div>
+        </div>
+
+        <!-- 畫布區域 -->
+        <div class="px-4 md:px-6 relative">
+            <div id="canvas-container" class="relative bg-white border-2 border-gray-200 rounded-lg overflow-hidden shadow-inner cursor-crosshair touch-none w-full h-[50vh] min-h-[300px] max-h-[500px]">
+                <svg id="sim-svg" width="100%" height="100%" class="w-full h-full block">
+                    <defs>
+                        <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                            <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#f1f5f9" stroke-width="1.5"/>
+                        </pattern>
+                        <marker id="arrow-red" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+                            <path d="M0,0 L0,8 L10,4 z" fill="#ef4444" />
+                        </marker>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)" />
+                    <!-- JS 將會動態注入軌跡與點位到這個群組內 -->
+                    <g id="svg-content"></g>
+                </svg>
+                
+                <div class="absolute bottom-3 right-3 text-[10px] md:text-xs text-slate-500 font-medium bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded shadow-sm border border-slate-100 pointer-events-none">
+                    1 格 = 5 m
+                </div>
+            </div>
+        </div>
+
+        <!-- 控制按鈕 -->
+        <div class="flex flex-wrap gap-3 mt-5 px-4 md:px-6 justify-center">
+            <button id="btn-add" class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                增加點
+            </button>
+            
+            <button id="btn-remove" class="flex items-center gap-2 px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                減少點
+            </button>
+            
+            <button id="btn-reset" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all sm:ml-4">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"></path><path d="M3 13a9 9 0 1 0 3-7.7L3 8"></path></svg>
+                重置場景
+            </button>
+        </div>
+
+        <!-- 教學提示 -->
+        <div class="m-4 md:m-6 mt-5 bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-sm text-yellow-800 flex gap-3 shadow-sm">
+            <div class="flex-shrink-0 mt-0.5 text-yellow-600">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </div>
+            <div>
+                <p class="font-bold mb-1 text-yellow-900">思考與探索：</p>
+                <ul class="list-disc pl-4 space-y-1 text-yellow-700/90 leading-relaxed">
+                    <li>拖曳終點 (B) 到起點 (A) 的<span class="font-semibold">東北方</span>，觀察方位角是否顯示為 N x° E？</li>
+                    <li>試著讓路徑彎曲，比較 <span class="font-semibold text-blue-700">距離 d</span> 和 <span class="font-semibold text-red-700">位移 s</span> 數值的差異。何時兩者會相等？</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // DOM 元素參考
+            const svgContent = document.getElementById('svg-content');
+            const svgElement = document.getElementById('sim-svg');
+            const valDistance = document.getElementById('val-distance');
+            const valDisplacement = document.getElementById('val-displacement');
+            const valBearing = document.getElementById('val-bearing');
+            const btnAdd = document.getElementById('btn-add');
+            const btnRemove = document.getElementById('btn-remove');
+            const btnReset = document.getElementById('btn-reset');
+
+            // 狀態變數
+            let points = [];
+            let draggingIndex = -1;
+            const MAX_POINTS = 8;
+            const HIT_RADIUS = 35; // 加大觸控/點擊判定半徑，讓手機更好點擊
+
+            // 初始化
+            function init() {
+                resetPoints();
+                setupEventListeners();
+                render();
+            }
+
+            // 重置點位 (根據螢幕大小給予不同初始位置)
+            function resetPoints() {
+                const isMobile = window.innerWidth < 600;
+                if (isMobile) {
+                    points = [
+                        { id: 'start', x: 50, y: 200, label: '起點 A' },
+                        { id: 'mid-init', x: 150, y: 100, label: 'P1' },
+                        { id: 'end', x: 250, y: 200, label: '終點 B' }
+                    ];
+                } else {
+                    points = [
+                        { id: 'start', x: 100, y: 250, label: '起點 A' },
+                        { id: 'mid-init', x: 300, y: 100, label: 'P1' },
+                        { id: 'end', x: 500, y: 250, label: '終點 B' }
+                    ];
+                }
+            }
+
+            // 取得兩點距離
+            function getDistance(p1, p2) {
+                return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+            }
+
+            // 計算方位角
+            function calculateBearing() {
+                const startPoint = points[0];
+                const endPoint = points[points.length - 1];
+                const dx = endPoint.x - startPoint.x;
+                const dy = -(endPoint.y - startPoint.y); // SVG y軸向下，物理習慣y軸向上，故取負
+
+                if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) return "---";
+                if (Math.abs(dx) < 0.1) return dy > 0 ? "North (正北)" : "South (正南)";
+                if (Math.abs(dy) < 0.1) return dx > 0 ? "East (正東)" : "West (正西)";
+
+                const angleRad = Math.atan(Math.abs(dx / dy));
+                const angleDeg = angleRad * (180 / Math.PI);
+                const angleStr = angleDeg.toFixed(1) + "°";
+
+                const ns = dy > 0 ? "N" : "S";
+                const ew = dx > 0 ? "E" : "W";
+
+                return `${ns} ${angleStr} ${ew}`;
+            }
+
+            // 更新儀表板數值
+            function updateDashboard() {
+                let totalDist = 0;
+                for (let i = 1; i < points.length; i++) {
+                    totalDist += getDistance(points[i - 1], points[i]);
+                }
+
+                const startPoint = points[0];
+                const endPoint = points[points.length - 1];
+                const dispMag = getDistance(startPoint, endPoint);
+
+                valDistance.textContent = (totalDist / 10).toFixed(1);
+                valDisplacement.textContent = (dispMag / 10).toFixed(1);
+                
+                // 動態加上方位角羅盤小圖示
+                const bearingTxt = calculateBearing();
+                valBearing.innerHTML = bearingTxt !== "---" 
+                    ? `<svg class="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg> ${bearingTxt}`
+                    : `---`;
+
+                // 更新按鈕狀態
+                btnAdd.disabled = points.length >= MAX_POINTS;
+                btnRemove.disabled = points.length <= 2;
+                
+                if(points.length >= MAX_POINTS) btnAdd.classList.add('opacity-50');
+                else btnAdd.classList.remove('opacity-50');
+                
+                if(points.length <= 2) btnRemove.classList.add('opacity-50');
+                else btnRemove.classList.remove('opacity-50');
+            }
+
+            // 繪製 SVG 內容
+            function drawCanvas() {
+                let html = '';
+                const startPoint = points[0];
+                const endPoint = points[points.length - 1];
+
+                // 1. 距離軌跡 (藍色虛線)
+                if (points.length > 0) {
+                    const pathD = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
+                    html += `<path d="${pathD}" fill="none" stroke="#3b82f6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8,6" opacity="0.8" />`;
+                }
+
+                // 2. 位移向量 (紅色實線箭頭)
+                html += `<line x1="${startPoint.x}" y1="${startPoint.y}" x2="${endPoint.x}" y2="${endPoint.y}" stroke="#ef4444" stroke-width="5" marker-end="url(#arrow-red)" opacity="0.9" />`;
+
+                // 3. 輔助線 (拖曳終點時顯示十字參考線)
+                if (draggingIndex === points.length - 1) {
+                    html += `
+                        <g opacity="0.4" stroke-dasharray="5,5" stroke="#64748b" stroke-width="1.5">
+                            <line x1="${startPoint.x}" y1="0" x2="${startPoint.x}" y2="100%" />
+                            <line x1="0" y1="${startPoint.y}" x2="100%" y2="${startPoint.y}" />
+                            <rect x="${startPoint.x - 12}" y="10" width="24" height="24" rx="4" fill="white" stroke="none" opacity="0.8"/>
+                            <text x="${startPoint.x}" y="26" font-size="14" font-weight="bold" fill="#475569" text-anchor="middle">N</text>
+                        </g>
+                    `;
+                }
+
+                // 4. 所有路徑點
+                points.forEach((p, i) => {
+                    const isStartOrEnd = i === 0 || i === points.length - 1;
+                    // 起終點用藍色，中間節點用橘色
+                    const fillColor = isStartOrEnd ? '#3b82f6' : '#f97316';
+                    const radius = isStartOrEnd ? 8 : 6;
+                    const labelText = p.label || `P${i}`;
+                    
+                    // 正在拖曳的點稍微放大並加上陰影效果
+                    const isDraggingThis = draggingIndex === i;
+                    const displayRadius = isDraggingThis ? radius + 2 : radius;
+
+                    html += `
+                        <g style="cursor: ${isDraggingThis ? 'grabbing' : 'grab'};">
+                            <!-- 透明觸控/點擊區塊 (Hitbox) -->
+                            <circle cx="${p.x}" cy="${p.y}" r="${HIT_RADIUS}" fill="transparent"></circle>
+                            
+                            <!-- 實際可見的圓點 -->
+                            <circle cx="${p.x}" cy="${p.y}" r="${displayRadius}" fill="${fillColor}" stroke="#ffffff" stroke-width="2.5" style="filter: drop-shadow(0px ${isDraggingThis ? '4px 6px' : '2px 3px'} rgba(0,0,0,0.3)); transition: r 0.1s;"></circle>
+                            
+                            <!-- 文字標籤外框(白邊) 與 文字 -->
+                            <text x="${p.x}" y="${p.y - 18}" text-anchor="middle" fill="white" font-weight="bold" font-size="14" stroke="white" stroke-width="4" stroke-linejoin="round" style="pointer-events: none;">${labelText}</text>
+                            <text x="${p.x}" y="${p.y - 18}" text-anchor="middle" fill="#334155" font-weight="bold" font-size="14" style="pointer-events: none;">${labelText}</text>
+                        </g>
+                    `;
+                });
+
+                svgContent.innerHTML = html;
+            }
+
+            // 總渲染函數
+            function render() {
+                updateDashboard();
+                drawCanvas();
+            }
+
+            // 處理滑鼠/觸控座標
+            function getEventCoords(e) {
+                if (e.touches && e.touches.length > 0) {
+                    return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+                }
+                return { clientX: e.clientX, clientY: e.clientY };
+            }
+
+            // 設置事件監聽器
+            function setupEventListeners() {
+                // Pointer Down (統一處理 Mouse & Touch)
+                svgElement.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    const coords = getEventCoords(e);
+                    const rect = svgElement.getBoundingClientRect();
+                    const x = coords.clientX - rect.left;
+                    const y = coords.clientY - rect.top;
+
+                    // 逆向搜尋，確保重疊時點擊到最上層的點
+                    for (let i = points.length - 1; i >= 0; i--) {
+                        const p = points[i];
+                        if (getDistance({x, y}, p) <= HIT_RADIUS) {
+                            draggingIndex = i;
+                            render(); // 更新輔助線與游標狀態
+                            break;
+                        }
+                    }
+                });
+
+                // Pointer Move
+                window.addEventListener('pointermove', (e) => {
+                    if (draggingIndex === -1) return;
+                    e.preventDefault();
+                    
+                    const coords = getEventCoords(e);
+                    const rect = svgElement.getBoundingClientRect();
+                    let x = coords.clientX - rect.left;
+                    let y = coords.clientY - rect.top;
+
+                    // 限制範圍在畫布內 (padding: 20px)
+                    const padding = 20;
+                    x = Math.max(padding, Math.min(x, rect.width - padding));
+                    y = Math.max(padding, Math.min(y, rect.height - padding));
+
+                    points[draggingIndex].x = x;
+                    points[draggingIndex].y = y;
+                    render();
+                }, { passive: false });
+
+                // Pointer Up / Cancel
+                const endDrag = () => {
+                    if (draggingIndex !== -1) {
+                        draggingIndex = -1;
+                        render();
+                    }
+                };
+                window.addEventListener('pointerup', endDrag);
+                window.addEventListener('pointercancel', endDrag);
+
+                // 按鈕事件：增加點
+                btnAdd.addEventListener('click', () => {
+                    if (points.length >= MAX_POINTS) return;
+                    const lastIndex = points.length - 1;
+                    const p1 = points[lastIndex - 1];
+                    const p2 = points[lastIndex];
+
+                    const newPoint = {
+                        id: `mid-${Date.now()}`,
+                        x: (p1.x + p2.x) / 2,
+                        y: (p1.y + p2.y) / 2 + 40, // 新增點稍微往下移，避免完全重疊
+                        label: `P${points.length - 1}`
+                    };
+
+                    points.splice(lastIndex, 0, newPoint);
+                    render();
+                });
+
+                // 按鈕事件：減少點
+                btnRemove.addEventListener('click', () => {
+                    if (points.length <= 2) return;
+                    points.splice(points.length - 2, 1);
+                    render();
+                });
+
+                // 按鈕事件：重置
+                btnReset.addEventListener('click', () => {
+                    resetPoints();
+                    render();
+                });
+
+                // 視窗縮放時，確保點位不會跑出畫布外
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        const rect = svgElement.getBoundingClientRect();
+                        let needsRender = false;
+                        points.forEach(p => {
+                            if (p.x > rect.width || p.y > rect.height) {
+                                p.x = Math.min(p.x, rect.width - 20);
+                                p.y = Math.min(p.y, rect.height - 20);
+                                needsRender = true;
+                            }
+                        });
+                        if(needsRender) render();
+                    }, 200);
+                });
+            }
+
+            // 執行初始化
+            init();
+        })();
+    </script>
+</body>
+</html>

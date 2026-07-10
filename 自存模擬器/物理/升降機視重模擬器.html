@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DSE Physics - Apparent Weight in a Lift</title>
+
+    
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax for Physics Formulas (Removed polyfill.io for security reasons) -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        /* Custom Styles for iOS style sliders and toggles */
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%;
+            background: #ffffff; cursor: pointer; margin-top: -8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2); border: 1px solid #e5e7eb;
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active { transform: scale(1.1); }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 8px; cursor: pointer; background: #e5e7eb;
+            border-radius: 9999px;
+        }
+        input[type=range]:focus { outline: none; }
+        
+        .toggle-radio:checked + label {
+            background-color: #3b82f6; color: white; border-color: #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+        }
+        
+        .math-box { min-height: 120px; } /* Prevent layout shift during MathJax render */
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+    <!-- Responsive Main Wrapper: Allows native scrolling, stacks on mobile, side-by-side on PC -->
+    <div class="w-full max-w-7xl mx-auto flex flex-col md:flex-row bg-white shadow-sm md:shadow-2xl md:rounded-3xl md:my-6 lg:my-10 overflow-hidden">
+        
+        <!-- Left Panel: SVG Visualization -->
+        <!-- Mobile: 50vh height. PC: Flex-1 to fill available space -->
+        <div class="w-full md:w-3/5 lg:w-2/3 h-[50vh] md:h-auto min-h-[400px] md:min-h-[600px] bg-slate-100 relative overflow-hidden flex items-center justify-center border-b md:border-b-0 md:border-r border-slate-200" id="canvas-container">
+            <!-- Language Toggle Button -->
+            <button id="lang-btn" class="absolute top-4 right-4 bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow hover:bg-white transition text-sm font-bold text-slate-700 z-10">
+                EN / 中文
+            </button>
+            
+            <svg id="sim-svg" viewBox="0 0 800 600" class="w-full h-full p-2 md:p-4 drop-shadow-lg">
+                <defs>
+                    <!-- Background Grid -->
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="translate(0, 0)">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+                    </pattern>
+                    <!-- Arrow Heads definition (to prevent piercing) -->
+                    <polygon id="arrow-head-up" points="-6,10 0,0 6,10" />
+                    <polygon id="arrow-head-down" points="-6,-10 0,0 6,-10" />
+                </defs>
+
+                <!-- Grid -->
+                <rect width="100%" height="100%" fill="url(#grid)" />
+
+                <!-- Left section: The Lift -->
+                <g id="lift-group" transform="translate(250, 300)">
+                    <!-- Lift Box -->
+                    <rect x="-100" y="-140" width="200" height="280" rx="8" fill="#f8fafc" stroke="#475569" stroke-width="6"/>
+                    <line x1="-100" y1="130" x2="100" y2="130" stroke="#94a3b8" stroke-width="8"/> <!-- Floor -->
+                    <line id="lift-cable" x1="0" y1="-140" x2="0" y2="-400" stroke="#64748b" stroke-width="4" stroke-dasharray="8,4"/> <!-- Cable -->
+                    
+                    <!-- Person -->
+                    <g id="person" stroke="#334155" stroke-width="4" fill="none" stroke-linecap="round">
+                        <circle cx="0" cy="-60" r="20" fill="#f1f5f9"/> <!-- Head -->
+                        <line x1="0" y1="-40" x2="0" y2="40" /> <!-- Body -->
+                        <line x1="0" y1="-20" x2="-25" y2="10" /> <!-- Left Arm -->
+                        <line x1="0" y1="-20" x2="25" y2="10" /> <!-- Right Arm -->
+                        <line x1="0" y1="40" x2="-20" y2="125" /> <!-- Left Leg -->
+                        <line x1="0" y1="40" x2="20" y2="125" /> <!-- Right Leg -->
+                    </g>
+
+                    <!-- Velocity Vector (v) -->
+                    <g id="vec-v" transform="translate(-130, 0)" stroke="#10b981" fill="#10b981">
+                        <line x1="0" y1="0" x2="0" y2="-60" stroke-width="4" stroke-linecap="round"/>
+                        <use href="#arrow-head-up" x="0" y="-60" />
+                        <text x="-25" y="-30" font-family="Times New Roman" font-style="italic" font-size="24" stroke="none">v</text>
+                    </g>
+
+                    <!-- Acceleration Vector (a) -->
+                    <g id="vec-a" transform="translate(130, 0)" stroke="#f59e0b" fill="#f59e0b">
+                        <line x1="0" y1="0" x2="0" y2="-60" stroke-width="4" stroke-linecap="round"/>
+                        <use href="#arrow-head-up" x="0" y="-60" />
+                        <text x="15" y="-30" font-family="Times New Roman" font-style="italic" font-size="24" stroke="none">a</text>
+                    </g>
+                </g>
+
+                <!-- Right section: Free Body Diagram (FBD) -->
+                <g id="fbd-group" transform="translate(600, 300)">
+                    <rect x="-120" y="-200" width="240" height="400" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" class="shadow-sm"/>
+                    <text x="0" y="-160" text-anchor="middle" font-weight="bold" font-size="20" fill="#475569" id="fbd-title">Free Body Diagram</text>
+                    
+                    <!-- FBD Dot -->
+                    <circle cx="0" cy="0" r="8" fill="#0f172a"/>
+
+                    <!-- Reaction Force (R) -->
+                    <g id="vec-R" stroke="#ef4444" fill="#ef4444">
+                        <line x1="0" y1="-8" x2="0" y2="-100" stroke-width="5" stroke-linecap="round"/>
+                        <use href="#arrow-head-up" x="0" y="-100" />
+                        <text x="15" y="-60" font-family="Times New Roman" font-style="italic" font-size="24" stroke="none">R</text>
+                    </g>
+
+                    <!-- Weight (W) -->
+                    <g id="vec-W" stroke="#3b82f6" fill="#3b82f6">
+                        <line x1="0" y1="8" x2="0" y2="100" stroke-width="5" stroke-linecap="round"/>
+                        <use href="#arrow-head-down" x="0" y="100" />
+                        <text x="15" y="60" font-family="Times New Roman" font-style="italic" font-size="24" stroke="none">W</text>
+                    </g>
+                </g>
+            </svg>
+        </div>
+
+        <!-- Right Panel: Controls -->
+        <!-- Removed fixed heights and overflow-y-auto so the page scrolls naturally -->
+        <div class="w-full md:w-2/5 lg:w-1/3 p-5 md:p-6 lg:p-8 flex flex-col gap-6 bg-white">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight" id="ui-title">升降機視重模擬器</h1>
+                <p class="text-sm md:text-base text-slate-500 mt-1" id="ui-subtitle">DSE 物理力學核心概念</p>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="space-y-6 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <!-- Mass Slider -->
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="font-semibold text-slate-700 text-sm" id="lbl-mass">質量 / Mass (<span class="italic font-serif">m</span>)</label>
+                        <span class="font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded text-sm"><span id="val-mass">50</span> kg</span>
+                    </div>
+                    <input type="range" id="slider-mass" min="30" max="100" value="50" step="1">
+                </div>
+
+                <!-- Acceleration Slider -->
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="font-semibold text-slate-700 text-sm" id="lbl-accel">加速度 / Accel. (<span class="italic font-serif">a</span>)</label>
+                        <span class="font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded text-sm"><span id="val-accel">2.0</span> m/s²</span>
+                    </div>
+                    <input type="range" id="slider-accel" min="0" max="15" value="2.0" step="0.1">
+                </div>
+
+                <!-- Motion Toggles -->
+                <div class="space-y-3">
+                    <label class="font-semibold text-slate-700 text-sm" id="lbl-motion">運動狀態 / State of Motion</label>
+                    
+                    <!-- Direction -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <input type="radio" name="dir" id="dir-up" value="1" class="hidden toggle-radio" checked>
+                            <label for="dir-up" class="block text-center py-2 px-1 border border-slate-300 rounded-lg cursor-pointer text-sm font-medium text-slate-600 transition hover:bg-slate-100" id="btn-up">⬆️ 向上</label>
+                        </div>
+                        <div>
+                            <input type="radio" name="dir" id="dir-stop" value="0" class="hidden toggle-radio">
+                            <label for="dir-stop" class="block text-center py-2 px-1 border border-slate-300 rounded-lg cursor-pointer text-sm font-medium text-slate-600 transition hover:bg-slate-100" id="btn-stop">⏸️ 靜止</label>
+                        </div>
+                        <div>
+                            <input type="radio" name="dir" id="dir-down" value="-1" class="hidden toggle-radio">
+                            <label for="dir-down" class="block text-center py-2 px-1 border border-slate-300 rounded-lg cursor-pointer text-sm font-medium text-slate-600 transition hover:bg-slate-100" id="btn-down">⬇️ 向下</label>
+                        </div>
+                    </div>
+
+                    <!-- Speed Change -->
+                    <div id="speed-controls" class="grid grid-cols-3 gap-2 transition-opacity duration-200">
+                        <div>
+                            <input type="radio" name="speed" id="speed-up" value="1" class="hidden toggle-radio" checked>
+                            <label for="speed-up" class="block text-center py-2 px-1 border border-slate-300 rounded-lg cursor-pointer text-xs font-medium text-slate-600 transition hover:bg-slate-100" id="btn-speedup">🚀 加速</label>
+                        </div>
+                        <div>
+                            <input type="radio" name="speed" id="speed-const" value="0" class="hidden toggle-radio">
+                            <label for="speed-const" class="block text-center py-2 px-1 border border-slate-300 rounded-lg cursor-pointer text-xs font-medium text-slate-600 transition hover:bg-slate-100" id="btn-const">➡️ 勻速</label>
+                        </div>
+                        <div>
+                            <input type="radio" name="speed" id="speed-down" value="-1" class="hidden toggle-radio">
+                            <label for="speed-down" class="block text-center py-2 px-1 border border-slate-300 rounded-lg cursor-pointer text-xs font-medium text-slate-600 transition hover:bg-slate-100" id="btn-speeddown">🐢 減速</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculation Box -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 relative math-box shadow-inner">
+                <div class="absolute -top-3 left-4 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm" id="lbl-calc">實時計算 / Calculation</div>
+                <div id="math-content" class="text-indigo-900 mt-2 text-sm lg:text-base leading-relaxed overflow-x-auto overflow-y-hidden">
+                    <!-- MathJax content will be injected here -->
+                </div>
+            </div>
+
+            <!-- Teacher's Tip -->
+            <div class="mt-auto bg-amber-50 border-l-4 border-amber-400 p-3 rounded-r-lg">
+                <p class="text-xs font-bold text-amber-800 flex items-center gap-1 mb-1">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+                    <span id="tip-title">Teacher's Tip (DSE 伏位)</span>
+                </p>
+                <p class="text-xs text-amber-700" id="tip-content">
+                    注意！視重 ($R$) 只與「加速度方向」有關，與「移動方向」無關！「向上減速」等同於「向下加速」，兩者皆會處於失重狀態 ($R < mg$)。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. State Management ---
+        const state = {
+            lang: 'zh',
+            mass: 50,
+            accelMag: 2.0,
+            velDir: 1,      // 1: Up, -1: Down
+            speedState: 1,  // 1: Speeding up, 0: Constant, -1: Slowing down
+            g: 9.81
+        };
+
+        // --- 2. i18n Dictionary ---
+        const dict = {
+            zh: {
+                title: "升降機視重模擬器",
+                subtitle: "DSE 物理力學核心概念",
+                fbdTitle: "隔離體圖 (Free Body Diagram)",
+                mass: "質量 (<span class='italic font-serif'>m</span>)",
+                accel: "加速度 (<span class='italic font-serif'>a</span>)",
+                motion: "運動狀態",
+                btnUp: "⬆️ 向上",
+                btnStop: "⏸️ 靜止",
+                btnDown: "⬇️ 向下",
+                btnSpeedUp: "🚀 加速",
+                btnConst: "➡️ 勻速",
+                btnSpeedDown: "🐢 減速",
+                calc: "實時計算",
+                tipTitle: "Teacher's Tip (DSE 伏位)",
+                tipContent: "注意！視重 (\\(R\\)) 只與「加速度方向」有關，與「移動方向」無關！「向上減速」等同於「向下加速」，兩者皆會處於失重狀態 (\\(R < mg\\))。",
+                stateOver: "超重 (Apparent Weight > True Weight)",
+                stateUnder: "失重 (Apparent Weight < True Weight)",
+                stateNormal: "視重 = 真實重量",
+                accelDirUp: "加速度方向：向上 (+)",
+                accelDirDown: "加速度方向：向下 (-)",
+                accelDirZero: "加速度：零 (0)"
+            },
+            en: {
+                title: "Apparent Weight Simulator",
+                subtitle: "HKDSE Physics Mechanics Core Concept",
+                fbdTitle: "Free Body Diagram (FBD)",
+                mass: "Mass (<span class='italic font-serif'>m</span>)",
+                accel: "Acceleration (<span class='italic font-serif'>a</span>)",
+                motion: "State of Motion",
+                btnUp: "⬆️ Up",
+                btnStop: "⏸️ Stationary",
+                btnDown: "⬇️ Down",
+                btnSpeedUp: "🚀 Speeding Up",
+                btnConst: "➡️ Constant Vel.",
+                btnSpeedDown: "🐢 Slowing Down",
+                calc: "Live Calculation",
+                tipTitle: "Teacher's Tip (DSE Trap)",
+                tipContent: "Beware! Apparent weight (\\(R\\)) depends ONLY on the direction of acceleration, NOT velocity! 'Moving up & slowing down' implies downward acceleration, resulting in weightlessness (\\(R < mg\\)).",
+                stateOver: "Heavier (Apparent Weight > True Weight)",
+                stateUnder: "Lighter (Apparent Weight < True Weight)",
+                stateNormal: "Apparent Weight = True Weight",
+                accelDirUp: "Accel. Direction: Upwards (+)",
+                accelDirDown: "Accel. Direction: Downwards (-)",
+                accelDirZero: "Acceleration: Zero (0)"
+            }
+        };
+
+        // --- 3. DOM Elements ---
+        const els = {
+            langBtn: document.getElementById('lang-btn'),
+            sliderMass: document.getElementById('slider-mass'),
+            sliderAccel: document.getElementById('slider-accel'),
+            valMass: document.getElementById('val-mass'),
+            valAccel: document.getElementById('val-accel'),
+            radiosDir: document.getElementsByName('dir'),
+            radiosSpeed: document.getElementsByName('speed'),
+            mathContent: document.getElementById('math-content'),
+            
+            // SVG Vectors
+            vecV: document.getElementById('vec-v'),
+            vecA: document.getElementById('vec-a'),
+            vecR: document.getElementById('vec-R'),
+            vecW: document.getElementById('vec-W')
+        };
+
+        // --- 4. Core Logic & Physics ---
+        function updatePhysics() {
+            let a_dir = 0;
+            let activeAccel = 0;
+            const speedControls = document.getElementById('speed-controls');
+
+            if (state.velDir === 0) {
+                // Stationary: override speed change and accel
+                activeAccel = 0;
+                a_dir = 0;
+                els.radiosSpeed.forEach(r => r.disabled = true);
+                speedControls.style.opacity = '0.5';
+                els.sliderAccel.disabled = true;
+                els.sliderAccel.parentElement.style.opacity = '0.5';
+            } else {
+                // Moving
+                els.radiosSpeed.forEach(r => r.disabled = false);
+                speedControls.style.opacity = '1';
+
+                if (state.speedState !== 0) {
+                    a_dir = state.velDir * state.speedState;
+                }
+                
+                activeAccel = (state.speedState === 0) ? 0 : state.accelMag;
+                els.sliderAccel.disabled = (state.speedState === 0);
+                els.sliderAccel.parentElement.style.opacity = (state.speedState === 0) ? '0.5' : '1';
+            }
+
+            // Calculate Forces
+            const W = state.mass * state.g;
+            // Net Force F = ma.  Taking UP as positive: R - mg = m * (a_dir * a)  => R = m(g + a_dir * a)
+            const R = state.mass * (state.g + (a_dir * activeAccel));
+
+            renderSVG(W, R, activeAccel, a_dir);
+            renderMath(W, R, activeAccel, a_dir);
+        }
+
+        // --- 5. SVG Rendering ---
+        function renderSVG(W, R, activeAccel, a_dir) {
+            // Scaling factors for visuals
+            const forceScale = 0.15; // px per Newton
+            const accelScale = 6;    // px per m/s^2
+            const minArrowLen = 20;
+
+            // Update Velocity Vector (Green)
+            if (state.velDir === 0) {
+                els.vecV.style.opacity = '0';
+            } else {
+                els.vecV.style.opacity = '1';
+                const vLen = 60; 
+                updateArrowPath(els.vecV, state.velDir, vLen, 'v');
+            }
+
+            // Update Acceleration Vector (Orange)
+            if (activeAccel === 0) {
+                els.vecA.style.opacity = '0';
+            } else {
+                els.vecA.style.opacity = '1';
+                const aLen = Math.max(minArrowLen, activeAccel * accelScale);
+                updateArrowPath(els.vecA, a_dir, aLen, 'a');
+            }
+
+            // Update FBD Weight (W) - Always Down
+            const wLen = W * forceScale;
+            updateArrowPath(els.vecW, -1, wLen, 'W', true);
+
+            // Update FBD Reaction Force (R) - Always Up
+            const rLen = R * forceScale;
+            updateArrowPath(els.vecR, 1, rLen, 'R', true);
+        }
+
+        function updateArrowPath(groupElement, directionSign, length, labelStr, isFBD = false) {
+            const line = groupElement.querySelector('line');
+            const use = groupElement.querySelector('use');
+            const text = groupElement.querySelector('text');
+            
+            // Base offset so it doesn't overlap the dot in FBD
+            const offset = isFBD ? 8 : 0;
+            const endY = (offset + length) * (directionSign > 0 ? -1 : 1);
+            const startY = offset * (directionSign > 0 ? -1 : 1);
+
+            line.setAttribute('y1', startY);
+            line.setAttribute('y2', endY);
+
+            // Position arrowhead at the end
+            use.setAttribute('y', endY);
+            use.setAttribute('href', directionSign > 0 ? '#arrow-head-up' : '#arrow-head-down');
+
+            // Position text label gracefully
+            text.setAttribute('y', endY + (directionSign > 0 ? 15 : -15));
+        }
+
+        // --- 6. MathJax & UI Rendering ---
+        function renderMath(W, R, activeAccel, a_dir) {
+            const t = dict[state.lang];
+            let mathHTML = ``;
+            let eq1, eq2, stateText, aText;
+
+            const R_formatted = R.toFixed(1);
+            const W_formatted = W.toFixed(1);
+
+            if (a_dir > 0) {
+                aText = t.accelDirUp;
+                eq1 = `R - mg = ma`;
+                eq2 = `R = ${state.mass}(${state.g} + ${activeAccel.toFixed(1)}) = \\mathbf{${R_formatted} \\text{ N}}`;
+                stateText = `<span class="text-red-600 font-bold">${t.stateOver}</span>`;
+            } else if (a_dir < 0) {
+                aText = t.accelDirDown;
+                eq1 = `mg - R = ma`;
+                eq2 = `R = ${state.mass}(${state.g} - ${activeAccel.toFixed(1)}) = \\mathbf{${R_formatted} \\text{ N}}`;
+                stateText = `<span class="text-blue-600 font-bold">${t.stateUnder}</span>`;
+            } else {
+                aText = t.accelDirZero;
+                eq1 = `a = 0 \\implies R = mg`;
+                eq2 = `R = ${state.mass}(${state.g}) = \\mathbf{${R_formatted} \\text{ N}}`;
+                stateText = `<span class="text-green-600 font-bold">${t.stateNormal}</span>`;
+            }
+
+            mathHTML = `
+                <div class="mb-1 font-semibold border-b border-indigo-200 pb-1">${aText}</div>
+                <div class="mb-2">\\( W = mg = ${state.mass}(${state.g}) = ${W_formatted} \\text{ N} \\)</div>
+                <div class="mb-2">\\( ${eq1} \\)</div>
+                <div class="mb-2 text-lg">\\( ${eq2} \\)</div>
+                <div class="mt-2 pt-2 border-t border-indigo-200">${stateText}</div>
+            `;
+
+            els.mathContent.innerHTML = mathHTML;
+            
+            // Trigger MathJax re-render
+            if (window.MathJax) {
+                MathJax.typesetPromise([els.mathContent]).catch((err) => console.log('MathJax error:', err));
+            }
+        }
+
+        // --- 7. Internationalization (i18n) ---
+        function updateLanguage() {
+            const t = dict[state.lang];
+            document.getElementById('ui-title').innerHTML = t.title;
+            document.getElementById('ui-subtitle').innerHTML = t.subtitle;
+            document.getElementById('fbd-title').innerHTML = t.fbdTitle;
+            document.getElementById('lbl-mass').innerHTML = t.mass;
+            document.getElementById('lbl-accel').innerHTML = t.accel;
+            document.getElementById('lbl-motion').innerHTML = t.motion;
+            
+            document.getElementById('btn-up').innerHTML = t.btnUp;
+            document.getElementById('btn-stop').innerHTML = t.btnStop;
+            document.getElementById('btn-down').innerHTML = t.btnDown;
+            document.getElementById('btn-speedup').innerHTML = t.btnSpeedUp;
+            document.getElementById('btn-const').innerHTML = t.btnConst;
+            document.getElementById('btn-speeddown').innerHTML = t.btnSpeedDown;
+            
+            document.getElementById('lbl-calc').innerHTML = t.calc;
+            document.getElementById('tip-title').innerHTML = t.tipTitle;
+            
+            // Re-render MathJax explicitly to translate physics text
+            if (window.MathJax) {
+                MathJax.typesetPromise([document.getElementById('tip-content')]).then(() => {
+                     document.getElementById('tip-content').innerHTML = t.tipContent;
+                     MathJax.typesetPromise([document.getElementById('tip-content')]);
+                });
+            } else {
+                document.getElementById('tip-content').innerHTML = t.tipContent;
+            }
+
+            updatePhysics();
+        }
+
+        // --- 8. Event Listeners ---
+        els.sliderMass.addEventListener('input', (e) => {
+            state.mass = parseFloat(e.target.value);
+            els.valMass.innerText = state.mass;
+            updatePhysics();
+        });
+
+        els.sliderAccel.addEventListener('input', (e) => {
+            state.accelMag = parseFloat(e.target.value);
+            els.valAccel.innerText = state.accelMag.toFixed(1);
+            updatePhysics();
+        });
+
+        els.radiosDir.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                state.velDir = parseInt(e.target.value);
+                updatePhysics();
+            });
+        });
+
+        els.radiosSpeed.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                state.speedState = parseInt(e.target.value);
+                updatePhysics();
+            });
+        });
+
+        els.langBtn.addEventListener('click', () => {
+            state.lang = state.lang === 'zh' ? 'en' : 'zh';
+            updateLanguage();
+        });
+
+        // --- 9. Animation Loop ---
+        let animOffset = 0;
+        let currentVisualV = 0;
+        
+        function animateLoop() {
+            // Target visual velocity depends on lift direction
+            let targetV = 0;
+            if (state.velDir === 1) targetV = 6; // Lift goes up -> background goes down
+            else if (state.velDir === -1) targetV = -6; // Lift goes down -> background goes up
+            
+            // Smooth transition for visual velocity
+            currentVisualV += (targetV - currentVisualV) * 0.1;
+            animOffset += currentVisualV;
+            
+            // Move Grid (Creates the illusion of moving past wall joints)
+            const grid = document.getElementById('grid');
+            if(grid) grid.setAttribute('patternTransform', `translate(0, ${animOffset % 40})`);
+            
+            // Move Cable (Animates dashed line to simulate cable pulling/releasing)
+            const cable = document.getElementById('lift-cable');
+            if(cable) cable.setAttribute('stroke-dashoffset', -animOffset);
+            
+            requestAnimationFrame(animateLoop);
+        }
+
+        // Initialize
+        window.onload = () => {
+            updateLanguage();
+            // Fallback render if MathJax loaded late
+            setTimeout(updatePhysics, 500); 
+            requestAnimationFrame(animateLoop);
+        };
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>互動電路實驗室 | HKDSE Physics Circuit Lab</title>
+    <!-- Google Tag -->
+
+    
+    <!-- Tone.js for Audio Synthesis -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { 
+                extend: { 
+                    colors: { dse: '#0055A4', darkbg: '#0f172a' } 
+                } 
+            }
+        }
+    </script>
+    <style>
+        body { overscroll-behavior: none; user-select: none; }
+        canvas { touch-action: none; cursor: crosshair; }
+        .tool-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .tool-btn.active { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.1); box-shadow: inset 0 0 0 1px #3b82f6; }
+        .dark .tool-btn.active { border-color: #60a5fa; background-color: rgba(96, 165, 250, 0.2); box-shadow: inset 0 0 0 1px #60a5fa;}
+        
+        /* Custom Scrollbar for tools */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        
+        @keyframes flash-border {
+            0% { border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); }
+            50% { border-color: #facc15; box-shadow: 0 0 30px rgba(250, 204, 21, 1); }
+            100% { border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); }
+        }
+        .warning-flash { animation: flash-border 0.5s infinite; }
+
+        /* Draggable panel active state */
+        .dragging-panel { opacity: 0.9; transform: scale(1.02); cursor: grabbing !important; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-darkbg dark:text-gray-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-300">
+
+    <!-- Header -->
+    <header class="h-14 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 md:px-6 z-30 shrink-0 relative">
+        <div class="flex items-center gap-2 md:gap-4">
+            <h1 id="title" class="text-base md:text-xl font-extrabold text-dse dark:text-blue-400 tracking-tight">互動電路實驗室</h1>
+            
+            <!-- Gear Button to toggle Panel -->
+            <button onclick="togglePanel('infoPanel')" class="text-gray-400 hover:text-dse dark:hover:text-white transition-colors p-1.5 bg-gray-100 dark:bg-gray-700/50 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 shadow-sm" title="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transform hover:rotate-90 transition-transform duration-300"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+        </div>
+        
+        <!-- Short Circuit Warning Banner -->
+        <div id="warning-banner" class="hidden absolute left-1/2 transform -translate-x-1/2 top-[12px] bg-red-600 text-white px-4 md:px-6 py-1.5 rounded-full text-xs md:text-sm font-bold z-50 border-2 warning-flash pointer-events-none whitespace-nowrap shadow-lg">
+            ⚠️ 警告：偵測到短路！請立即斷開電路！
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-4">
+            <!-- Undo Button -->
+            <button onclick="performUndo()" class="flex items-center gap-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white px-2.5 py-1 md:px-3 md:py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs md:text-sm font-bold transition-all shadow-sm active:scale-95 opacity-50 cursor-not-allowed" id="btn-undo" disabled title="Undo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>
+                <span id="lbl-undo">復原</span>
+            </button>
+            
+            <button onclick="resetCircuit()" class="text-red-500 hover:text-white px-2.5 py-1 md:px-4 md:py-1.5 rounded-full border border-red-500 hover:bg-red-500 text-xs md:text-sm font-bold transition-all shadow-sm active:scale-95" id="btn-reset">清除</button>
+            
+            <!-- Lang Switch -->
+            <button onclick="toggleLang()" class="flex items-center w-14 h-7 bg-gray-200 dark:bg-gray-700 rounded-full p-1 relative transition-colors duration-300 shadow-inner focus:outline-none" title="Language Switch">
+                <div id="lang-indicator" class="w-5 h-5 bg-white dark:bg-gray-300 text-gray-800 rounded-full shadow-md flex items-center justify-center text-[10px] font-extrabold absolute transition-transform duration-300 transform">中</div>
+            </button>
+
+            <!-- Theme Switch -->
+            <button onclick="toggleTheme()" class="p-1.5 md:p-2 rounded-full text-amber-500 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-gray-700 transition-colors focus:outline-none active:scale-95" title="Toggle Light/Dark Theme">
+                <svg name="sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex flex-1 overflow-hidden relative">
+        
+        <!-- Tools Palette -->
+        <aside class="w-[72px] sm:w-20 md:w-24 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-r border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-1.5 md:gap-2 overflow-y-auto overflow-x-hidden shrink-0 z-20 shadow-[4px_0_15px_rgba(0,0,0,0.03)] touch-pan-y">
+            <div class="text-[10px] md:text-xs font-bold text-gray-400 dark:text-gray-500 mb-1" id="lbl-tools">工具</div>
+            
+            <button class="tool-btn active w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 flex flex-col items-center justify-center border-2 border-transparent rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700/50" data-tool="select">
+                <svg class="w-5 h-5 md:w-6 md:h-6 mb-1 text-gray-700 dark:text-gray-300 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                <span class="text-[10px] md:text-xs text-center font-medium dark:text-gray-300" id="lbl-select">選取</span>
+            </button>
+            <div class="w-10 md:w-12 border-b border-gray-200 dark:border-gray-700 my-1 md:my-2"></div>
+            
+            <div id="components-palette" class="flex flex-col gap-1.5 md:gap-2 w-full items-center"></div>
+        </aside>
+
+        <!-- Canvas Area -->
+        <div class="flex-1 relative bg-slate-100 dark:bg-[#0b1120] overflow-hidden" id="canvas-container">
+            <canvas id="circuitCanvas" class="absolute top-0 left-0 outline-none"></canvas>
+            
+            <!-- Help Overlay -->
+            <div class="absolute bottom-4 left-4 md:bottom-6 md:left-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md px-4 py-3 rounded-2xl shadow-lg pointer-events-none border border-gray-200 dark:border-gray-700 flex flex-col gap-1.5 z-10 max-w-[85%] md:max-w-md">
+                <p class="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2" id="lbl-instruction">
+                    <span class="text-lg">👉</span> 選擇元件後，在畫布上拖曳連接。
+                </p>
+                <p class="text-[11px] md:text-xs text-blue-600 dark:text-blue-400 font-medium leading-tight" id="lbl-hint">
+                    🔔 提示：接駁蜂鳴器時請開啟喇叭，電壓愈高音調愈高。小心短路起火！
+                </p>
+            </div>
+        </div>
+
+        <!-- Right Properties Panel (Collapsible & Draggable) -->
+        <aside id="infoPanel" class="hidden absolute right-2 top-2 sm:right-4 sm:top-4 w-56 sm:w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/60 dark:border-gray-700/60 flex flex-col z-40 overflow-hidden max-h-[80vh] transition-[opacity,height] duration-300">
+            <!-- Panel Header (Drag Handle) -->
+            <div id="panel-header" class="p-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50 cursor-move touch-none active:bg-gray-100 dark:active:bg-gray-700" title="拖曳移動視窗 (Drag to move)">
+                <h3 class="font-bold text-gray-800 dark:text-gray-100 pointer-events-none flex items-center gap-2" id="panel-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                    元件屬性
+                </h3>
+                <button onclick="togglePanelContent(event)" id="btn-collapse" class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500 dark:text-gray-400 active:scale-95 z-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+            </div>
+            
+            <div id="panel-content" class="p-4 flex flex-col gap-4 text-sm overflow-y-auto bg-white/95 dark:bg-gray-800/95">
+                <div id="no-selection-msg" class="text-gray-400 dark:text-gray-500 italic text-center py-6 text-xs md:text-sm">
+                    請選取一個元件。
+                </div>
+                
+                <div id="prop-container" class="hidden flex flex-col gap-3.5">
+                    <div class="flex justify-between items-center bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                        <span class="font-bold text-gray-600 dark:text-gray-300 text-xs" id="prop-type-lbl">類型:</span>
+                        <span id="prop-type" class="text-blue-700 dark:text-blue-300 font-extrabold"></span>
+                    </div>
+                    
+                    <div id="prop-val-section" class="flex flex-col gap-1.5">
+                        <label class="font-bold text-gray-600 dark:text-gray-300 flex justify-between px-1">
+                            <span id="prop-val-lbl">數值:</span>
+                            <span id="prop-val-display" class="font-mono text-blue-600 dark:text-blue-400"></span>
+                        </label>
+                        <select id="prop-val-select" class="w-full p-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"></select>
+                        <input type="range" id="prop-val-slider" class="w-full hidden mt-2 accent-blue-600">
+                    </div>
+
+                    <div id="prop-action-section" class="flex flex-col gap-2 mt-1"></div>
+
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-3.5 mt-1 flex flex-col gap-2 px-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500 dark:text-gray-400 text-xs font-bold" id="prop-i-lbl">電流 (I):</span>
+                            <span id="prop-i-val" class="font-mono font-bold text-gray-800 dark:text-gray-200">0.00 A</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500 dark:text-gray-400 text-xs font-bold" id="prop-v-lbl">電壓 (V):</span>
+                            <span id="prop-v-val" class="font-mono font-bold text-gray-800 dark:text-gray-200">0.00 V</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-gray-100 dark:bg-gray-800 -mx-1 px-2 py-1 rounded">
+                            <span class="text-gray-500 dark:text-gray-400 text-xs font-bold" id="prop-p-lbl">功率 (P):</span>
+                            <span id="prop-p-val" class="font-mono font-bold text-green-600 dark:text-green-400">0.00 W</span>
+                        </div>
+                    </div>
+
+                    <button id="btn-delete" class="mt-2 w-full py-2.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 border border-red-200 dark:border-red-900/50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <span id="lbl-delete">刪除元件</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+<script>
+/* ==========================================================================
+   Language & Localization
+   ========================================================================== */
+const I18N = {
+    zh: {
+        title: '互動電路實驗室', tools: '組件', select: '選取', reset: '清除', undo: '復原',
+        inst: '選擇元件後，在畫布上拖曳連接。',
+        hint: '🔔 提示：接駁蜂鳴器時請開啟喇叭，電壓愈高音調愈高。小心短路起火！',
+        warn_short: '⚠️ 警告：偵測到短路 (Short Circuit)！請立即斷開電路！',
+        warn_fire: '🔥 嚴重短路：電線已起火燃燒！',
+        del: '刪除元件', no_sel: '請使用「選取」工具點擊一個元件。',
+        type: '類型:', val: '數值:', current: '電流 (I):', voltage: '電壓 (V):', power: '功率 (P):',
+        comps: {
+            wire: '電線', battery: '電池', resistor: '固定電阻', variable: '可變電阻',
+            bulb: '燈泡', switch: '開關', ammeter: '安培計', voltmeter: '伏特計',
+            fuse: '保險絲', fan: '風扇', buzzer: '蜂鳴器'
+        },
+        actions: { toggle_sw: '開 / 關', reset_fuse: '重置保險絲' },
+        units: { battery: 'V', resistor: 'Ω', variable: 'Ω', fuse: 'A' },
+        broken: '已燒斷', open: '斷開', closed: '閉合'
+    },
+    en: {
+        title: 'DC Circuit Lab', tools: 'Parts', select: 'Select', reset: 'Clear', undo: 'Undo',
+        inst: 'Select a tool, drag on grid to connect.',
+        hint: '🔔 Hint: Turn on speakers for the buzzer. Avoid short circuits!',
+        warn_short: '⚠️ WARNING: Short Circuit Detected! Disconnect immediately!',
+        warn_fire: '🔥 CRITICAL: Short circuit caused a fire!',
+        del: 'Delete Component', no_sel: 'Select a component using the Select tool.',
+        type: 'Type:', val: 'Value:', current: 'Current (I):', voltage: 'Voltage (V):', power: 'Power (P):',
+        comps: {
+            wire: 'Wire', battery: 'Battery', resistor: 'Resistor', variable: 'Rheostat',
+            bulb: 'Light Bulb', switch: 'Switch', ammeter: 'Ammeter', voltmeter: 'Voltmeter',
+            fuse: 'Fuse', fan: 'Motor Fan', buzzer: 'Buzzer'
+        },
+        actions: { toggle_sw: 'Toggle Switch', reset_fuse: 'Replace Fuse' },
+        units: { battery: 'V', resistor: 'Ω', variable: 'Ω', fuse: 'A' },
+        broken: 'Blown', open: 'Open', closed: 'Closed'
+    }
+};
+
+/* ==========================================================================
+   State Management & Audio
+   ========================================================================== */
+let sysLang = navigator.language.startsWith('zh') ? 'zh' : 'en';
+let isDark = false;
+let panelOpen = false;
+let panelContentVisible = true;
+let audioStarted = false; 
+
+const GRID_SIZE = 40;
+let components = [];
+let nodes = [];
+let selectedTool = 'select';
+let selectedComponent = null;
+
+let isDragging = false;
+let startGridX = 0, startGridY = 0;
+let currentGridX = 0, currentGridY = 0;
+
+let offsetX = 0, offsetY = 0;
+let isPanning = false, panStartX = 0, panStartY = 0;
+
+let animationTime = 0;
+
+// Short Circuit Variables
+let shortTimer = 0;
+let isBurning = false;
+let warnOsc = null;
+let fireNoise = null;
+const SHORT_CURRENT_THRESHOLD = 50; // Ampere
+
+// Draggable Panel Variables
+let isDraggingPanel = false;
+let panelDragStartX, panelDragStartY;
+let panelInitialLeft, panelInitialTop;
+
+// Undo Stack
+let undoStack = [];
+const MAX_UNDO = 30;
+
+/* Component Definitions */
+const COMP_DEFS = {
+    wire: { icon: 'M4 12h16' },
+    battery: { icon: 'M8 6v12 M16 9v6 M8 12h8', options: [1.5, 3, 6, 9], defVal: 9 },
+    resistor: { icon: 'M4 12 l3 -4 l4 8 l4 -8 l4 8 l2 -4', options: [1, 5, 10, 20, 50, 100, 1000], defVal: 10 },
+    variable: { icon: 'M4 12 l3 -4 l4 8 l4 -8 l4 8 l2 -4 M12 6 v-4 l-2 2 M12 2 l2 2', min: 0, max: 100, defVal: 50 },
+    bulb: { icon: 'M12 18a6 6 0 100-12 6 6 0 000 12z M9 9l6 6 M15 9l-6 6' },
+    switch: { icon: 'M4 12h4 l6 -4 h6' },
+    ammeter: { icon: 'M12 18a6 6 0 100-12 6 6 0 000 12z M10 14l2-5 2 5 M10.5 12h3' },
+    voltmeter: { icon: 'M12 18a6 6 0 100-12 6 6 0 000 12z M10 10l2 5 2-5' },
+    fuse: { icon: 'M6 10h12v4H6z M4 12h16', options: [10, 15], defVal: 10 },
+    fan: { icon: 'M12 18a6 6 0 100-12 6 6 0 000 12z M12 12 l-3 -3 M12 12 l4 0 M12 12 l-1 4' },
+    buzzer: { icon: 'M8 8v8h4l4 4V4l-4 4H8z M18 9a4 4 0 010 6' }
+};
+
+/* ==========================================================================
+   Initialization
+   ========================================================================== */
+function init() {
+    buildPalette();
+    initLangUI(); 
+    
+    const canvas = document.getElementById('circuitCanvas');
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    window.addEventListener('mousedown', initAudio);
+    window.addEventListener('touchstart', initAudio, {passive: true});
+
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    canvas.addEventListener('touchstart', (e) => { 
+        if(e.touches.length === 1) { e.preventDefault(); handleMouseDown(e.touches[0]); }
+    }, {passive: false});
+    canvas.addEventListener('touchmove', (e) => { 
+        if(e.touches.length === 1) { e.preventDefault(); handleMouseMove(e.touches[0]); }
+    }, {passive: false});
+    window.addEventListener('touchend', handleMouseUp);
+
+    const panelHeader = document.getElementById('panel-header');
+    panelHeader.addEventListener('mousedown', onPanelDragStart);
+    panelHeader.addEventListener('touchstart', onPanelDragStart, {passive: false});
+
+    offsetX = canvas.width / 2;
+    offsetY = canvas.height / 2;
+
+    requestAnimationFrame(renderLoop);
+}
+
+async function initAudio() {
+    if (!audioStarted && typeof Tone !== 'undefined') {
+        await Tone.start();
+        audioStarted = true;
+    }
+}
+
+function resizeCanvas() {
+    const container = document.getElementById('canvas-container');
+    const canvas = document.getElementById('circuitCanvas');
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+}
+
+/* ==========================================================================
+   Undo System
+   ========================================================================== */
+function saveState() {
+    let state = components.map(c => ({
+        id: c.id, type: c.type,
+        x1: c.x1, y1: c.y1, x2: c.x2, y2: c.y2,
+        val: c.val, closed: c.closed, broken: c.broken
+    }));
+    undoStack.push(state);
+    if(undoStack.length > MAX_UNDO) undoStack.shift();
+    
+    const btnUndo = document.getElementById('btn-undo');
+    if(btnUndo) {
+        btnUndo.disabled = false;
+        btnUndo.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+function performUndo() {
+    if (undoStack.length === 0) return;
+    let prevState = undoStack.pop();
+    
+    components.forEach(c => {
+        if (c.osc) { c.osc.stop(); c.osc.dispose(); c.osc = null; }
+    });
+    if (warnOsc) { warnOsc.stop(); warnOsc.dispose(); warnOsc = null; }
+    if (fireNoise) { fireNoise.stop(); fireNoise.dispose(); fireNoise = null; }
+    
+    components = prevState.map(c => ({
+        ...c, i: 0, v: 0, p: 0, phase: 0, osc: null
+    }));
+    
+    selectedComponent = null;
+    shortTimer = 0;
+    isBurning = false;
+    document.getElementById('warning-banner').classList.add('hidden');
+    updatePropertiesPanel();
+    
+    const btnUndo = document.getElementById('btn-undo');
+    if(btnUndo && undoStack.length === 0) {
+        btnUndo.disabled = true;
+        btnUndo.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+/* ==========================================================================
+   UI & Theme Handlers
+   ========================================================================== */
+function toggleTheme() {
+    isDark = !isDark;
+    if (isDark) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+}
+
+function initLangUI() {
+    const indicator = document.getElementById('lang-indicator');
+    if(sysLang === 'zh') {
+        indicator.innerText = '中';
+        indicator.style.transform = 'translateX(2px)';
+    } else {
+        indicator.innerText = 'EN';
+        indicator.style.transform = 'translateX(26px)';
+    }
+    updateLangText();
+}
+
+function toggleLang() {
+    sysLang = sysLang === 'zh' ? 'en' : 'zh';
+    initLangUI();
+}
+
+function togglePanel(panelId) {
+    const p = document.getElementById(panelId);
+    panelOpen = !panelOpen;
+    if(panelOpen) {
+        p.classList.remove('hidden');
+        if(!selectedComponent && selectedTool === 'select') {
+            document.getElementById('no-selection-msg').classList.remove('hidden');
+            document.getElementById('prop-container').classList.add('hidden');
+        }
+    } else p.classList.add('hidden');
+}
+
+function togglePanelContent(event) {
+    if (event) event.stopPropagation();
+    panelContentVisible = !panelContentVisible;
+    const content = document.getElementById('panel-content');
+    const btn = document.getElementById('btn-collapse');
+    if (panelContentVisible) {
+        content.style.display = 'flex';
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+    } else {
+        content.style.display = 'none';
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+    }
+}
+
+/* ==========================================================================
+   Draggable Panel Logic
+   ========================================================================== */
+function onPanelDragStart(e) {
+    if (e.target.closest('button')) return;
+    isDraggingPanel = true;
+    const panel = document.getElementById('infoPanel');
+    panel.classList.add('dragging-panel');
+    
+    const rect = panel.getBoundingClientRect();
+    panelInitialLeft = rect.left;
+    panelInitialTop = rect.top;
+    panel.style.left = panelInitialLeft + 'px';
+    panel.style.top = panelInitialTop + 'px';
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    panelDragStartX = clientX;
+    panelDragStartY = clientY;
+
+    document.addEventListener('mousemove', onPanelDrag);
+    document.addEventListener('touchmove', onPanelDrag, {passive: false});
+    document.addEventListener('mouseup', onPanelDragEnd);
+    document.addEventListener('touchend', onPanelDragEnd);
+}
+
+function onPanelDrag(e) {
+    if (!isDraggingPanel) return;
+    e.preventDefault();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const panel = document.getElementById('infoPanel');
+    let newLeft = panelInitialLeft + (clientX - panelDragStartX);
+    let newTop = panelInitialTop + (clientY - panelDragStartY);
+    
+    newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - panel.offsetWidth));
+    newTop = Math.max(0, Math.min(newTop, window.innerHeight - panel.offsetHeight));
+
+    panel.style.left = newLeft + 'px';
+    panel.style.top = newTop + 'px';
+}
+
+function onPanelDragEnd() {
+    isDraggingPanel = false;
+    document.getElementById('infoPanel').classList.remove('dragging-panel');
+    document.removeEventListener('mousemove', onPanelDrag);
+    document.removeEventListener('touchmove', onPanelDrag);
+    document.removeEventListener('mouseup', onPanelDragEnd);
+    document.removeEventListener('touchend', onPanelDragEnd);
+}
+
+function buildPalette() {
+    const pal = document.getElementById('components-palette');
+    pal.innerHTML = '';
+    Object.keys(COMP_DEFS).forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = `tool-btn w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 flex flex-col items-center justify-center border-2 border-transparent rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700/50`;
+        btn.dataset.tool = type;
+        btn.onclick = () => selectTool(type);
+        btn.innerHTML = `
+            <svg class="w-5 h-5 md:w-6 md:h-6 mb-1 text-gray-700 dark:text-gray-300 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="${COMP_DEFS[type].icon}"></path>
+            </svg>
+            <span class="text-[9px] sm:text-[10px] md:text-xs text-center font-medium dark:text-gray-300 leading-tight" data-i18n="comps.${type}"></span>
+        `;
+        pal.appendChild(btn);
+    });
+}
+
+function selectTool(tool) {
+    selectedTool = tool;
+    document.querySelectorAll('.tool-btn').forEach(b => {
+        if(b.dataset.tool === tool) b.classList.add('active');
+        else b.classList.remove('active');
+    });
+    selectedComponent = null;
+    updatePropertiesPanel();
+}
+
+function updateLangText() {
+    const d = I18N[sysLang];
+    document.getElementById('title').innerText = d.title;
+    document.getElementById('lbl-tools').innerText = d.tools;
+    document.getElementById('lbl-select').innerText = d.select;
+    document.getElementById('lbl-undo').innerText = d.undo;
+    document.getElementById('lbl-instruction').innerHTML = `<span class="text-lg">👉</span> ${d.inst}`;
+    document.getElementById('lbl-hint').innerText = d.hint;
+    document.getElementById('btn-reset').innerText = d.reset;
+    document.getElementById('panel-title').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg> ${d.title === 'DC Circuit Lab' ? 'Properties' : '元件屬性'}`;
+    document.getElementById('lbl-delete').innerText = d.del;
+    document.getElementById('no-selection-msg').innerText = d.no_sel;
+    document.getElementById('prop-type-lbl').innerText = d.type;
+    document.getElementById('prop-val-lbl').innerText = d.val;
+    document.getElementById('prop-i-lbl').innerText = d.current;
+    document.getElementById('prop-v-lbl').innerText = d.voltage;
+    document.getElementById('prop-p-lbl').innerText = d.power;
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const keys = el.dataset.i18n.split('.');
+        el.innerText = d[keys[0]][keys[1]];
+    });
+    updatePropertiesPanel();
+}
+
+/* ==========================================================================
+   Interaction & Canvas Logic
+   ========================================================================== */
+function getGridPos(clientX, clientY) {
+    const rect = document.getElementById('circuitCanvas').getBoundingClientRect();
+    const x = clientX - rect.left - offsetX;
+    const y = clientY - rect.top - offsetY;
+    return {
+        x: Math.round(x / GRID_SIZE) * GRID_SIZE,
+        y: Math.round(y / GRID_SIZE) * GRID_SIZE
+    };
+}
+
+function dist(x1, y1, x2, y2) { return Math.hypot(x2-x1, y2-y1); }
+
+function handleMouseDown(e) {
+    if (e.button === 1 || (selectedTool === 'select' && !getClickedComponent(e.clientX, e.clientY))) {
+        isPanning = true;
+        panStartX = e.clientX - offsetX;
+        panStartY = e.clientY - offsetY;
+        document.getElementById('circuitCanvas').style.cursor = 'grabbing';
+        return;
+    }
+
+    if(selectedTool === 'select') {
+        selectedComponent = getClickedComponent(e.clientX, e.clientY);
+        if(!panelOpen && selectedComponent) togglePanel('infoPanel');
+        updatePropertiesPanel();
+        return;
+    }
+
+    const pos = getGridPos(e.clientX, e.clientY);
+    isDragging = true;
+    startGridX = pos.x;
+    startGridY = pos.y;
+    currentGridX = pos.x;
+    currentGridY = pos.y;
+}
+
+function handleMouseMove(e) {
+    if (isPanning) {
+        offsetX = e.clientX - panStartX;
+        offsetY = e.clientY - panStartY;
+        return;
+    }
+    if(!isDragging) return;
+    const pos = getGridPos(e.clientX, e.clientY);
+    currentGridX = pos.x;
+    currentGridY = pos.y;
+}
+
+function handleMouseUp(e) {
+    if (isPanning) {
+        isPanning = false;
+        document.getElementById('circuitCanvas').style.cursor = 'crosshair';
+        return;
+    }
+    if(!isDragging) return;
+    isDragging = false;
+    
+    if(startGridX !== currentGridX || startGridY !== currentGridY) {
+        addComponent(selectedTool, startGridX, startGridY, currentGridX, currentGridY);
+    }
+}
+
+function getClickedComponent(clientX, clientY) {
+    const rect = document.getElementById('circuitCanvas').getBoundingClientRect();
+    const x = clientX - rect.left - offsetX;
+    const y = clientY - rect.top - offsetY;
+    
+    for(let c of components) {
+        const l2 = dist(c.x1, c.y1, c.x2, c.y2)**2;
+        if(l2 === 0) continue;
+        let t = ((x - c.x1)*(c.x2 - c.x1) + (y - c.y1)*(c.y2 - c.y1)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        const px = c.x1 + t*(c.x2 - c.x1);
+        const py = c.y1 + t*(c.y2 - c.y1);
+        if(dist(x, y, px, py) < 20) return c;
+    }
+    return null;
+}
+
+// 核心修復：當元件接在連續導線中間時，自動將導線切成兩段 (T型結點)
+function normalizeWires() {
+    let changed = true;
+    while(changed) {
+        changed = false;
+        let pts = [];
+        components.forEach(c => {
+            pts.push({x: c.x1, y: c.y1});
+            pts.push({x: c.x2, y: c.y2});
+        });
+        
+        for(let i = 0; i < components.length; i++) {
+            let c = components[i];
+            if (c.type !== 'wire') continue; // 只允許從中間切斷電線
+            
+            let splitPt = null;
+            for(let p of pts) {
+                let d1 = dist(c.x1, c.y1, p.x, p.y);
+                let d2 = dist(p.x, p.y, c.x2, c.y2);
+                let dTotal = dist(c.x1, c.y1, c.x2, c.y2);
+                // 若節點正好在導線上，且不是該導線的端點
+                if (d1 > 1 && d2 > 1 && Math.abs(d1 + d2 - dTotal) < 1) {
+                    splitPt = p;
+                    break;
+                }
+            }
+            
+            if (splitPt) {
+                let w1 = { ...c, id: Date.now() + Math.random(), x2: splitPt.x, y2: splitPt.y };
+                let w2 = { ...c, id: Date.now() + Math.random(), x1: splitPt.x, y1: splitPt.y };
+                components.splice(i, 1, w1, w2);
+                // 確保原選取狀態不丟失
+                if (selectedComponent === c) selectedComponent = w1;
+                changed = true;
+                break;
+            }
+        }
+    }
+}
+
+function addComponent(type, x1, y1, x2, y2) {
+    if(components.some(c => (c.x1===x1&&c.y1===y1&&c.x2===x2&&c.y2===y2) || (c.x1===x2&&c.y1===y2&&c.x2===x1&&c.y2===y1))) return;
+
+    saveState(); // 紀錄 Undo 狀態
+    
+    let def = COMP_DEFS[type];
+    let comp = {
+        id: Date.now() + Math.random(),
+        type: type,
+        x1: x1, y1: y1, x2: x2, y2: y2,
+        val: def.defVal || 0,
+        i: 0, v: 0, p: 0,
+        closed: true, broken: false, osc: null 
+    };
+    components.push(comp);
+    selectedComponent = comp;
+    
+    normalizeWires(); // 自動處理 T 型結點
+    
+    selectedTool = 'select';
+    selectTool('select');
+    if(!panelOpen) togglePanel('infoPanel');
+    updatePropertiesPanel();
+}
+
+function resetCircuit() {
+    if (components.length === 0) return;
+    saveState();
+    
+    components.forEach(c => {
+        if (c.osc) { c.osc.stop(); c.osc.dispose(); c.osc = null; }
+    });
+    if (warnOsc) { warnOsc.stop(); warnOsc.dispose(); warnOsc = null; }
+    if (fireNoise) { fireNoise.stop(); fireNoise.dispose(); fireNoise = null; }
+    
+    components = [];
+    selectedComponent = null;
+    shortTimer = 0;
+    isBurning = false;
+    document.getElementById('warning-banner').classList.add('hidden');
+    updatePropertiesPanel();
+}
+
+/* ==========================================================================
+   Properties Panel Update
+   ========================================================================== */
+function updatePropertiesPanel() {
+    const noMsg = document.getElementById('no-selection-msg');
+    const container = document.getElementById('prop-container');
+    const d = I18N[sysLang];
+
+    if(!selectedComponent) {
+        noMsg.classList.remove('hidden');
+        container.classList.add('hidden');
+        return;
+    }
+
+    noMsg.classList.add('hidden');
+    container.classList.remove('hidden');
+
+    const c = selectedComponent;
+    document.getElementById('prop-type').innerText = d.comps[c.type];
+    
+    const valSec = document.getElementById('prop-val-section');
+    const select = document.getElementById('prop-val-select');
+    const slider = document.getElementById('prop-val-slider');
+    const actSec = document.getElementById('prop-action-section');
+    const display = document.getElementById('prop-val-display');
+    
+    select.classList.add('hidden');
+    slider.classList.add('hidden');
+    actSec.innerHTML = '';
+
+    const unit = d.units[c.type] || '';
+    display.innerText = (c.val !== undefined && unit) ? `${c.val} ${unit}` : '-';
+
+    if(COMP_DEFS[c.type].options) {
+        valSec.classList.remove('hidden');
+        select.classList.remove('hidden');
+        select.innerHTML = '';
+        COMP_DEFS[c.type].options.forEach(opt => {
+            const optEl = document.createElement('option');
+            optEl.value = opt;
+            optEl.innerText = `${opt} ${unit}`;
+            if(c.val == opt) optEl.selected = true;
+            select.appendChild(optEl);
+        });
+        select.onchange = (e) => { saveState(); c.val = parseFloat(e.target.value); };
+    } else if (c.type === 'variable') {
+        valSec.classList.remove('hidden');
+        slider.classList.remove('hidden');
+        slider.min = COMP_DEFS.variable.min;
+        slider.max = COMP_DEFS.variable.max;
+        slider.value = c.val;
+        slider.onmousedown = () => saveState();
+        slider.ontouchstart = () => saveState();
+        slider.oninput = (e) => { 
+            c.val = parseFloat(e.target.value); 
+            display.innerText = `${c.val} ${unit}`;
+        };
+    } else {
+        valSec.classList.add('hidden');
+    }
+
+    if(c.type === 'switch') {
+        const btn = document.createElement('button');
+        btn.className = 'w-full py-2.5 bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 rounded-xl font-bold transition-colors';
+        btn.innerText = d.actions.toggle_sw;
+        btn.onclick = () => { saveState(); c.closed = !c.closed; };
+        actSec.appendChild(btn);
+        display.innerText = c.closed ? d.closed : d.open;
+        valSec.classList.remove('hidden'); 
+    }
+    if(c.type === 'fuse') {
+        if(c.broken) {
+            const btn = document.createElement('button');
+            btn.className = 'w-full py-2.5 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-400 dark:hover:bg-yellow-900/60 rounded-xl font-bold transition-colors';
+            btn.innerText = d.actions.reset_fuse;
+            btn.onclick = () => { saveState(); c.broken = false; updatePropertiesPanel(); };
+            actSec.appendChild(btn);
+            display.innerText = d.broken;
+            display.classList.add('text-red-500');
+        } else {
+            display.classList.remove('text-red-500');
+        }
+    }
+
+    document.getElementById('btn-delete').onclick = () => {
+        saveState();
+        if (c.osc) { c.osc.stop(); c.osc.dispose(); c.osc = null; }
+        components = components.filter(x => x !== c);
+        selectedComponent = null;
+        updatePropertiesPanel();
+    };
+}
+
+function formatVal(v) {
+    if(Math.abs(v) > 999) return "> 999"; 
+    if(Math.abs(v) < 1e-4) return "0.00";
+    return v.toFixed(2);
+}
+
+/* ==========================================================================
+   Physics Engine (Nodal Analysis)
+   ========================================================================== */
+function solveMatrix(A, b) {
+    let n = b.length;
+    for (let i = 0; i < n; i++) {
+        let maxEl = Math.abs(A[i][i]), maxRow = i;
+        for (let k = i + 1; k < n; k++) {
+            if (Math.abs(A[k][i]) > maxEl) { maxEl = Math.abs(A[k][i]); maxRow = k; }
+        }
+        for (let k = i; k < n; k++) { let tmp = A[maxRow][k]; A[maxRow][k] = A[i][k]; A[i][k] = tmp; }
+        let tmpB = b[maxRow]; b[maxRow] = b[i]; b[i] = tmpB;
+
+        if (Math.abs(A[i][i]) < 1e-12) return Array(n).fill(0);
+
+        for (let k = i + 1; k < n; k++) {
+            let c = -A[k][i] / A[i][i];
+            for (let j = i; j < n; j++) {
+                if (i === j) A[k][j] = 0; else A[k][j] += c * A[i][j];
+            }
+            b[k] += c * b[i];
+        }
+    }
+    let x = new Array(n).fill(0);
+    for (let i = n - 1; i >= 0; i--) {
+        x[i] = b[i] / A[i][i];
+        for (let k = i - 1; k >= 0; k--) b[k] -= A[k][i] * x[i];
+    }
+    return x;
+}
+
+function simulatePhysics() {
+    if(components.length === 0) {
+        handleShortCircuitState(false);
+        return;
+    }
+
+    nodes = [];
+    components.forEach(c => {
+        let p1 = `${c.x1},${c.y1}`, p2 = `${c.x2},${c.y2}`;
+        if(nodes.indexOf(p1) === -1) nodes.push(p1);
+        if(nodes.indexOf(p2) === -1) nodes.push(p2);
+    });
+
+    let N = nodes.length;
+    let G = Array(N).fill(0).map(() => Array(N).fill(0));
+    let I_src = Array(N).fill(0);
+
+    // 提高精確度：避免 1e7 (10MΩ) 的伏特計被微小對地導納影響
+    for(let i=0; i<N; i++) G[i][i] += 1e-9; 
+
+    components.forEach(c => {
+        let n1 = nodes.indexOf(`${c.x1},${c.y1}`);
+        let n2 = nodes.indexOf(`${c.x2},${c.y2}`);
+        
+        let R = 1e-3; 
+        if(c.type === 'switch') R = c.closed ? 1e-3 : 1e9;
+        else if(c.type === 'fuse') R = c.broken ? 1e9 : 1e-3;
+        else if(c.type === 'voltmeter') R = 1e7; 
+        else if(c.type === 'resistor' || c.type === 'variable') R = Math.max(1e-3, c.val);
+        else if(c.type === 'bulb') R = 10;
+        else if(c.type === 'fan') R = 15;
+        else if(c.type === 'buzzer') R = 20;
+
+        if(c.type === 'battery') {
+            R = 1e-3; 
+            let I = c.val / R;
+            I_src[n1] -= I;
+            I_src[n2] += I;
+        }
+
+        let g = 1 / R;
+        G[n1][n1] += g; G[n2][n2] += g;
+        G[n1][n2] -= g; G[n2][n1] -= g;
+    });
+
+    for(let i=0; i<N; i++) { G[0][i] = 0; G[i][0] = 0; }
+    G[0][0] = 1; I_src[0] = 0;
+
+    let V_nodes = solveMatrix(G, I_src);
+    let hasShortCircuit = false;
+
+    components.forEach(c => {
+        let n1 = nodes.indexOf(`${c.x1},${c.y1}`);
+        let n2 = nodes.indexOf(`${c.x2},${c.y2}`);
+        let v1 = V_nodes[n1], v2 = V_nodes[n2];
+        
+        let R = 1e-3;
+        if(c.type === 'switch') R = c.closed ? 1e-3 : 1e9;
+        else if(c.type === 'fuse') R = c.broken ? 1e9 : 1e-3;
+        else if(c.type === 'voltmeter') R = 1e7;
+        else if(c.type === 'resistor' || c.type === 'variable') R = Math.max(1e-3, c.val);
+        else if(c.type === 'bulb') R = 10;
+        else if(c.type === 'fan') R = 15;
+        else if(c.type === 'buzzer') R = 20;
+
+        if(c.type === 'battery') {
+            R = 1e-3;
+            c.v = v2 - v1; 
+            c.i = (v1 - v2 + c.val) / R; 
+        } else {
+            c.v = v1 - v2;
+            c.i = c.v / R;
+        }
+        
+        c.p = Math.abs(c.v * c.i);
+
+        if (Math.abs(c.i) > SHORT_CURRENT_THRESHOLD && c.type !== 'voltmeter' && (!c.broken || c.type!=='fuse')) {
+            hasShortCircuit = true;
+        }
+
+        if(c.type === 'fuse' && !c.broken && Math.abs(c.i) > c.val) {
+            c.broken = true;
+            if(selectedComponent === c) updatePropertiesPanel();
+        }
+
+        if (c.type === 'buzzer') {
+            if (c.p > 0.1) {
+                if (audioStarted && typeof Tone !== 'undefined') {
+                    if (!c.osc) {
+                        c.osc = new Tone.Oscillator({ type: "sawtooth", volume: -15 }).toDestination();
+                        c.osc.start();
+                    }
+                    let targetFreq = 300 + Math.abs(c.v) * 50;
+                    c.osc.frequency.rampTo(targetFreq, 0.1); 
+                }
+            } else {
+                if (c.osc) { c.osc.stop(); c.osc.dispose(); c.osc = null; }
+            }
+        }
+
+        if(!c.phase) c.phase = 0;
+        c.phase += c.i * 0.1;
+    });
+
+    handleShortCircuitState(hasShortCircuit);
+
+    if(selectedComponent) {
+        document.getElementById('prop-i-val').innerText = formatVal(Math.abs(selectedComponent.i)) + " A";
+        document.getElementById('prop-v-val').innerText = formatVal(Math.abs(selectedComponent.v)) + " V";
+        document.getElementById('prop-p-val').innerText = formatVal(selectedComponent.p) + " W";
+        if(selectedComponent.type === 'switch' && document.getElementById('prop-val-display')) {
+             document.getElementById('prop-val-display').innerText = selectedComponent.closed ? I18N[sysLang].closed : I18N[sysLang].open;
+        }
+    }
+}
+
+// Global Short Circuit Logic & Audio
+function handleShortCircuitState(hasShort) {
+    const banner = document.getElementById('warning-banner');
+    if (hasShort) {
+        shortTimer++;
+        if (shortTimer > 150) { 
+            isBurning = true;
+            banner.innerText = I18N[sysLang].warn_fire;
+            banner.classList.remove('hidden');
+            
+            if (audioStarted && typeof Tone !== 'undefined') {
+                if (warnOsc) { warnOsc.stop(); warnOsc.dispose(); warnOsc = null; } 
+                if (!fireNoise) {
+                    fireNoise = new Tone.Noise("brown").toDestination();
+                    fireNoise.volume.value = -10;
+                    fireNoise.start();
+                }
+            }
+        } else {
+            isBurning = false;
+            banner.innerText = I18N[sysLang].warn_short;
+            banner.classList.remove('hidden');
+            
+            if (audioStarted && typeof Tone !== 'undefined') {
+                if (!warnOsc) {
+                    warnOsc = new Tone.Oscillator(800, "square").toDestination();
+                    warnOsc.volume.value = -20;
+                    warnOsc.start();
+                }
+                warnOsc.frequency.value = (animationTime % 30 < 15) ? 800 : 1200;
+            }
+        }
+    } else {
+        shortTimer = 0;
+        isBurning = false;
+        banner.classList.add('hidden');
+        if (warnOsc) { warnOsc.stop(); warnOsc.dispose(); warnOsc = null; }
+        if (fireNoise) { fireNoise.stop(); fireNoise.dispose(); fireNoise = null; }
+    }
+}
+
+/* ==========================================================================
+   Rendering
+   ========================================================================== */
+function renderLoop() {
+    simulatePhysics();
+    
+    const canvas = document.getElementById('circuitCanvas');
+    const ctx = canvas.getContext('2d');
+    const cw = canvas.width;
+    const ch = canvas.height;
+    
+    ctx.clearRect(0, 0, cw, ch);
+    animationTime++;
+
+    let shakeX = 0, shakeY = 0;
+    if (isBurning) {
+        shakeX = (Math.random() - 0.5) * 4;
+        shakeY = (Math.random() - 0.5) * 4;
+    }
+    ctx.translate(shakeX, shakeY);
+
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    let startX = offsetX % GRID_SIZE;
+    let startY = offsetY % GRID_SIZE;
+    for(let x = startX; x < cw; x += GRID_SIZE) { ctx.moveTo(x, 0); ctx.lineTo(x, ch); }
+    for(let y = startY; y < ch; y += GRID_SIZE) { ctx.moveTo(0, y); ctx.lineTo(cw, y); }
+    ctx.stroke();
+
+    if(isDragging) {
+        ctx.strokeStyle = isDark ? 'rgba(96, 165, 250, 0.5)' : 'rgba(59, 130, 246, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(startGridX + offsetX, startGridY + offsetY);
+        ctx.lineTo(currentGridX + offsetX, currentGridY + offsetY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    components.forEach(c => {
+        let cx1 = c.x1 + offsetX, cy1 = c.y1 + offsetY;
+        let cx2 = c.x2 + offsetX, cy2 = c.y2 + offsetY;
+        let angle = Math.atan2(cy2 - cy1, cx2 - cx1);
+        let midX = (cx1 + cx2)/2, midY = (cy1 + cy2)/2;
+        let len = dist(cx1, cy1, cx2, cy2);
+        
+        ctx.save();
+        ctx.translate(midX, midY);
+        ctx.rotate(angle);
+
+        let color = isDark ? '#94a3b8' : '#334155';
+        if(selectedComponent === c) {
+            ctx.shadowColor = '#3b82f6';
+            ctx.shadowBlur = 12;
+            color = '#3b82f6';
+        }
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(-len/2, 0);
+        ctx.lineTo(len/2, 0);
+        ctx.stroke();
+
+        ctx.fillStyle = isDark ? '#0b1120' : '#f1f5f9';
+        
+        if(c.type === 'battery') {
+            ctx.fillRect(-10, -15, 20, 30);
+            ctx.beginPath();
+            ctx.moveTo(-5, -15); ctx.lineTo(-5, 15);
+            ctx.moveTo(5, -25); ctx.lineTo(5, 25);
+            ctx.stroke();
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(12, -10); ctx.lineTo(18, -10); ctx.moveTo(15, -13); ctx.lineTo(15, -7); ctx.stroke();
+        }
+        else if(c.type === 'resistor' || c.type === 'variable') {
+            ctx.fillRect(-15, -10, 30, 20);
+            ctx.beginPath();
+            ctx.moveTo(-15, 0);
+            ctx.lineTo(-10, -10); ctx.lineTo(-5, 10);
+            ctx.lineTo(0, -10); ctx.lineTo(5, 10);
+            ctx.lineTo(10, -10); ctx.lineTo(15, 0);
+            ctx.stroke();
+            if(c.type === 'variable') {
+                ctx.beginPath();
+                ctx.moveTo(-15, 15); ctx.lineTo(10, -15);
+                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(10, -15); ctx.lineTo(2, -15); ctx.lineTo(10, -7); ctx.fill();
+            }
+        }
+        else if(c.type === 'bulb') {
+            ctx.fillRect(-15, -15, 30, 30);
+            if(c.p > 0.1) {
+                let glow = Math.min(1, c.p / 10);
+                ctx.shadowColor = 'yellow';
+                ctx.shadowBlur = 10 + glow * 20;
+                ctx.fillStyle = `rgba(255, 255, 0, ${glow*0.8})`;
+                ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0;
+            } else {
+                ctx.fillStyle = isDark ? '#0b1120' : '#f1f5f9';
+            }
+            ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-10, -10); ctx.lineTo(10, 10); ctx.moveTo(10, -10); ctx.lineTo(-10, 10); ctx.stroke();
+        }
+        else if(c.type === 'switch') {
+            ctx.fillRect(-15, -10, 30, 20);
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(-15, 0, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(15, 0, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-15, 0);
+            if(c.closed) ctx.lineTo(15, 0);
+            else ctx.lineTo(10, -15);
+            ctx.stroke();
+        }
+        else if(c.type === 'fuse') {
+            ctx.fillRect(-18, -10, 36, 20);
+            ctx.strokeRect(-18, -8, 36, 16);
+            ctx.beginPath();
+            if(!c.broken) { ctx.moveTo(-18, 0); ctx.lineTo(18, 0); ctx.stroke(); }
+        }
+        else if(c.type === 'ammeter' || c.type === 'voltmeter') {
+            ctx.fillRect(-16, -16, 32, 32);
+            ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI*2); ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(c.type === 'ammeter' ? 'A' : 'V', 0, 1);
+            
+            ctx.font = '10px monospace';
+            let dispVal = Math.abs(c.type==='ammeter'? c.i : c.v);
+            ctx.fillText(dispVal > 999 ? ">999" : formatVal(dispVal), 0, 25);
+        }
+        else if(c.type === 'fan') {
+            ctx.fillRect(-15, -15, 30, 30);
+            ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.stroke();
+            ctx.save();
+            ctx.rotate(c.phase * 5);
+            ctx.fillStyle = color;
+            for(let i=0; i<3; i++) {
+                ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0, 12, 0, 0.5); ctx.lineTo(0,0); ctx.fill();
+                ctx.rotate(Math.PI*2/3);
+            }
+            ctx.restore();
+        }
+        else if(c.type === 'buzzer') {
+            ctx.fillRect(-15, -15, 30, 30);
+            ctx.beginPath(); ctx.moveTo(-10, -10); ctx.lineTo(-10, 10); ctx.lineTo(5, 10); ctx.lineTo(5, -10); ctx.closePath(); ctx.stroke();
+            if(c.p > 0.1) {
+                let r1 = 8 + (animationTime%30)/3;
+                let r2 = 12 + ((animationTime+15)%30)/3;
+                ctx.beginPath(); ctx.arc(5, 0, r1, -1, 1); ctx.stroke();
+                ctx.beginPath(); ctx.arc(5, 0, r2, -1, 1); ctx.stroke();
+            }
+        }
+
+        ctx.restore();
+
+        if(Math.abs(c.i) > 0.01 && c.type !== 'voltmeter' && (!c.broken || c.type!=='fuse')) {
+            let flowDir = Math.sign(c.i);
+            let numDots = Math.floor(len / 20);
+            ctx.fillStyle = '#ef4444';
+            for(let j=0; j<=numDots; j++) {
+                let t = (j / numDots + c.phase * flowDir) % 1;
+                if(t < 0) t += 1;
+                let px = cx1 + (cx2 - cx1) * t;
+                let py = cy1 + (cy2 - cy1) * t;
+                ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI*2); ctx.fill();
+            }
+        }
+
+        if(isBurning && Math.abs(c.i) > SHORT_CURRENT_THRESHOLD && (!c.broken || c.type!=='fuse')) {
+            let numFlames = Math.floor(len / 15) + 1;
+            for(let j=0; j<=numFlames; j++) {
+                let t = (j / numFlames);
+                let px = cx1 + (cx2 - cx1) * t;
+                let py = cy1 + (cy2 - cy1) * t;
+                
+                for(let f=0; f<3; f++) {
+                    let oX = (Math.random()-0.5)*20;
+                    let oY = (Math.random()-0.5)*20 - 5;
+                    ctx.fillStyle = Math.random() > 0.4 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(250, 204, 21, 0.9)';
+                    ctx.beginPath();
+                    ctx.arc(px + oX, py + oY, Math.random()*6 + 2, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
+        ctx.beginPath(); ctx.arc(cx1, cy1, 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx2, cy2, 4, 0, Math.PI*2); ctx.fill();
+    });
+
+    ctx.translate(-shakeX, -shakeY);
+    requestAnimationFrame(renderLoop);
+}
+
+window.onload = init;
+
+</script>
+</body>
+</html>

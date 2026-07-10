@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>牛頓第二定律模擬器 (Newton's 2nd Law)</title>
+    
+    <!-- Tailwind CSS for Responsive Design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for Graphing -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            touch-action: manipulation; /* Prevent zoom on double tap on mobile */
+        }
+        canvas {
+            border-bottom: 4px solid #475569;
+            background: #f8fafc;
+        }
+        .control-panel {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        .data-card {
+            background: #f1f5f9;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-3 shadow-md shrink-0">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold"><i class="fas fa-flask mr-2"></i>牛頓第二定律模擬器</h1>
+            <span class="text-xs bg-blue-700 px-2 py-1 rounded">HKDSE Physics</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto p-2 md:p-4 flex flex-col md:flex-row gap-4 overflow-auto">
+        
+        <!-- Left Column: Simulation & Controls -->
+        <div class="flex flex-col gap-4 md:w-2/3">
+            
+            <!-- Canvas Container -->
+            <div class="relative w-full bg-white rounded-lg shadow-md overflow-hidden" style="min-height: 300px;">
+                <canvas id="simCanvas" class="w-full h-full block"></canvas>
+                
+                <!-- Overlay Status -->
+                <div class="absolute top-2 right-2 bg-white/90 p-2 rounded shadow text-sm border border-slate-200">
+                    <div class="font-mono text-blue-600">t = <span id="timeVal">0.00</span> s</div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="control-panel p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- Inputs -->
+                <div class="space-y-3">
+                    <h3 class="font-bold text-gray-700 border-b pb-1">實驗參數設定</h3>
+                    
+                    <div>
+                        <label class="flex justify-between text-sm mb-1">
+                            <span>軌道長度 (L)</span>
+                            <span class="font-mono text-blue-600" id="trackLenVal">3.0 m</span>
+                        </label>
+                        <input type="range" id="trackLen" min="3.0" max="20.0" step="0.5" value="3.0">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm mb-1">
+                            <span>滑車質量 (M)</span>
+                            <span class="font-mono text-blue-600" id="massCartVal">1.0 kg</span>
+                        </label>
+                        <input type="range" id="massCart" min="0.5" max="3.0" step="0.1" value="1.0">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm mb-1">
+                            <span>掛重質量 (m)</span>
+                            <span class="font-mono text-blue-600" id="massHangVal">1.00 kg</span>
+                        </label>
+                        <input type="range" id="massHang" min="0.5" max="20.0" step="0.5" value="1.0">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm mb-1">
+                            <span>摩擦係數</span>
+                            <span class="font-mono text-blue-600" id="frictionVal">0.00</span>
+                        </label>
+                        <input type="range" id="friction" min="0.0" max="0.5" step="0.01" value="0.00">
+                        <p class="text-xs text-gray-400 mt-1">*設為 0 代表摩擦補償軌道</p>
+                    </div>
+                </div>
+
+                <!-- Actions & Readouts -->
+                <div class="flex flex-col justify-between">
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div class="data-card p-2 rounded">
+                            <div class="text-xs text-gray-500">拉力 (mg)</div>
+                            <div class="text-lg font-bold font-mono" id="forceDisp">9.81 N</div>
+                        </div>
+                        <div class="data-card p-2 rounded border-l-green-500">
+                            <div class="text-xs text-gray-500">加速度 (a)</div>
+                            <div class="text-lg font-bold font-mono" id="accelDisp">0.00 m/s²</div>
+                        </div>
+                        <div class="data-card p-2 rounded border-l-purple-500">
+                            <div class="text-xs text-gray-500">速度 (v)</div>
+                            <div class="text-lg font-bold font-mono" id="velDisp">0.00 m/s</div>
+                        </div>
+                         <div class="data-card p-2 rounded border-l-orange-500">
+                            <div class="text-xs text-gray-500">位移 (x)</div>
+                            <div class="text-lg font-bold font-mono" id="posDisp">0.00 m</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button id="btnStart" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition">
+                            <i class="fas fa-play mr-1"></i> 開始
+                        </button>
+                        <button id="btnReset" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-bold transition">
+                            <i class="fas fa-undo mr-1"></i> 重置
+                        </button>
+                        <button id="btnRecord" class="flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold transition" title="記錄數據">
+                            <i class="fas fa-save"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Analysis -->
+        <div class="flex flex-col gap-4 md:w-1/3">
+            
+            <!-- Graph -->
+            <div class="bg-white p-2 rounded-lg shadow-md flex-1 min-h-[250px] flex flex-col">
+                <h3 class="text-sm font-bold text-gray-700 mb-2 text-center">實時 v-t 圖表</h3>
+                <div class="relative flex-grow">
+                    <canvas id="vtGraph"></canvas>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="bg-white p-2 rounded-lg shadow-md flex-1 min-h-[200px] overflow-hidden flex flex-col">
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <h3 class="text-sm font-bold text-gray-700">實驗記錄表</h3>
+                    <button id="btnClearTable" class="text-xs text-red-500 hover:text-red-700 underline">清除表格</button>
+                </div>
+                <div class="overflow-auto flex-grow">
+                    <table class="w-full text-sm text-center">
+                        <thead class="bg-gray-100 text-gray-600 sticky top-0">
+                            <tr>
+                                <th class="p-1">#</th>
+                                <th class="p-1">F (N)</th>
+                                <th class="p-1">M_total (kg)</th>
+                                <th class="p-1">a (m/s²)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody" class="divide-y divide-gray-100">
+                            <!-- Rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-xs text-center text-gray-400 mt-2">
+                    點擊「<i class="fas fa-save"></i>」按鈕以記錄當前實驗數據
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Javascript Logic -->
+    <script>
+        {
+            // Physics Constants
+            const G = 9.81;
+            let PIXELS_PER_METER = 200; // Will be dynamic now
+
+            // State Variables
+            let simState = {
+                running: false,
+                finished: false,
+                time: 0,
+                x: 0,         // Cart position (m)
+                v: 0,         // Velocity (m/s)
+                a: 0,         // Acceleration (m/s^2)
+                M: 1.0,       // Cart Mass (kg)
+                m: 1.0,       // Hanging Mass (kg)
+                mu: 0.0,      // Friction Coeff
+                trackLen: 3.0,// Track Length (m)
+                dt: 0.016     // Time step (approx 60fps)
+            };
+
+            // DOM Elements
+            const canvas = document.getElementById('simCanvas');
+            const ctx = canvas.getContext('2d');
+            const els = {
+                time: document.getElementById('timeVal'),
+                force: document.getElementById('forceDisp'),
+                accel: document.getElementById('accelDisp'),
+                vel: document.getElementById('velDisp'),
+                pos: document.getElementById('posDisp'),
+                trackLen: document.getElementById('trackLen'),
+                trackLenVal: document.getElementById('trackLenVal'),
+                mCart: document.getElementById('massCart'),
+                mHang: document.getElementById('massHang'),
+                fric: document.getElementById('friction'),
+                mCartVal: document.getElementById('massCartVal'),
+                mHangVal: document.getElementById('massHangVal'),
+                fricVal: document.getElementById('frictionVal'),
+                btnStart: document.getElementById('btnStart'),
+                btnReset: document.getElementById('btnReset'),
+                btnRecord: document.getElementById('btnRecord'),
+                tableBody: document.getElementById('dataTableBody'),
+                btnClear: document.getElementById('btnClearTable')
+            };
+
+            // Chart.js Setup
+            let graphData = {
+                labels: [],
+                datasets: [{
+                    label: '速度 v (m/s)',
+                    data: [],
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: true,
+                    tension: 0
+                }]
+            };
+
+            const chartConfig = {
+                type: 'line',
+                data: graphData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: { intersect: false },
+                    scales: {
+                        x: { 
+                            type: 'linear', 
+                            title: { display: true, text: '時間 t (s)' },
+                            min: 0
+                        },
+                        y: { 
+                            title: { display: true, text: '速度 v (m/s)' },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            };
+
+            // Check if chart instance exists on canvas and destroy it before creating new one
+            const chartCanvas = document.getElementById('vtGraph');
+            const existingChart = Chart.getChart(chartCanvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+
+            const vtChart = new Chart(chartCanvas, chartConfig);
+
+            // --- Initialization & Resizing ---
+            function updateScale() {
+                const currentWidth = canvas.width || 800;
+                // Padding: 40px left offset + 60px right pulley area = 100px reserved
+                const availablePixels = Math.max(100, currentWidth - 100);
+                PIXELS_PER_METER = availablePixels / simState.trackLen;
+            }
+
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                if (container) {
+                    canvas.width = container.clientWidth || 800; 
+                    canvas.height = container.clientHeight || 300;
+                    updateScale(); // Recalculate scale on resize
+                    draw();
+                }
+            }
+            window.addEventListener('resize', resizeCanvas);
+
+            // --- Physics Engine ---
+            function calculatePhysics() {
+                const F_pull = simState.m * G;
+                const F_fric = simState.mu * simState.M * G;
+                
+                let F_net = F_pull - F_fric;
+                if (F_net < 0) F_net = 0;
+
+                const M_total = simState.M + simState.m;
+                simState.a = F_net / M_total;
+
+                return { F_net, M_total };
+            }
+
+            function update() {
+                if (!simState.running) return;
+
+                calculatePhysics(); 
+
+                // Kinematics Euler Integration
+                simState.v += simState.a * simState.dt;
+                simState.x += simState.v * simState.dt;
+                simState.time += simState.dt;
+
+                // Stop condition
+                // Cart stops slightly before the very end of track (0.3m visual buffer)
+                // Since we now scale explicitly to simState.trackLen, we stop when x >= trackLen - buffer
+                // Buffer ensures the cart doesn't overlap the pulley visually
+                // We define buffer in METERS.
+                const bufferMeters = 50 / PIXELS_PER_METER; // approx 50px buffer converted to meters
+                const maxDist = simState.trackLen - Math.max(0.2, bufferMeters);
+
+                if (simState.x >= maxDist) {
+                    simState.x = maxDist;
+                    simState.v = 0;
+                    simState.a = 0;
+                    stopSim(true);
+                }
+
+                // Update UI
+                updateUI();
+                
+                if (simState.time > 0) {
+                    addDataToGraph(simState.time, simState.v);
+                }
+
+                draw();
+                requestAnimationFrame(update);
+            }
+
+            // --- Rendering ---
+            function draw() {
+                const w = canvas.width;
+                const h = canvas.height;
+                const trackY = h * 0.6;
+                const startX = 40; // Visual left padding
+                
+                // Clear
+                ctx.clearRect(0, 0, w, h);
+
+                // Draw Track
+                ctx.fillStyle = '#cbd5e1'; 
+                // Draw track from startX to the calculated end pixel
+                const trackPixelLen = simState.trackLen * PIXELS_PER_METER;
+                ctx.fillRect(0, trackY, startX + trackPixelLen + 40, 10);
+                
+                // Draw Ruler markings
+                ctx.strokeStyle = '#94a3b8';
+                ctx.font = '10px Arial';
+                ctx.fillStyle = '#64748b';
+                
+                // Adaptive Ruler Step
+                let rulerStep = 0.1;
+                if (simState.trackLen > 15) rulerStep = 1.0;
+                else if (simState.trackLen > 5) rulerStep = 0.5;
+
+                // Loop in meters
+                for (let m = 0; m <= simState.trackLen; m += rulerStep) {
+                    const px = startX + (m * PIXELS_PER_METER);
+                    const isMajor = Math.abs(m % 1.0) < 0.001 || (rulerStep >= 1.0);
+                    const height = isMajor ? 10 : 5;
+
+                    ctx.beginPath();
+                    ctx.moveTo(px, trackY);
+                    ctx.lineTo(px, trackY + height);
+                    ctx.stroke();
+                    
+                    if (isMajor) {
+                        ctx.fillText(m.toFixed(1) + 'm', px + 3, trackY + 22);
+                    }
+                }
+
+                // Pulley (At the end of the track)
+                const pulleyX = startX + trackPixelLen;
+                const pulleyR = 15;
+                ctx.beginPath();
+                ctx.arc(pulleyX, trackY, pulleyR, 0, 2 * Math.PI);
+                ctx.fillStyle = '#475569';
+                ctx.fill();
+                ctx.strokeStyle = '#1e293b';
+                ctx.stroke();
+
+                // Cart
+                // Cart width visual: Scale it slightly but clamp it so it's not too small/big
+                // Base width 80px, but maybe shrink if scale is tiny
+                const cartW = Math.max(40, Math.min(80, 0.4 * PIXELS_PER_METER)); 
+                const cartH = cartW * 0.5;
+                const cartX = startX + (simState.x * PIXELS_PER_METER);
+                const cartY = trackY - cartH - 5; 
+
+                // Draw Cart Body
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillRect(cartX, cartY, cartW, cartH);
+                
+                // Draw Cart Text (M)
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 12px Arial';
+                if (cartW > 50) {
+                     ctx.fillText(`${simState.M.toFixed(1)}kg`, cartX + cartW/2, cartY + cartH/2 + 4);
+                }
+
+                // Draw Wheels
+                const wheelR = 5;
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(cartX + 10, trackY - wheelR, wheelR, 0, Math.PI * 2);
+                ctx.arc(cartX + cartW - 10, trackY - wheelR, wheelR, 0, Math.PI * 2);
+                ctx.fill();
+
+                // String
+                ctx.beginPath();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1.5;
+                ctx.moveTo(cartX + cartW, trackY - cartH/2); 
+                ctx.lineTo(pulleyX, trackY - 10); // simplified angle
+                
+                const hangingY = trackY + (simState.x * PIXELS_PER_METER) + 50;
+                // Limit hanging Y visually so it doesn't go off canvas too much
+                const visualHangingY = Math.min(hangingY, h - 20);
+                
+                ctx.moveTo(pulleyX + pulleyR, trackY);
+                ctx.lineTo(pulleyX + pulleyR, visualHangingY);
+                ctx.stroke();
+
+                // Hanging Mass 
+                const massSize = 20 + (Math.log(simState.m + 1) * 8); 
+
+                ctx.fillStyle = '#ef4444'; 
+                ctx.fillRect(pulleyX + pulleyR - massSize/2, visualHangingY, massSize, massSize);
+                
+                // Only show text if mass block is big enough
+                if (massSize > 25) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = '10px Arial';
+                    ctx.fillText(`${simState.m.toFixed(1)}`, pulleyX + pulleyR, visualHangingY + massSize/2 + 3);
+                }
+
+                // Draw Forces
+                if (simState.running || simState.x > 0) {
+                    // Tension
+                    drawArrow(ctx, cartX + cartW, trackY - cartH/2, Math.min(40, cartW), 0, '#ef4444', 'T');
+                    // Friction
+                    if (simState.mu > 0) {
+                        drawArrow(ctx, cartX, trackY - cartH/2, -Math.min(30, cartW) * simState.mu * 3, 0, '#64748b', 'f');
+                    }
+                }
+            }
+
+            function drawArrow(ctx, x, y, len, angle, color, label) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.moveTo(0, 0);
+                ctx.lineTo(len, 0);
+                ctx.stroke();
+                
+                if (len !== 0) {
+                    ctx.beginPath();
+                    ctx.fillStyle = color;
+                    const headLen = 6;
+                    const sign = len > 0 ? 1 : -1;
+                    ctx.moveTo(len, 0);
+                    ctx.lineTo(len - (headLen*sign), -headLen/2);
+                    ctx.lineTo(len - (headLen*sign), headLen/2);
+                    ctx.fill();
+                }
+
+                if (label) {
+                    ctx.fillStyle = color;
+                    ctx.font = 'bold 12px Arial';
+                    ctx.fillText(label, len/2, -5);
+                }
+
+                ctx.restore();
+            }
+
+            // --- UI & Interactions ---
+
+            function updateUI() {
+                els.time.textContent = simState.time.toFixed(2);
+                els.pos.textContent = simState.x.toFixed(2) + " m";
+                els.vel.textContent = simState.v.toFixed(2) + " m/s";
+                
+                const theoretical = calculatePhysics();
+                const displayAccel = simState.running ? simState.a : theoretical.F_net / theoretical.M_total;
+                
+                els.accel.textContent = displayAccel.toFixed(2) + " m/s²";
+                
+                const force = simState.m * G;
+                els.force.textContent = force.toFixed(2) + " N";
+            }
+
+            function addDataToGraph(t, v) {
+                vtChart.data.labels.push(t.toFixed(2));
+                vtChart.data.datasets[0].data.push(v);
+                
+                if(vtChart.data.labels.length > 200) {
+                    vtChart.data.labels.shift();
+                    vtChart.data.datasets[0].data.shift();
+                }
+                vtChart.update('none');
+            }
+
+            // Unified Button Handler
+            function toggleSim() {
+                if (simState.running) {
+                    pauseSim();
+                } else {
+                    startSim();
+                }
+            }
+
+            function updateButtonState() {
+                if (simState.running) {
+                    els.btnStart.innerHTML = '<i class="fas fa-pause mr-1"></i> 暫停';
+                    els.btnStart.className = 'flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded font-bold transition';
+                } else {
+                    // If finished, show 'Start' (implied restart)
+                    let label = (simState.finished || simState.time === 0) ? '開始' : '繼續';
+                    els.btnStart.innerHTML = `<i class="fas fa-play mr-1"></i> ${label}`;
+                    els.btnStart.className = 'flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition';
+                }
+            }
+
+            function startSim() {
+                // If finished, auto-reset first
+                if (simState.finished) {
+                    resetSim();
+                }
+
+                simState.running = true;
+                simState.finished = false;
+                
+                toggleInputs(false);
+                updateButtonState();
+
+                requestAnimationFrame(update);
+            }
+
+            function pauseSim() {
+                simState.running = false;
+                updateButtonState();
+            }
+
+            function stopSim(finished = false) {
+                simState.running = false;
+                if (finished) simState.finished = true;
+                updateButtonState();
+            }
+
+            function resetSim() {
+                simState.running = false;
+                simState.finished = false;
+                simState.time = 0;
+                simState.x = 0;
+                simState.v = 0;
+                simState.a = 0;
+                
+                // Clear graph
+                vtChart.data.labels = [];
+                vtChart.data.datasets[0].data = [];
+                vtChart.update();
+
+                updateUI();
+                draw();
+                toggleInputs(true);
+                updateButtonState();
+            }
+
+            function toggleInputs(enabled) {
+                els.trackLen.disabled = !enabled; // disable track length change during run
+                els.mCart.disabled = !enabled;
+                els.mHang.disabled = !enabled;
+                els.fric.disabled = !enabled;
+                
+                const opacity = enabled ? 'opacity-100' : 'opacity-50';
+                const parentEls = [els.trackLen, els.mCart, els.mHang, els.fric].map(el => el.parentElement);
+                
+                parentEls.forEach(el => {
+                    el.classList.remove('opacity-50', 'opacity-100');
+                    el.classList.add(opacity);
+                });
+            }
+
+            let recordCount = 0;
+            function recordData() {
+                recordCount++;
+                const physics = calculatePhysics();
+                
+                let accToRecord = simState.a;
+                
+                if (simState.time === 0) {
+                    accToRecord = physics.F_net / physics.M_total;
+                }
+
+                const row = document.createElement('tr');
+                row.className = "hover:bg-gray-50 transition";
+                row.innerHTML = `
+                    <td class="p-1 border-b text-gray-400">${recordCount}</td>
+                    <td class="p-1 border-b font-mono">${(simState.m * G).toFixed(2)}</td>
+                    <td class="p-1 border-b font-mono">${physics.M_total.toFixed(2)}</td>
+                    <td class="p-1 border-b font-mono font-bold text-blue-600">${accToRecord.toFixed(2)}</td>
+                `;
+                els.tableBody.appendChild(row);
+            }
+
+            // Event Listeners
+            els.trackLen.addEventListener('input', (e) => {
+                simState.trackLen = parseFloat(e.target.value);
+                els.trackLenVal.textContent = simState.trackLen.toFixed(1) + " m";
+                updateScale();
+                draw();
+            });
+
+            els.mCart.addEventListener('input', (e) => {
+                simState.M = parseFloat(e.target.value);
+                els.mCartVal.textContent = simState.M.toFixed(1) + " kg";
+                draw();
+            });
+
+            els.mHang.addEventListener('input', (e) => {
+                simState.m = parseFloat(e.target.value);
+                els.mHangVal.textContent = simState.m.toFixed(2) + " kg";
+                updateUI();
+                draw();
+            });
+
+            els.fric.addEventListener('input', (e) => {
+                simState.mu = parseFloat(e.target.value);
+                els.fricVal.textContent = simState.mu.toFixed(2);
+                updateUI();
+                draw();
+            });
+
+            // Use the unified toggleSim handler
+            els.btnStart.addEventListener('click', toggleSim);
+            els.btnReset.addEventListener('click', resetSim);
+            els.btnRecord.addEventListener('click', recordData);
+            
+            els.btnClear.addEventListener('click', () => {
+                els.tableBody.innerHTML = '';
+                recordCount = 0;
+            });
+
+            resizeCanvas();
+            updateUI();
+        }
+    </script>
+</body>
+</html>

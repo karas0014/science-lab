@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pro Vision Correction Simulator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep: #050505;
+            --bg-panel: rgba(17, 24, 39, 0.85);
+            --accent-blue: #3b82f6;
+            --accent-blue-glow: rgba(59, 130, 246, 0.5);
+        }
+
+        body { 
+            margin: 0; overflow: hidden; 
+            background-color: var(--bg-deep); 
+            font-family: 'Inter', sans-serif; 
+            color: #e2e8f0;
+            -webkit-font-smoothing: antialiased;
+            touch-action: none; /* 防止手機雙指縮放干擾 */
+        }
+        
+        #canvas-container { 
+            width: 100vw; height: 100vh; 
+            display: flex; justify-content: center; align-items: center;
+            background: radial-gradient(circle at 50% 40%, #1e293b 0%, #020617 100%);
+            position: relative;
+        }
+
+        /* Top Left Header */
+        .app-header {
+            position: absolute; top: 20px; left: 20px; z-index: 20;
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px 14px 6px 6px; border-radius: 99px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .app-icon {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 15px var(--accent-blue-glow);
+        }
+        .app-header h1 { font-size: 15px; margin: 0; }
+
+        /* Top Right Controls */
+        .top-right-controls {
+            position: absolute; top: 20px; right: 20px; z-index: 20;
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;
+        }
+
+        /* Lang Toggle */
+        .lang-toggle {
+            display: flex; background: rgba(15, 23, 42, 0.8);
+            border-radius: 99px; border: 1px solid rgba(255,255,255,0.1);
+            padding: 3px; backdrop-filter: blur(8px);
+        }
+        .lang-btn {
+            padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;
+            color: #94a3b8; cursor: pointer; transition: all 0.3s;
+        }
+        .lang-btn.active { background: #334155; color: white; }
+
+        /* Zoom & Gear Buttons */
+        .zoom-group { display: flex; gap: 6px; }
+        .icon-btn {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1);
+            color: #cbd5e1; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; backdrop-filter: blur(8px);
+        }
+        .icon-btn:hover { background: #334155; color: white; transform: scale(1.05); }
+        .icon-btn.active-gear { background: #2563eb; color: white; border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+
+        /* Dynamic Status Pill */
+        #status-bar {
+            position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+            padding: 8px 20px; border-radius: 99px; font-weight: 600; font-size: 0.9rem;
+            background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1); color: white;
+            transition: all 0.4s ease; display: flex; align-items: center; gap: 8px;
+            z-index: 10; white-space: nowrap; pointer-events: none;
+        }
+
+        /* Pro Dashboard Bottom (PC Default) */
+        #ui-panel {
+            position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+            width: calc(100% - 48px); max-width: 1100px;
+            background: var(--bg-panel); backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px; padding: 24px 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex; gap: 32px; z-index: 30;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.4s;
+        }
+
+        #ui-panel.collapsed {
+            transform: translate(-50%, 150%);
+            opacity: 0; visibility: hidden;
+        }
+
+        .panel-col { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .divider { width: 1px; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.1) 20%, rgba(255,255,255,0.1) 80%, transparent); }
+
+        /* Mobile Drag Handle (Hidden on PC) */
+        .drag-handle { display: none; width: 40px; height: 5px; background: #475569; border-radius: 10px; margin: 0 auto 16px auto; }
+
+        /* Sliders & Controls */
+        .control-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+        .control-title { font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+        .control-value { font-size: 0.85rem; font-weight: 600; color: #60a5fa; font-variant-numeric: tabular-nums; }
+        
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 6px;
+            background: #1e293b; border-radius: 99px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 24px; height: 24px; /* Larger thumb for mobile touch */
+            background: #ffffff; border: 2px solid #3b82f6; border-radius: 50%;
+            cursor: pointer; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+            margin-top: -9px;
+        }
+
+        select {
+            appearance: none; width: 100%; padding: 8px 12px;
+            background: #0f172a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") no-repeat right 12px center/14px;
+            border: 1px solid #334155; color: #f8fafc; border-radius: 10px;
+            font-size: 0.85rem; outline: none; cursor: pointer;
+        }
+
+        .btn-reset {
+            width: 100%; padding: 10px; margin-top: auto;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: #cbd5e1; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        .marks { display: flex; justify-content: space-between; font-size: 9px; color: #64748b; margin-top: 6px; font-weight: 600; }
+
+        /* --- Mobile / Tablet Optimization --- */
+        @media (max-width: 900px) {
+            #status-bar { top: 70px; font-size: 0.8rem; padding: 6px 16px; }
+            .app-header { top: 16px; left: 16px; }
+            .top-right-controls { top: 16px; right: 16px; }
+            
+            /* Bottom Sheet UI for Mobile */
+            #ui-panel { 
+                flex-direction: column; gap: 20px; 
+                bottom: 0; width: 100%; border-radius: 28px 28px 0 0;
+                padding: 16px 24px 32px 24px;
+                max-height: 70vh; overflow-y: auto;
+                border-bottom: none;
+            }
+            #ui-panel.collapsed {
+                transform: translate(-50%, 100%);
+            }
+            .drag-handle { display: block; }
+            .divider { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">
+        <div class="app-icon"><i class="fas fa-eye text-white text-[12px]"></i></div>
+        <h1 class="font-bold text-white tracking-wide m-0" id="ui-title">糾視光學模擬器</h1>
+    </div>
+
+    <div class="top-right-controls">
+        <div class="lang-toggle">
+            <button class="lang-btn active" id="btn-zh" onclick="setLang('zh')">中</button>
+            <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+        </div>
+        <div class="zoom-group">
+            <button class="icon-btn" onclick="adjustZoom(-0.1)" title="Zoom Out"><i class="fas fa-minus text-xs"></i></button>
+            <button class="icon-btn" onclick="resetZoom()" title="Reset Zoom"><i class="fas fa-compress text-xs"></i></button>
+            <button class="icon-btn" onclick="adjustZoom(0.1)" title="Zoom In"><i class="fas fa-plus text-xs"></i></button>
+            <button class="icon-btn active-gear" id="btn-toggle-panel" onclick="togglePanel()" title="Toggle Control Panel">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="sim-canvas"></canvas>
+    </div>
+
+    <div id="status-bar">
+        <i class="fas fa-circle-notch fa-spin"></i> <span id="ui-status">初始化中...</span>
+    </div>
+
+    <div id="ui-panel">
+        <div class="drag-handle"></div> <!-- Mobile drag indicator -->
+        
+        <!-- Col 1: Eye -->
+        <div class="panel-col">
+            <div class="mb-5">
+                <div class="control-header">
+                    <div class="control-title"><i class="fas fa-eye text-blue-400"></i> <span id="ui-eye-cond">眼球狀況</span></div>
+                    <div class="control-value" id="val-eye-type">正常</div>
+                </div>
+                <input type="range" id="eye-defect" min="-4.5" max="4.5" step="0.05" value="0">
+                <div class="marks">
+                    <span id="ui-myopia">近視</span>
+                    <span id="ui-normal">正常</span>
+                    <span id="ui-hyperopia">遠視</span>
+                </div>
+            </div>
+            <button class="btn-reset" onclick="resetSimulation()">
+                <i class="fas fa-rotate-left"></i> <span id="ui-reset">重置</span>
+            </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Col 2: Object & Window Size -->
+        <div class="panel-col">
+            <div class="mb-5">
+                <div class="control-header">
+                    <div class="control-title"><i class="fas fa-circle text-red-500"></i> <span id="ui-object">物體距離</span></div>
+                    <div class="control-value" id="val-obj-dist">330 px</div>
+                </div>
+                <input type="range" id="object-distance" min="150" max="600" step="5" value="330">
+                <div class="marks"><span id="ui-near">近</span><span id="ui-far">遠</span></div>
+            </div>
+            
+            <!-- Window Size Slider -->
+            <div>
+                <div class="control-header">
+                    <div class="control-title"><i class="fas fa-expand text-purple-400"></i> <span id="ui-retina-size">視窗大小</span></div>
+                    <div class="control-value" id="val-retina-size">1.0x</div>
+                </div>
+                <input type="range" id="retina-scale" min="0.5" max="2.0" step="0.1" value="1.0">
+                <div class="marks"><span>小</span><span>預設</span><span>大</span></div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Col 3: Lens -->
+        <div class="panel-col bg-slate-800/40 p-4 rounded-xl border border-white/5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 blur-2xl rounded-full pointer-events-none"></div>
+            
+            <div class="flex gap-4 mb-4 relative z-10">
+                <div class="w-1/2">
+                    <div class="control-title mb-2"><i class="fas fa-glasses text-blue-300"></i> <span id="ui-lens">鏡片</span></div>
+                    <select id="lens-type">
+                        <option value="none" id="opt-none">無鏡片</option>
+                        <option value="concave" id="opt-concave">凹透鏡</option>
+                        <option value="convex" id="opt-convex">凸透鏡</option>
+                    </select>
+                </div>
+                <div class="w-1/2" id="lens-power-group">
+                    <div class="control-header mb-1">
+                        <div class="control-title"><span id="ui-power">度數</span></div>
+                        <div class="control-value text-white" id="val-lens-power">0.50 D</div>
+                    </div>
+                    <input type="range" id="lens-power" min="0" max="15.0" step="0.05" value="0.5" class="mt-2">
+                </div>
+            </div>
+
+            <div id="lens-dist-group" class="relative z-10">
+                <div class="control-header mb-1">
+                    <div class="control-title"><span id="ui-pos">位置</span></div>
+                </div>
+                <input type="range" id="lens-distance" min="0.1" max="0.9" step="0.01" value="0.5">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- i18n Dictionary ---
+        const dict = {
+            zh: {
+                title: "糾視光學模擬器", eyeCond: "眼球狀況", normal: "正常", myopia: "近視", hyperopia: "遠視",
+                object: "物體距離", near: "近", far: "遠", reset: "重置", lens: "鏡片", none: "無鏡片",
+                concave: "凹透鏡", convex: "凸透鏡", power: "度數", pos: "位置",
+                sInit: "初始化中...", sFocus: "影像清晰", sMyopia: "模糊 - 焦點在前 (近視)", sHyperopia: "模糊 - 焦點在後 (遠視)",
+                retinaView: "視網膜影像", retinaSize: "視窗大小" // Updated label
+            },
+            en: {
+                title: "Vision Correction", eyeCond: "Eye Condition", normal: "Normal", myopia: "Myopia", hyperopia: "Hyperopia",
+                object: "Object Dist", near: "Near", far: "Far", reset: "Reset", lens: "Lens", none: "None",
+                concave: "Concave", convex: "Convex", power: "Power", pos: "Position",
+                sInit: "Initializing...", sFocus: "In Focus", sMyopia: "Focus Front (Myopia)", sHyperopia: "Focus Behind (Hyperopia)",
+                retinaView: "Retina View", retinaSize: "Window Size" // Updated label
+            }
+        };
+
+        const config = {
+            eyeCenterX: 200, eyeRadiusX: 70, eyeRadiusY: 65, corneaWidth: 20, retinaOffset: 70,
+            rayWidth: 2, arrowSize: 8, pupilRadius: 25, ballRadius: 21
+        };
+
+        const defaultState = {
+            lang: 'zh',
+            eyeDefect: 0, lensType: 'none', lensPower: 0.5, lensDistanceRatio: 0.5,
+            objectDistance: 330, zoom: window.innerWidth < 768 ? 0.65 : 1.0, // Auto zoom for mobile
+            currentBlur: 0, retinaScale: 1.0 // Controls HUD Window Size
+        };
+
+        let state = { ...defaultState };
+        const canvas = document.getElementById('sim-canvas');
+        const ctx = canvas.getContext('2d');
+        let cw, ch;
+
+        // --- Init & Events ---
+        function init() {
+            window.addEventListener('resize', resizeCanvas);
+            setupUI();
+            setLang(state.lang);
+            resizeCanvas();
+
+            // Mobile Smart UX: Touch canvas to collapse panel
+            canvas.addEventListener('touchstart', (e) => {
+                if (window.innerWidth <= 900) {
+                    const panel = document.getElementById('ui-panel');
+                    if (!panel.classList.contains('collapsed')) {
+                        togglePanel();
+                    }
+                }
+            }, { passive: true });
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cw = canvas.width; ch = canvas.height;
+            draw();
+        }
+
+        window.adjustZoom = (delta) => { state.zoom = Math.max(0.4, Math.min(2.5, state.zoom + delta)); draw(); };
+        window.resetZoom = () => { state.zoom = window.innerWidth < 768 ? 0.65 : 1.0; draw(); };
+        
+        window.togglePanel = () => {
+            const panel = document.getElementById('ui-panel');
+            const btn = document.getElementById('btn-toggle-panel');
+            panel.classList.toggle('collapsed');
+            if(panel.classList.contains('collapsed')) btn.classList.remove('active-gear');
+            else btn.classList.add('active-gear');
+        };
+
+        window.resetSimulation = () => {
+            const currentLang = state.lang;
+            state = { ...defaultState, lang: currentLang, zoom: window.innerWidth < 768 ? 0.65 : 1.0 };
+            document.getElementById('eye-defect').value = state.eyeDefect;
+            document.getElementById('object-distance').value = state.objectDistance;
+            document.getElementById('retina-scale').value = state.retinaScale;
+            document.getElementById('lens-type').value = state.lensType;
+            document.getElementById('lens-power').value = state.lensPower;
+            document.getElementById('lens-distance').value = state.lensDistanceRatio;
+            updateLensControlsVisibility(); updateLabels(); draw();
+        };
+
+        window.setLang = (lang) => {
+            state.lang = lang;
+            document.getElementById('btn-zh').classList.toggle('active', lang === 'zh');
+            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+            const t = dict[lang];
+            ['title', 'eyeCond', 'myopia', 'normal', 'hyperopia', 'object', 'retinaSize', 'near', 'far', 'reset', 'lens', 'power', 'pos'].forEach(k => {
+                const el = document.getElementById('ui-' + k.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`));
+                if(el) el.innerText = t[k];
+            });
+            document.getElementById('ui-title').innerText = t.title; // override due to ID diff
+            document.getElementById('opt-none').innerText = t.none;
+            document.getElementById('opt-concave').innerText = t.concave;
+            document.getElementById('opt-convex').innerText = t.convex;
+            updateLabels(); draw();
+        };
+
+        // --- Core Render ---
+        function draw() {
+            ctx.clearRect(0, 0, cw, ch);
+            ctx.save();
+            ctx.translate(cw / 2, ch / 2 - (window.innerWidth < 768 ? 40 : 0)); // shift eye up slightly on mobile
+            ctx.scale(state.zoom, state.zoom);
+            
+            drawGrid(); drawEye(); drawObject(); drawCorrectiveLens(); computeAndDrawRays();
+            ctx.restore();
+            
+            drawRetinaViewHUD(); 
+        }
+
+        // --- Drawing Helpers ---
+        function drawGrid() {
+            ctx.lineWidth = 1; ctx.strokeStyle = '#1e293b';
+            for (let i = -1000; i <= 1000; i += 50) {
+                ctx.beginPath(); ctx.moveTo(i, -1000); ctx.lineTo(i, 1000); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-1000, i); ctx.lineTo(1000, i); ctx.stroke();
+            }
+            ctx.lineWidth = 2; ctx.strokeStyle = '#334155';
+            ctx.beginPath(); ctx.moveTo(-1000, 0); ctx.lineTo(1000, 0); ctx.stroke();
+        }
+
+        function drawEye() {
+            const ecX = config.eyeCenterX, rX = config.eyeRadiusX, rY = config.eyeRadiusY;
+            const retinaX = ecX + config.retinaOffset, corneaX = ecX - rX;
+
+            ctx.lineWidth = 2; ctx.strokeStyle = '#64748b'; ctx.fillStyle = 'rgba(255,255,255,0.03)';
+            ctx.beginPath(); ctx.ellipse(ecX, 0, rX, rY, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(corneaX, -rY * 0.6);
+            ctx.bezierCurveTo(corneaX - config.corneaWidth * 1.5, -rY*0.3, corneaX - config.corneaWidth * 1.5, rY*0.3, corneaX, rY * 0.6);
+            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3; ctx.stroke();
+
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = Math.abs(state.eyeDefect) < 0.1 ? '#10b981' : '#475569'; 
+            ctx.beginPath();
+            ctx.moveTo(retinaX, -rY * 0.6);
+            ctx.quadraticCurveTo(retinaX + 15, 0, retinaX, rY * 0.6);
+            ctx.stroke();
+        }
+
+        function drawObject() {
+            const objX = config.eyeCenterX - state.objectDistance;
+            const grad = ctx.createRadialGradient(objX - 5, -5, 2, objX, 0, config.ballRadius);
+            grad.addColorStop(0, '#fca5a5'); grad.addColorStop(0.5, '#ef4444'); grad.addColorStop(1, '#991b1b');
+            
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(objX, 0, config.ballRadius, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ef4444'; ctx.font = '500 12px Inter'; ctx.textAlign = 'center';
+            ctx.fillText("Object", objX, config.ballRadius + 20); ctx.textAlign = 'left';
+        }
+
+        function drawCorrectiveLens() {
+            if (state.lensType === 'none') return;
+            const objX = config.eyeCenterX - state.objectDistance, corneaX = config.eyeCenterX - config.eyeRadiusX;
+            const lensX = corneaX - 25 - (state.lensDistanceRatio * (corneaX - objX - 40) * 0.8); 
+            state.currentLensX = lensX; 
+
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.15)'; ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = 1.5;
+            const lensH = 100, powerRatio = Math.min(state.lensPower / 15.0, 1.0);
+
+            ctx.beginPath();
+            if (state.lensType === 'convex') {
+                const centerT = 4 + (powerRatio * 20); 
+                ctx.moveTo(lensX, -lensH/2);
+                ctx.quadraticCurveTo(lensX + centerT, 0, lensX, lensH/2); 
+                ctx.quadraticCurveTo(lensX - centerT, 0, lensX, -lensH/2); 
+            } else {
+                const centerT = 3, edgeT = centerT + 2 + (powerRatio * 20); 
+                ctx.moveTo(lensX - edgeT/2, -lensH/2); ctx.lineTo(lensX + edgeT/2, -lensH/2);
+                ctx.bezierCurveTo(lensX + centerT/2, -lensH/4, lensX + centerT/2, lensH/4, lensX + edgeT/2, lensH/2);
+                ctx.lineTo(lensX - edgeT/2, lensH/2);
+                ctx.bezierCurveTo(lensX - centerT/2, lensH/4, lensX - centerT/2, -lensH/4, lensX - edgeT/2, -lensH/2);
+            }
+            ctx.fill(); ctx.stroke();
+            
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.setLineDash([2, 4]);
+            ctx.beginPath(); ctx.moveTo(lensX, -60); ctx.lineTo(lensX, 60); ctx.stroke(); ctx.setLineDash([]);
+        }
+
+        function computeAndDrawRays() {
+            const corneaX = config.eyeCenterX - config.eyeRadiusX, retinaX = config.eyeCenterX + config.retinaOffset, objX = config.eyeCenterX - state.objectDistance;
+            const eyePower = (1/140 + 1/260) - (state.eyeDefect * 0.0015);
+
+            let lensPower = 0, lensX = corneaX; 
+            if (state.lensType !== 'none') {
+                lensPower = state.lensPower * 0.0015 * (state.lensType === 'convex' ? 1 : -1);
+                lensX = state.currentLensX;
+            }
+
+            let focusX = 0, isFocused = false;
+            [config.pupilRadius, -config.pupilRadius].forEach((targetY, index) => {
+                let m0 = targetY / (corneaX - objX); 
+                let yLens = m0 * (lensX - objX);
+                let m1 = state.lensType !== 'none' ? m0 - yLens * lensPower : m0;
+                let yCornea = yLens + m1 * (corneaX - lensX);
+                let m2 = m1 - yCornea * eyePower;
+                let thisFocusX = corneaX - yCornea / m2;
+                
+                if (index === 0) focusX = thisFocusX;
+                const yRetina = yCornea + m2 * (retinaX - corneaX);
+                isFocused = Math.abs(focusX - retinaX) < 8; 
+                if (index === 0) state.currentBlur = isFocused ? 0 : Math.min(20, Math.max(0, (Math.abs(focusX - retinaX) - 5) * 0.3));
+
+                const color = isFocused ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.7)'; 
+                drawSegment(objX, 0, lensX, yLens, color);
+                if (state.lensType !== 'none') drawSegment(lensX, yLens, corneaX, yCornea, color);
+
+                if (focusX > corneaX && focusX < retinaX) {
+                    drawSegment(corneaX, yCornea, focusX, 0, color); drawSegment(focusX, 0, retinaX, yRetina, color);
+                } else { drawSegment(corneaX, yCornea, retinaX, yRetina, color); }
+            });
+
+            updateStatusBar(focusX, retinaX, isFocused);
+        }
+
+        function drawSegment(x1, y1, x2, y2, color) {
+            ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = config.rayWidth;
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, angle = Math.atan2(y2 - y1, x2 - x1), hl = config.arrowSize;
+            ctx.beginPath(); ctx.moveTo(mx, my);
+            ctx.lineTo(mx - hl * Math.cos(angle - Math.PI/6), my - hl * Math.sin(angle - Math.PI/6));
+            ctx.lineTo(mx - hl * Math.cos(angle + Math.PI/6), my - hl * Math.sin(angle + Math.PI/6));
+            ctx.fill();
+        }
+
+        // --- Core Feature: dynamic Window, Fixed Image ---
+        function drawRetinaViewHUD() {
+            const blur = state.currentBlur || 0;
+            const isMobile = cw < 900;
+            
+            // 1. Calculate Dynamic Window Size based on scale
+            const baseBoxW = isMobile ? 140 : 260;
+            const baseBoxH = isMobile ? 105 : 195; // 4:3 ratio
+            const boxW = baseBoxW * state.retinaScale;
+            const boxH = baseBoxH * state.retinaScale;
+            
+            // Positioning - anchored near top right
+            const marginX = isMobile ? 16 : 24;
+            const marginY = isMobile ? 110 : 80; 
+            const cx = cw - boxW - marginX;
+            const cy = marginY;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            // Title
+            ctx.fillStyle = '#cbd5e1'; ctx.font = `600 ${isMobile ? 12 : 14}px Inter`; ctx.textAlign = 'left';
+            ctx.fillText("👁️ " + dict[state.lang].retinaView, 0, -10);
+
+            // Frame
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+            ctx.strokeStyle = blur === 0 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(0, 0, boxW, boxH, 12); else ctx.rect(0, 0, boxW, boxH);
+            ctx.fill(); ctx.stroke();
+
+            // Clip inner window
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(0, 0, boxW, boxH, 12); else ctx.rect(0, 0, boxW, boxH);
+            ctx.clip();
+            ctx.filter = `blur(${blur}px)`;
+
+            // --- 斯內倫視力表 (Snellen Eye Chart) ---
+            ctx.save();
+            
+            // 1. 白底背景
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, boxW, boxH);
+
+            // 2. 視力表文字設定
+            ctx.fillStyle = '#050505';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 動態縮放以適應視窗大小
+            const chartScale = Math.min(boxW / 240, boxH / 300);
+            ctx.translate(boxW / 2, boxH / 2);
+            ctx.scale(chartScale, chartScale);
+
+            // 繪製經典視力表字母列 (E, FP, TOZ...)
+            const rows = [
+                { t: "E", s: 70, y: -110 },
+                { t: "F    P", s: 50, y: -50 },
+                { t: "T   O   Z", s: 40, y: -2 },
+                { t: "L   P   E   D", s: 30, y: 40 },
+                { t: "P  E  C  F  D", s: 24, y: 75 },
+                { t: "E  D  F  C  Z  P", s: 18, y: 105 }
+            ];
+
+            rows.forEach(r => {
+                ctx.font = `bold ${r.s}px 'Times New Roman', serif`;
+                ctx.fillText(r.t, 0, r.y);
+            });
+
+            // 綠線 (20/30 與 20/25 之間)
+            ctx.lineWidth = 5; ctx.strokeStyle = '#16a34a';
+            ctx.beginPath(); ctx.moveTo(-90, 125); ctx.lineTo(90, 125); ctx.stroke();
+
+            // 第 7 行
+            ctx.font = `bold 14px 'Times New Roman', serif`;
+            ctx.fillText("F E L O P Z D", 0, 142);
+
+            // 紅線 (20/25 與 20/20 之間)
+            ctx.strokeStyle = '#dc2626';
+            ctx.beginPath(); ctx.moveTo(-70, 158); ctx.lineTo(70, 158); ctx.stroke();
+
+            // 第 8 行 (20/20 正常視力標準)
+            ctx.font = `bold 12px 'Times New Roman', serif`;
+            ctx.fillText("D E F P O T E C", 0, 172);
+
+            ctx.restore();
+            // --- 視力表繪製結束 ---
+
+            ctx.filter = 'none';
+            ctx.restore();
+        }
+
+        // --- UI Updaters ---
+        function updateStatusBar(focusX, retinaX, isFocused) {
+            const bar = document.getElementById('status-bar');
+            const txt = document.getElementById('ui-status');
+            const t = dict[state.lang];
+            const corneaX = config.eyeCenterX - config.eyeRadiusX;
+
+            if (isFocused) {
+                txt.innerHTML = `<i class="fas fa-check-circle text-emerald-400"></i> ${t.sFocus}`;
+                bar.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+            } else if (focusX > corneaX && focusX < retinaX) {
+                txt.innerHTML = `<i class="fas fa-exclamation-circle text-red-400"></i> ${t.sMyopia}`;
+                bar.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            } else {
+                txt.innerHTML = `<i class="fas fa-exclamation-circle text-orange-400"></i> ${t.sHyperopia}`;
+                bar.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+            }
+        }
+
+        function setupUI() {
+            const bind = (id, key, parser = parseFloat) => {
+                document.getElementById(id).addEventListener('input', (e) => {
+                    state[key] = parser(e.target.value);
+                    updateLabels(); draw();
+                });
+            };
+            bind('eye-defect', 'eyeDefect'); bind('lens-power', 'lensPower');
+            bind('lens-distance', 'lensDistanceRatio'); bind('object-distance', 'objectDistance');
+            bind('retina-scale', 'retinaScale'); 
+            
+            document.getElementById('lens-type').addEventListener('change', (e) => {
+                state.lensType = e.target.value;
+                updateLensControlsVisibility(); draw();
+            });
+        }
+
+        function updateLensControlsVisibility() {
+            const isNone = state.lensType === 'none';
+            document.getElementById('lens-power-group').style.opacity = isNone ? '0.3' : '1';
+            document.getElementById('lens-power-group').style.pointerEvents = isNone ? 'none' : 'auto';
+            document.getElementById('lens-dist-group').style.opacity = isNone ? '0.3' : '1';
+            document.getElementById('lens-dist-group').style.pointerEvents = isNone ? 'none' : 'auto';
+        }
+
+        function updateLabels() {
+            const t = dict[state.lang];
+            let condText = t.normal, condColor = "text-blue-400";
+            if (state.eyeDefect < -0.2) { condText = t.myopia; condColor = "text-red-400"; }
+            else if (state.eyeDefect > 0.2) { condText = t.hyperopia; condColor = "text-orange-400"; }
+            
+            const valEye = document.getElementById('val-eye-type');
+            valEye.innerText = condText; valEye.className = `control-value ${condColor}`;
+
+            document.getElementById('val-lens-power').innerText = state.lensPower.toFixed(2) + " D";
+            document.getElementById('val-obj-dist').innerText = state.objectDistance + " px";
+            document.getElementById('val-retina-size').innerText = state.retinaScale.toFixed(1) + "x";
+        }
+
+        init();
+    </script>
+</body>
+</html>

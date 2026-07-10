@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>食物熱量計實驗模擬器 | Food Calorimetry Lab Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .fire-gradient { fill: url(#fireGrad); }
+        .thermometer-fluid { transition: height 0.3s ease-out; }
+        input[type=range] { accent-color: #4f46e5; }
+        .quiz-option:disabled { cursor: not-allowed; }
+        .quiz-option.correct { border-color: #10b981; background-color: #ecfdf5; color: #065f46; }
+        .quiz-option.wrong { border-color: #ef4444; background-color: #fef2f2; color: #991b1b; }
+        .quiz-option.selected { border-color: #4f46e5; background-color: #eff6ff; color: #1e40af; }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1) translateY(-2px); }
+        }
+        .flame-anim { animation: flicker 0.15s infinite; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
+            <div>
+                <h1 id="ui-title" class="text-3xl font-black text-slate-900 flex items-center gap-2 tracking-tight">
+                    <span class="text-orange-600">🔥</span> 食物熱量計模擬器
+                </h1>
+                <p id="ui-subtitle" class="text-slate-500 font-medium">專業教學版：支援 kJ / kcal 單位顯示與課後練習</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3">
+                <!-- Language Toggle -->
+                <div class="flex bg-slate-200 p-1 rounded-xl shadow-inner border border-slate-200">
+                    <button id="langZhBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm">繁中</button>
+                    <button id="langEnBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-700">EN</button>
+                </div>
+                <!-- Mode Toggle -->
+                <div class="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+                    <button id="autoModeBtn" class="px-4 py-2 rounded-lg text-sm font-bold transition-all bg-indigo-600 text-white shadow-md">自動模式</button>
+                    <button id="manualModeBtn" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:bg-slate-50">手動模式</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Controls -->
+            <aside class="lg:col-span-3 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 id="ui-settings" class="text-lg font-bold mb-4 flex items-center gap-2 border-b pb-2 text-slate-700">
+                        ⚙️ 實驗設定
+                    </h2>
+                    <div class="space-y-6">
+                        <div>
+                            <label id="ui-label-food" class="block text-xs font-black text-slate-400 tracking-widest mb-3">1. 選擇食物樣品</label>
+                            <div class="grid grid-cols-2 gap-2" id="foodSelector"></div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black text-slate-400 tracking-widest mb-2 flex justify-between">
+                                <span id="ui-label-water">2. 水容量 (cm³)</span>
+                                <span id="waterVal" class="text-indigo-600 font-mono font-bold">20</span>
+                            </label>
+                            <input type="range" id="waterRange" min="10" max="50" step="5" value="20" class="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black text-slate-400  tracking-widest mb-2 flex justify-between">
+                                <span id="ui-label-mass">3. 起始重量 (g)</span>
+                                <span id="massVal" class="text-indigo-600 font-mono font-bold">1.50</span>
+                            </label>
+                            <input type="range" id="massRange" min="0.5" max="3.0" step="0.1" value="1.5" class="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <div class="pt-4 space-y-3">
+                            <button id="startBtn" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
+                                ⏺️ 開始燃燒
+                            </button>
+                            <button id="stopBtn" class="hidden w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
+                                ⏹️ 停止實驗
+                            </button>
+                            <button id="resetBtn" class="w-full bg-white text-slate-500 border border-slate-200 font-bold py-3 rounded-xl hover:bg-slate-50 transition-all">
+                                🔄 重置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Input Panel -->
+                <div id="manualPanel" class="hidden bg-amber-50 p-6 rounded-2xl shadow-sm border border-amber-200">
+                    <h2 id="ui-manual-title" class="text-lg font-bold mb-3 flex items-center gap-2 text-amber-900">📝 觀察與記錄</h2>
+                    <div class="space-y-4">
+                        <div id="manualError" class="hidden bg-red-100 text-red-700 p-2 rounded-lg text-xs font-bold">請輸入有效讀數</div>
+                        <div>
+                            <label id="ui-manual-mass" class="block text-xs font-bold text-amber-700 mb-1">最終重量 (g)</label>
+                            <input type="number" id="inputMass" step="0.01" placeholder="0.00" class="w-full p-3 rounded-lg border border-amber-300 focus:ring-2 focus:ring-amber-400 outline-none">
+                        </div>
+                        <div>
+                            <label id="ui-manual-temp" class="block text-xs font-bold text-amber-700 mb-1">最高溫度 (°c)</label>
+                            <input type="number" id="inputTemp" step="0.1" placeholder="0.0" class="w-full p-3 rounded-lg border border-amber-300 focus:ring-2 focus:ring-amber-400 outline-none">
+                        </div>
+                        <button id="submitManualBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md transition-all active:scale-95">提交數據</button>
+                    </div>
+                </div>
+
+                <button id="autoSaveBtn" class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+                    💾 存入紀錄冊
+                </button>
+            </aside>
+
+            <!-- Main Simulation Area -->
+            <main class="lg:col-span-9 space-y-8">
+                <div class="bg-white rounded-[2.5rem] p-6 md:p-12 relative overflow-hidden min-h-[500px] flex flex-col items-center justify-center border border-slate-200 shadow-sm">
+                    <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px); background-size: 40px 40px;"></div>
+                    
+                    <div class="relative w-full flex-grow flex items-center justify-center">
+                        <svg viewBox="0 0 500 400" class="w-full h-full max-w-2xl drop-shadow-xl">
+                            <!-- Slanted Test Tube (Centered) -->
+                            <g transform="rotate(-30, 345, 125)">
+                                <path d="M 175 20 L 175 180 A 15 15 0 0 0 205 180 L 205 20" stroke="#94a3b8" stroke-width="3" fill="rgba(241,245,249,0.5)" />
+                                <path id="waterFill" d="M 175 100 L 175 180 A 15 15 0 0 0 205 180 L 205 100 Z" fill="#38bdf8" opacity="0.6" />
+                                <ellipse cx="190" cy="20" rx="15" ry="5" stroke="#94a3b8" stroke-width="3" fill="none" />
+                                
+                                <!-- Extended Thermometer -->
+                                <g transform="translate(187, 30)">
+                                    <rect x="0" y="-50" width="6" height="180" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+                                    <rect id="thermoFluid" x="1" y="128" width="4" height="0" rx="2" fill="#ef4444" class="thermometer-fluid" />
+                                    <circle cx="3" cy="128" r="5" fill="#ef4444" />
+                                </g>
+                            </g>
+
+                            <!-- Food & Burner -->
+                            <g transform="translate(250, 310)">
+                                <rect x="-20" y="45" width="40" height="6" rx="1" fill="#475569" />
+                                <path d="M 0 45 L 0 5" stroke="#94a3b8" stroke-width="2" />
+                                <g id="flameGroup" class="hidden flame-anim">
+                                    <path d="M -18 0 Q 0 -75 18 0 Q 0 15 -18 0" fill="url(#fireGrad)" />
+                                </g>
+                                <circle id="foodSample" r="15" fill="#d4a373" stroke="#451a03" stroke-width="2" />
+                            </g>
+
+                            <defs>
+                                <linearGradient id="fireGrad" x1="0" y1="1" x2="0" y2="0">
+                                    <stop offset="0%" stop-color="#ea580c" />
+                                    <stop offset="60%" stop-color="#fbbf24" />
+                                    <stop offset="100%" stop-color="#fffbeb" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+
+                    <!-- HUD Display -->
+                    <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8 text-center sm:text-left">
+                        <div class="bg-white border-2 border-slate-100 p-6 rounded-[2rem] flex items-center justify-between shadow-sm hover:border-orange-200 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="bg-orange-100 p-4 rounded-2xl text-orange-600 text-2xl">🌡️</div>
+                                <span id="ui-hud-temp" class="text-slate-400 font-black text-xs tracking-widest">當前水溫</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="hudTemp" class="text-5xl font-mono font-bold text-slate-900 tracking-tighter">25.0</span>
+                                <span class="text-slate-400 ml-2 text-xl font-bold">°c</span>
+                            </div>
+                        </div>
+                        <div class="bg-white border-2 border-slate-100 p-6 rounded-[2rem] flex items-center justify-between shadow-sm hover:border-emerald-200 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="bg-emerald-100 p-4 rounded-2xl text-emerald-600 text-2xl">⚖️</div>
+                                <span id="ui-hud-mass" class="text-slate-400 font-black text-xs tracking-widest">電子秤讀數</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="hudMass" class="text-5xl font-mono font-bold text-slate-900 tracking-tighter">1.50</span>
+                                <span class="text-slate-400 ml-2 text-xl font-bold">g</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <h2 id="ui-report-title" class="text-xl font-black text-slate-900">實驗紀錄冊</h2>
+                        <div id="ui-report-formula" class="text-xs font-bold text-slate-400">c = 4.2 J/g/°C | 1 kcal ≈ 4184 j</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-center">
+                            <thead id="logTableHeader"></thead>
+                            <tbody id="logTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Quiz -->
+                <section class="mt-16 space-y-8 pb-12 border-t border-slate-200 pt-12">
+                    <div class="flex items-center gap-3">
+                        <div class="h-8 w-2 bg-indigo-600 rounded-full"></div>
+                        <h2 id="ui-quiz-title" class="text-2xl font-black text-slate-900">課後練習</h2>
+                    </div>
+                    <div id="quizContainer" class="grid grid-cols-1 gap-6"></div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const i18n = {
+            zh: {
+                title: "食物熱量計模擬器",
+                subtitle: "專業教學版：支援 kJ / kcal 單位顯示與課後練習",
+                settings: "⚙️ 實驗設定",
+                labelFood: "1. 選擇食物樣品",
+                labelWater: "2. 水容量 (cm³)",
+                labelMass: "3. 起始重量 (g)",
+                btnStart: "⏺️ 開始燃燒",
+                btnStop: "⏹️ 停止實驗",
+                btnReset: "🔄 重置",
+                btnAutoSave: "💾 存入紀錄冊",
+                modeAuto: "自動模式",
+                modeManual: "手動模式",
+                hudTemp: "當前水溫",
+                hudMass: "電子秤讀數",
+                reportTitle: "實驗紀錄冊 (Lab Report)",
+                reportFormula: "c = 4.2 J/g/°C | 1 kcal ≈ 4184 J",
+                thFood: "食物樣品",
+                thWater: "水 (cm³)",
+                thMassDelta: "重量變化 (g)",
+                thTempDelta: "溫升 (°C)",
+                thEnergyKJ: "能量 (kJ)",
+                thEnergyKcal: "熱量 (kcal)",
+                thAction: "操作",
+                emptyLog: "尚未記錄數據。",
+                manualTitle: "📝 觀察與記錄",
+                manualError: "請輸入有效的數字讀數！",
+                manualFinalMass: "最終重量 (g)",
+                manualFinalTemp: "最高溫度 (°C)",
+                btnSubmit: "提交數據",
+                quizCorrectMsg: "答對了！",
+                quizWrongMsg: "答錯了，解析如下：",
+                foodNames: { peanut: "花生", biscuit: "餅乾", noodle: "即食麵", bread: "麵包", banana: "香蕉 (乾)" }
+            },
+            en: {
+                title: "Food Calorimetry Lab Simulator",
+                subtitle: "Educational Version: Support kJ / kcal and Practice Quiz",
+                settings: "⚙️ Lab Settings",
+                labelFood: "1. Select Food Sample",
+                labelWater: "2. Water Volume (cm³)",
+                labelMass: "3. Initial Mass (g)",
+                btnStart: "⏺️ Start Burning",
+                btnStop: "⏹️ Stop Experiment",
+                btnReset: "🔄 Reset",
+                btnAutoSave: "💾 Add to Log",
+                modeAuto: "Auto Mode",
+                modeManual: "Manual Mode",
+                hudTemp: "Current Water Temp",
+                hudMass: "Electronic Scale",
+                reportTitle: "Lab Report Table",
+                reportFormula: "c = 4.2 J/g/°C | 1 kcal ≈ 4184 J",
+                thFood: "Food Sample",
+                thWater: "Water (cm³)",
+                thMassDelta: "Mass Delta (g)",
+                thTempDelta: "Temp Rise (°C)",
+                thEnergyKJ: "Energy (kJ)",
+                thEnergyKcal: "Energy (kcal)",
+                thAction: "Action",
+                emptyLog: "No records yet.",
+                manualTitle: "📝 Observation & Log",
+                manualError: "Please enter valid numbers!",
+                manualFinalMass: "Final Mass (g)",
+                manualFinalTemp: "Max Temp (°c)",
+                btnSubmit: "Submit Data",
+                quizCorrectMsg: "Correct!",
+                quizWrongMsg: "Incorrect. Explanation:",
+                foodNames: { peanut: "Peanut", biscuit: "Biscuit", noodle: "Instant Noodle", bread: "Bread", banana: "Dried Banana" }
+            }
+        };
+
+        const QUIZ_DATA = {
+            zh: [
+                { id: 1, q: "在實驗中，如果 20g 的水溫度上升了 20°C，根據公式 Q = mcΔT (c=4.2)，水吸收了多少焦耳 (J)？", opts: ["840 J", "1680 J", "4200 J", "8400 J"], ans: 1, exp: "20g × 4.2 J/g/°C × 20°C = 1680 J。" },
+                { id: 2, q: "為什麼實驗中測得的食物熱量通常比標籤數值低得多？", opts: ["不完全燃燒", "比熱容變化", "熱量流失到空氣", "讀數太慢"], ans: 2, exp: "熱量流失到環境中是簡易卡路里計最大的誤差來源。" },
+                { id: 3, q: "比較不同食物能量時，哪項必須保持不變？", opts: ["食物起始重量", "水的質量", "燃燒時間", "最終溫度"], ans: 1, exp: "水的質量影響溫升幅度，必須固定才能公平比較。" },
+                { id: 4, q: "試管打斜放置的主要目的是？", opts: ["方便讀數", "增加受熱面積", "防止破裂", "防止水溢出"], ans: 1, exp: "增加熱氣與試管壁接觸的路徑，提高熱傳遞效率。" },
+                { id: 5, q: "試管底部的黑煙灰（碳微粒）代表什麼？", opts: ["不完全燃燒", "完全燃燒", "水吸收所有熱能", "物理變化"], ans: 0, exp: "黑煙是未燃燒的碳，代表氧氣不足導致不完全燃燒，能量未釋放。" }
+            ],
+            en: [
+                { id: 1, q: "In the lab, if 20g of water rises by 20°C (c=4.2), how much energy (J) is absorbed?", opts: ["840 J", "1680 J", "4200 J", "8400 J"], ans: 1, exp: "Calculation: 20g × 4.2 J/g/°C × 20°C = 1680 J." },
+                { id: 2, q: "Why is the measured value usually much lower than the food label value?", opts: ["Incomplete combustion", "Specific heat change", "Heat loss to air", "Slow reading"], ans: 2, exp: "Heat loss to the surroundings is the major source of error." },
+                { id: 3, q: "Which variable must be controlled when comparing different foods?", opts: ["Initial mass", "Mass of water", "Burning time", "Final temp"], ans: 1, exp: "Water mass affects the temp rise and must be fixed for a fair comparison." },
+                { id: 4, q: "What is the scientific purpose of slanting the test tube?", opts: ["Ease of reading", "Increase surface area", "Prevent cracking", "Prevent spilling"], ans: 1, exp: "It increases the path of hot air flow, transferring more heat to water." },
+                { id: 5, q: "What does black soot at the bottom indicate?", opts: ["Incomplete combustion", "Complete combustion", "Total absorption", "Physical change"], ans: 0, exp: "Soot is unburned carbon, meaning energy was not fully released due to low oxygen." }
+            ]
+        };
+
+        const FOOD_BASE_DATA = {
+            peanut: { energyDensity: 28, burnRate: 0.012, color: '#d4a373' },
+            biscuit: { energyDensity: 18, burnRate: 0.022, color: '#e9edc9' },
+            noodle: { energyDensity: 16, burnRate: 0.028, color: '#fefae0' },
+            bread: { energyDensity: 10, burnRate: 0.018, color: '#faedcd' },
+            banana: { energyDensity: 6, burnRate: 0.01, color: '#f9dc5c' }
+        };
+
+        let state = {
+            lang: 'zh',
+            selectedFoodKey: 'peanut',
+            isBurning: false,
+            isManualMode: false,
+            waterMass: 20,
+            initialFoodMass: 1.5,
+            currentTemp: 25.0,
+            burntMass: 0,
+            elapsedTime: 0,
+            logs: [],
+            interval: null,
+            quizStates: {}
+        };
+
+        const el = (id) => document.getElementById(id);
+
+        function updateStaticText() {
+            const t = i18n[state.lang];
+            el('ui-title').innerHTML = `<span class="text-orange-600">🔥</span> ${t.title}`;
+            el('ui-subtitle').innerText = t.subtitle;
+            el('ui-settings').innerText = t.settings;
+            el('ui-label-food').innerText = t.labelFood;
+            el('ui-label-water').innerText = t.labelWater;
+            el('ui-label-mass').innerText = t.labelMass;
+            el('startBtn').innerHTML = t.btnStart;
+            el('stopBtn').innerHTML = t.btnStop;
+            el('resetBtn').innerHTML = t.btnReset;
+            el('autoSaveBtn').innerHTML = t.btnAutoSave;
+            el('autoModeBtn').innerText = t.modeAuto;
+            el('manualModeBtn').innerText = t.modeManual;
+            el('ui-hud-temp').innerText = t.hudTemp;
+            el('ui-hud-mass').innerText = t.hudMass;
+            el('ui-report-title').innerText = t.reportTitle;
+            el('ui-report-formula').innerText = t.reportFormula;
+            el('ui-manual-title').innerText = t.manualTitle;
+            el('manualError').innerText = t.manualError;
+            el('ui-manual-mass').innerText = t.manualFinalMass;
+            el('ui-manual-temp').innerText = t.manualFinalTemp;
+            el('submitManualBtn').innerText = t.btnSubmit;
+            el('ui-quiz-title').innerText = i18n[state.lang].quizTitle || (state.lang === 'zh' ? "課後練習：實驗設計與結果分析" : "Practice: Lab Design & Results");
+
+            renderFoodSelector();
+            renderTableHeader();
+            renderLogs();
+            renderQuiz();
+        }
+
+        function renderFoodSelector() {
+            const selector = el('foodSelector');
+            selector.innerHTML = '';
+            Object.keys(FOOD_BASE_DATA).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = `p-2 text-sm rounded-xl border-2 transition-all font-bold ${key === state.selectedFoodKey ? 'bg-indigo-50 text-indigo-700 border-indigo-600' : 'bg-white text-slate-600 border-slate-100 hover:border-slate-300'}`;
+                btn.innerText = i18n[state.lang].foodNames[key];
+                btn.onclick = () => selectFood(key);
+                selector.appendChild(btn);
+            });
+        }
+
+        function renderTableHeader() {
+            const t = i18n[state.lang];
+            el('logTableHeader').innerHTML = `
+                <tr class="bg-slate-50 text-slate-500 border-b font-black tracking-widest text-[10px] sm:text-xs">
+                    <th class="px-3 sm:px-6 py-4 text-left">${t.thFood}</th>
+                    <th class="px-2 sm:px-6 py-4">${t.thWater}</th>
+                    <th class="px-2 sm:px-6 py-4">${t.thMassDelta}</th>
+                    <th class="px-2 sm:px-6 py-4">${t.thTempDelta}</th>
+                    <th class="px-2 sm:px-6 py-4 text-indigo-600 underline">${t.thEnergyKJ}</th>
+                    <th class="px-2 sm:px-6 py-4 text-rose-600 underline">${t.thEnergyKcal}</th>
+                    <th class="px-3 sm:px-6 py-4 text-right">${t.thAction}</th>
+                </tr>
+            `;
+        }
+
+        function renderQuiz() {
+            const container = el('quizContainer');
+            container.innerHTML = '';
+            const t = i18n[state.lang];
+            QUIZ_DATA[state.lang].forEach((q, idx) => {
+                const quizState = state.quizStates[q.id];
+                const div = document.createElement('div');
+                div.className = "bg-white rounded-3xl p-6 border border-slate-200 shadow-sm transition-all hover:shadow-md";
+                div.innerHTML = `
+                    <div class="flex items-start gap-4 mb-6">
+                        <span class="flex-shrink-0 h-10 w-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-black">${idx + 1}</span>
+                        <h3 class="text-lg font-bold text-slate-800 leading-snug">${q.q}</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        ${q.opts.map((opt, optIdx) => {
+                            let statusClass = "";
+                            if (quizState) {
+                                if (optIdx === q.ans) statusClass = "correct";
+                                else if (optIdx === quizState.selected) statusClass = "wrong";
+                            }
+                            return `<button onclick="checkQuiz(${q.id}, ${optIdx})" ${quizState ? 'disabled' : ''} class="quiz-option p-4 text-left rounded-2xl border-2 border-slate-50 bg-slate-50 text-slate-600 font-bold hover:border-slate-200 transition-all ${statusClass}">${opt}</button>`;
+                        }).join('')}
+                    </div>
+                    ${quizState ? `<div class="p-4 rounded-2xl flex gap-3 animate-in slide-in-from-top-2 ${quizState.selected === q.ans ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}">
+                        <div class="shrink-0 mt-0.5">ℹ️</div>
+                        <div><p class="font-black text-xs tracking-widest mb-1">${quizState.selected === q.ans ? t.quizCorrectMsg : t.quizWrongMsg}</p><p class="text-sm font-medium">${q.exp}</p></div>
+                    </div>` : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function checkQuiz(qId, optIdx) {
+            state.quizStates[qId] = { selected: optIdx };
+            renderQuiz();
+        }
+
+        function setMode(isManual) {
+            state.isManualMode = isManual;
+            el('autoModeBtn').className = !isManual ? 'px-4 py-2 rounded-lg text-sm font-bold transition-all bg-indigo-600 text-white shadow-md' : 'px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50';
+            el('manualModeBtn').className = isManual ? 'px-4 py-2 rounded-lg text-sm font-bold transition-all bg-indigo-600 text-white shadow-md' : 'px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50';
+            updateUI();
+        }
+
+        function selectFood(key) {
+            if (state.isBurning) return;
+            state.selectedFoodKey = key;
+            renderFoodSelector();
+            resetExperiment();
+        }
+
+        function startBurning() {
+            if (state.interval) clearInterval(state.interval);
+            state.isBurning = true;
+            state.burntMass = 0;
+            state.elapsedTime = 0;
+            state.currentTemp = 25.0;
+            updateUI();
+            
+            state.interval = setInterval(() => {
+                state.elapsedTime += 0.1;
+                const food = FOOD_BASE_DATA[state.selectedFoodKey];
+                state.burntMass += food.burnRate;
+                if (state.burntMass >= state.initialFoodMass * 0.88) stopBurning();
+
+                const energyReleased = food.burnRate * food.energyDensity * 1000 * 0.18;
+                const tempRise = energyReleased / (state.waterMass * 4.2);
+                state.currentTemp = Math.min(state.currentTemp + tempRise, 99.0);
+                updateUI();
+            }, 100);
+        }
+
+        function stopBurning() {
+            state.isBurning = false;
+            if (state.interval) clearInterval(state.interval);
+            updateUI();
+        }
+
+        function resetExperiment() {
+            stopBurning();
+            state.burntMass = 0;
+            state.currentTemp = 25.0;
+            state.elapsedTime = 0;
+            el('inputMass').value = '';
+            el('inputTemp').value = '';
+            el('manualError').classList.add('hidden');
+            updateUI();
+        }
+
+        function saveLog() {
+            let finalMass, finalTemp;
+            if (state.isManualMode) {
+                finalMass = parseFloat(el('inputMass').value);
+                finalTemp = parseFloat(el('inputTemp').value);
+                if (isNaN(finalMass) || isNaN(finalTemp)) {
+                    el('manualError').classList.remove('hidden');
+                    return;
+                }
+                el('manualError').classList.add('hidden');
+            } else {
+                finalMass = state.initialFoodMass - state.burntMass;
+                finalTemp = state.currentTemp;
+            }
+
+            const dtValue = parseFloat((finalTemp - 25.0).toFixed(1));
+            const energyJ = (state.waterMass * 4.2 * dtValue);
+            
+            state.logs.unshift({
+                foodKey: state.selectedFoodKey,
+                water: state.waterMass,
+                m1: state.initialFoodMass.toFixed(2),
+                m2: finalMass.toFixed(2),
+                dm: (state.initialFoodMass - finalMass).toFixed(2),
+                dt: dtValue.toFixed(1),
+                kJ: (energyJ / 1000).toFixed(2),
+                kcal: (energyJ / 4184).toFixed(2)
+            });
+
+            renderLogs();
+            resetExperiment();
+        }
+
+        function renderLogs() {
+            const body = el('logTableBody');
+            if (state.logs.length === 0) {
+                body.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-slate-400 italic">${i18n[state.lang].emptyLog}</td></tr>`;
+                return;
+            }
+            body.innerHTML = state.logs.map((log, i) => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-3 sm:px-6 py-4 font-bold text-left text-slate-900">${i18n[state.lang].foodNames[log.foodKey]}</td>
+                    <td class="px-2 sm:px-6 py-4 font-mono">${log.water}</td>
+                    <td class="px-2 sm:px-6 py-4 font-mono text-xs">${log.m1} → ${log.m2} <span class="text-amber-600 font-bold">(${log.dm} g)</span></td>
+                    <td class="px-2 sm:px-6 py-4 font-mono font-bold text-indigo-700">+${log.dt}</td>
+                    <td class="px-2 sm:px-6 py-4 font-black text-indigo-600">${log.kJ}</td>
+                    <td class="px-2 sm:px-6 py-4 font-black text-rose-600">${log.kcal}</td>
+                    <td class="px-3 sm:px-6 py-4 text-right"><button onclick="deleteLog(${i})" class="text-slate-300 hover:text-red-500 transition-colors">🗑️</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteLog(i) {
+            state.logs.splice(i, 1);
+            renderLogs();
+        }
+
+        function updateUI() {
+            el('hudTemp').innerText = state.currentTemp.toFixed(1);
+            el('hudMass').innerText = (state.initialFoodMass - state.burntMass).toFixed(2);
+            el('waterVal').innerText = state.waterMass;
+            el('massVal').innerText = state.initialFoodMass.toFixed(2);
+
+            el('startBtn').classList.toggle('hidden', state.isBurning);
+            el('stopBtn').classList.toggle('hidden', !state.isBurning);
+            
+            const hasData = state.elapsedTime > 0 && !state.isBurning;
+            el('autoSaveBtn').classList.toggle('hidden', state.isManualMode || !hasData);
+            el('manualPanel').classList.toggle('hidden', !state.isManualMode || !hasData);
+
+            const maxFluidHeight = 150; 
+            const thermoHeight = ((state.currentTemp - 25) / 75) * maxFluidHeight;
+            el('thermoFluid').setAttribute('height', Math.max(thermoHeight, 0));
+            el('thermoFluid').setAttribute('y', 128 - Math.max(thermoHeight, 0));
+            
+            el('flameGroup').classList.toggle('hidden', !state.isBurning);
+            const scale = Math.max(0.4, 1 - (state.burntMass / state.initialFoodMass));
+            el('foodSample').setAttribute('r', 15 * scale);
+            el('foodSample').setAttribute('fill', FOOD_BASE_DATA[state.selectedFoodKey].color);
+        }
+
+        el('langZhBtn').onclick = () => { state.lang = 'zh'; el('langZhBtn').className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm'; el('langEnBtn').className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-700'; updateStaticText(); };
+        el('langEnBtn').onclick = () => { state.lang = 'en'; el('langEnBtn').className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm'; el('langZhBtn').className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-700'; updateStaticText(); };
+        el('autoModeBtn').onclick = () => setMode(false);
+        el('manualModeBtn').onclick = () => setMode(true);
+        el('waterRange').oninput = (e) => { state.waterMass = parseInt(e.target.value); updateUI(); };
+        el('massRange').oninput = (e) => { state.initialFoodMass = parseFloat(e.target.value); updateUI(); };
+        el('startBtn').onclick = startBurning;
+        el('stopBtn').onclick = stopBurning;
+        el('resetBtn').onclick = resetExperiment;
+        el('autoSaveBtn').onclick = saveLog;
+        el('submitManualBtn').onclick = saveLog;
+
+        window.onload = updateStaticText;
+    </script>
+</body>
+</html>

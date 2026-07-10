@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生物科實驗：黑藻光合作用多組數據模擬器 (Bilingual & HOT)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @keyframes bubbleInPipette {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            15% { opacity: 1; }
+            35% { transform: translateY(-35px) scale(0.8); }
+            100% { transform: translateY(-160px) scale(0.6); opacity: 0; }
+        }
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            border: 0.5px solid white;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: bubbleInPipette 2.8s ease-in forwards;
+        }
+        #lamp-unit {
+            transition: transform 0.25s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
+    <div class="max-w-7xl mx-auto p-4 lg:p-6">
+        <!-- 頂部標題與語言選擇 -->
+        <header class="bg-emerald-900 text-white p-6 rounded-3xl shadow-xl mb-6 flex flex-col md:flex-row justify-between items-center border-b-8 border-emerald-950">
+            <div class="mb-4 md:mb-0">
+                <h1 class="text-2xl font-bold flex items-center" id="title-text">
+                    <span class="bg-white text-emerald-900 px-3 py-1 rounded-lg mr-3 text-lg" id="badge-exp">實驗</span>
+                    探究影響光合作用速率的因素 (對比模式)
+                </h1>
+                <p class="text-emerald-200 text-sm mt-1 font-medium italic" id="hint-text">老師提示：改變參數後點擊「開始新實驗組」來對比曲線</p>
+            </div>
+            <div class="flex items-center gap-6">
+                <!-- 語言切換按鈕 -->
+                <div class="flex bg-emerald-800 rounded-xl p-1 border border-white/10">
+                    <button id="lang-zh" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white text-emerald-900">中文</button>
+                    <button id="lang-en" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-emerald-100 hover:bg-emerald-700">English</button>
+                </div>
+                <div class="bg-white/10 backdrop-blur px-6 py-2 rounded-2xl border border-white/20 text-center">
+                    <div class="text-[10px] font-bold text-emerald-300 uppercase tracking-widest" id="label-rate">產氧速率</div>
+                    <div class="text-3xl font-mono font-bold"><span id="rateLabel">0</span> <small class="text-xs" id="unit-bpm">泡/分</small></div>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- 左側控制區 -->
+            <div class="lg:col-span-1 space-y-4">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <h2 class="font-bold text-slate-700 mb-6 flex items-center border-b pb-3 text-lg">
+                        <svg class="w-5 h-5 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <span id="label-params">環境參數設定</span>
+                    </h2>
+
+                    <!-- 檯燈距離 -->
+                    <div class="mb-6 p-3 rounded-2xl border-2 border-transparent" id="box-dist">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-slate-600 font-bold underline decoration-emerald-500" id="label-dist">檯燈距離 (自變量)</span>
+                            <span id="distText" class="text-blue-600 font-bold">20 厘米</span>
+                        </div>
+                        <input type="range" id="distRange" min="5" max="60" value="20" class="w-full h-2 bg-slate-200 rounded-lg accent-blue-600 cursor-pointer">
+                    </div>
+
+                    <!-- CO2 濃度 -->
+                    <div class="mb-6 p-3 rounded-2xl border-2 border-transparent" id="box-co2">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-slate-600 font-bold underline decoration-emerald-500" id="label-co2">二氧化碳濃度</span>
+                            <span id="co2Text" class="text-emerald-600 font-bold">0.50 百分比</span>
+                        </div>
+                        <input type="range" id="co2Range" min="0" max="100" value="50" class="w-full h-2 bg-slate-200 rounded-lg accent-emerald-600 cursor-pointer">
+                    </div>
+
+                    <!-- 溫度 -->
+                    <div class="mb-8 p-3 rounded-2xl border-2 border-transparent" id="box-temp">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-slate-600 font-bold underline decoration-emerald-500" id="label-temp">環境溫度</span>
+                            <span id="tempText" class="text-orange-600 font-bold">25 攝氏度</span>
+                        </div>
+                        <input type="range" id="tempRange" min="5" max="50" value="25" class="w-full h-2 bg-slate-200 rounded-lg accent-orange-600 cursor-pointer">
+                    </div>
+
+                    <div class="space-y-3">
+                        <button id="addRecord" class="w-full py-4 bg-emerald-700 text-white rounded-2xl font-bold shadow-lg hover:bg-emerald-800 active:scale-95 transition-all text-lg">
+                            記錄數據點
+                        </button>
+                        <button id="newExperiment" class="w-full py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-md hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            <span id="label-new-group">開始新實驗組</span>
+                        </button>
+                        <button id="resetExp" class="w-full py-2 text-slate-400 text-xs hover:text-slate-600 transition-colors">重置所有實驗</button>
+                    </div>
+                </div>
+
+                <!-- 狀態看板 -->
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3" id="label-progress">實驗進度</div>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500" id="label-current-group">當前實驗組:</span>
+                            <span id="currentGroupLabel" class="font-bold text-blue-600">第 1 組</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500" id="label-points">已記錄點數:</span>
+                            <span id="pointCountLabel" class="font-bold">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主實驗舞台區 -->
+            <div class="lg:col-span-3 space-y-6">
+                <div class="relative w-full h-[450px] bg-slate-950 rounded-[2.5rem] shadow-2xl border-8 border-slate-800 overflow-hidden">
+                    <!-- 標尺 -->
+                    <div class="absolute bottom-8 right-32 w-[600px] h-14 flex flex-row-reverse border-t-2 border-white/10">
+                        <div class="relative flex-1 border-r border-white/20 h-4"><span class="absolute -bottom-6 -right-1 text-[9px] text-slate-500 font-mono">0</span></div>
+                        <div class="relative flex-1 border-r border-white/20 h-4"><span class="absolute -bottom-6 -right-1 text-[9px] text-slate-500 font-mono">10</span></div>
+                        <div class="relative flex-1 border-r border-white/20 h-4"><span class="absolute -bottom-6 -right-1 text-[9px] text-slate-500 font-mono">20</span></div>
+                        <div class="relative flex-1 border-r border-white/20 h-4"><span class="absolute -bottom-6 -right-1 text-[9px] text-slate-500 font-mono">30</span></div>
+                        <div class="relative flex-1 border-r border-white/20 h-4"><span class="absolute -bottom-6 -right-1 text-[9px] text-slate-500 font-mono">40</span></div>
+                        <div class="relative flex-1 border-r border-white/20 h-4"><span class="absolute -bottom-6 -right-1 text-[9px] text-slate-500 font-mono">50</span></div>
+                        <div class="relative border-r border-white/20 h-4"><span class="absolute -bottom-6 -right-1 text-[9px] text-slate-500 font-mono">60</span></div>
+                    </div>
+
+                    <!-- 可移動檯燈 -->
+                    <div id="lamp-unit" class="absolute bottom-16 right-32 z-30 flex items-center h-48" style="transform: translateX(-200px);">
+                        <div class="relative">
+                            <div id="beam" class="absolute left-[30px] top-[35px] h-[80px] origin-left bg-gradient-to-r from-yellow-200/40 to-transparent" style="clip-path: polygon(0 25%, 100% 0, 100% 100%, 0 75%);"></div>
+                            <svg width="120" height="160" viewBox="0 0 120 160">
+                                <rect x="0" y="140" width="80" height="10" rx="3" fill="#334155" />
+                                <path d="M40 140 L40 90 Q40 60 20 60" fill="none" stroke="#475569" stroke-width="5" />
+                                <path d="M5 40 L50 15 L50 105 L5 80 Z" fill="#1e293b" />
+                                <circle cx="15" cy="60" r="12" fill="#fef08a" class="animate-pulse shadow-yellow-200 shadow-lg" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 實驗裝置 -->
+                    <div class="absolute bottom-16 right-32 w-48 h-80 z-20 translate-x-1/2">
+                        <svg width="180" height="300" viewBox="0 0 180 300">
+                            <rect x="30" y="80" width="120" height="175" fill="#38bdf8" fill-opacity="0.15" rx="5" />
+                            <path d="M30 60 L30 252 Q30 255 35 255 L145 255 Q150 255 150 252 L150 60" fill="none" stroke="#94a3b8" stroke-width="3" />
+                            <g transform="translate(90, 250)">
+                                <path d="M0 0 L0 -100" stroke="#166534" stroke-width="4" />
+                                <g transform="translate(0, -20)"><ellipse rx="16" ry="4.5" fill="#14532d" transform="rotate(0)"/><ellipse rx="16" ry="4.5" fill="#14532d" transform="rotate(60)"/><ellipse rx="16" ry="4.5" fill="#14532d" transform="rotate(120)"/></g>
+                                <g transform="translate(0, -55)"><ellipse rx="14" ry="4" fill="#15803d" transform="rotate(30)"/><ellipse rx="14" ry="4" fill="#15803d" transform="rotate(90)"/><ellipse rx="14" ry="4" fill="#15803d" transform="rotate(150)"/></g>
+                                <g transform="translate(0, -85)"><ellipse rx="12" ry="3.5" fill="#166534" transform="rotate(15)"/><ellipse rx="12" ry="3.5" fill="#166534" transform="rotate(75)"/><ellipse rx="12" ry="3.5" fill="#166534" transform="rotate(135)"/></g>
+                            </g>
+                            <path d="M45 245 L135 245 L95 165 L95 125 L85 125 L85 165 Z" fill="rgba(255,255,255,0.1)" stroke="#cbd5e1" stroke-width="1.5" />
+                            <rect x="84" y="20" width="12" height="105" fill="rgba(255,255,255,0.2)" stroke="#cbd5e1" stroke-width="1.2" />
+                        </svg>
+                        <div id="emitter" class="absolute bottom-[130px] left-1/2 -translate-x-1/2 w-4 h-4"></div>
+                    </div>
+                </div>
+
+                <!-- 數據表格與圖表分析 -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-10">
+                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden text-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-700" id="table-title">對比實驗紀錄表</h3>
+                            <button id="clearRows" class="text-[10px] text-red-400 hover:text-red-600 font-bold uppercase">清空所有數據</button>
+                        </div>
+                        <div class="max-h-80 overflow-y-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-slate-400 uppercase sticky top-0">
+                                    <tr id="table-headers">
+                                        <th class="p-3">實驗組</th>
+                                        <th class="p-3">距離</th>
+                                        <th class="p-3">CO2</th>
+                                        <th class="p-3">溫度</th>
+                                        <th class="p-3 font-bold text-emerald-700">速率</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 min-h-[400px]">
+                        <canvas id="analysisChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- HOT 題目區塊 -->
+                <div class="bg-white p-8 rounded-[2.5rem] shadow-md border border-slate-200 mb-20">
+                    <h2 class="text-xl font-bold text-emerald-900 mb-6 flex items-center" id="hot-title">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.674a1 1 0 00.707-.293l4.853-4.853a1 1 0 000-1.414L15.044 5.586a1 1 0 00-.707-.293H9.663a1 1 0 00-.707.293L4.103 10.44a1 1 0 000 1.414l4.853 4.853a1 1 0 00.707.293z"></path></svg>
+                        實驗探究與思考：HOT 挑戰
+                    </h2>
+                    <div id="hot-questions-container" class="space-y-6 text-sm">
+                        <!-- 題目將由 JavaScript 動態插入 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            distance: 20,
+            co2: 0.5,
+            temp: 25,
+            rate: 0,
+            currentGroupIndex: 0,
+            pointCount: 0,
+            language: 'zh'
+        };
+
+        const translations = {
+            zh: {
+                title: '<span class="bg-white text-emerald-900 px-3 py-1 rounded-lg mr-3 text-lg">實驗</span> 探究影響光合作用速率的因素 (對比模式)',
+                hint: '老師提示：改變參數後點擊「開始新實驗組」來對比曲線',
+                label_rate: '產氧速率',
+                unit_bpm: '泡/分',
+                params: '環境參數設定',
+                dist: '檯燈距離 (自變量)',
+                co2: '二氧化碳濃度',
+                temp: '環境溫度',
+                record: '記錄數據點',
+                new_group: '開始新實驗組',
+                reset: '重置所有實驗',
+                progress: '實驗進度',
+                curr_group: '當前實驗組:',
+                points: '已記錄點數:',
+                table_title: '對比實驗紀錄表',
+                clear: '清空所有數據',
+                headers: ['實驗組', '距離', 'CO2', '溫度', '速率'],
+                chart_x: '相對光強度 (10000/d²)',
+                chart_y: '產氧速率 (泡/分)',
+                group_prefix: '組',
+                unit_cm: '厘米',
+                unit_pct: '百分比',
+                unit_deg: '攝氏度',
+                hot_title: '實驗探究與思考：HOT 挑戰',
+                show_ans: '顯示答案與解析',
+                hide_ans: '隱藏答案',
+                hot_q: [
+                    {
+                        q: "在移動檯燈改變光強度時，為何通常要在燈與燒杯之間放置一個透明水缸或隔熱玻璃？",
+                        a: "這是為了**控制溫度**（控制變量）。燈泡在發光時會釋放熱力，若不隔絕熱力，靠近燈時水溫會上升，影響光合作用速率，使實驗結果不準確。"
+                    },
+                    {
+                        q: "在開始實驗前，向水中加入少量的碳酸氫鈉（NaHCO3）溶液的主要目的是什麼？",
+                        a: "為了提供**充足且穩定的二氧化碳來源**。這能確保二氧化碳濃度在實驗初期不是限制因素，並維持實驗條件的一致性。"
+                    },
+                    {
+                        q: "若檯燈移至極近位置，但產氧速率不再上升，除了光飽和外，還有什麼可能原因？",
+                        a: "可能是因為其他因素變成了**限制因素**（Limiting Factors），例如二氧化碳濃度不足或環境溫度未達最佳值。另外，過強的光線也可能損傷葉綠體（光抑制現象）。"
+                    },
+                    {
+                        q: "為什麼使用「氣泡計數法」來量度光合作用速率會存在系統誤差？",
+                        a: "因為氣泡的大小並不一致。此外，植物產生的氧氣部分會溶於水，部分會被植物本身的**呼吸作用**直接消耗，因此量度到的只是「淨光合作用速率」。"
+                    },
+                    {
+                        q: "在改變檯燈距離後，為什麼應等待幾分鐘才開始計數氣泡？",
+                        a: "這是為了讓植物**適應新的光強度環境**，使光合作用速率達到穩定狀態（Equilibration），從而獲取更可靠的數據。"
+                    }
+                ]
+            },
+            en: {
+                title: '<span class="bg-white text-emerald-900 px-3 py-1 rounded-lg mr-3 text-lg">EXP</span> Photosynthesis Rate Factors (Comparison)',
+                hint: 'Teacher Tip: Click "New Group" after changing params to compare curves',
+                label_rate: 'Oxygen Rate',
+                unit_bpm: 'bpm',
+                params: 'Environment Params',
+                dist: 'Lamp Distance (I.V.)',
+                co2: 'CO2 Concentration',
+                temp: 'Water Temperature',
+                record: 'Record Data Point',
+                new_group: 'Start New Group',
+                reset: 'Reset All',
+                progress: 'Progress',
+                curr_group: 'Current Group:',
+                points: 'Points Recorded:',
+                table_title: 'Comparison Table',
+                clear: 'CLEAR ALL DATA',
+                headers: ['Group', 'Dist', 'CO2', 'Temp', 'Rate'],
+                chart_x: 'Rel. Light Intensity (10000/d²)',
+                chart_y: 'Oxygen Rate (bubbles/min)',
+                group_prefix: 'Group',
+                unit_cm: 'cm',
+                unit_pct: '%',
+                unit_deg: '°C',
+                hot_title: 'Exp. Inquiry & Thinking: HOT Challenge',
+                show_ans: 'Show Answer & Rationale',
+                hide_ans: 'Hide Answer',
+                hot_q: [
+                    {
+                        q: "Why is a transparent water tank or heat shield often placed between the lamp and the plant?",
+                        a: "To **control the temperature** (controlled variable). Lamps emit heat; without a shield, the water temperature would rise as the lamp gets closer, affecting the enzyme activity and the experimental accuracy."
+                    },
+                    {
+                        q: "What is the primary purpose of adding Sodium Bicarbonate (NaHCO3) to the water before the experiment?",
+                        a: "To provide a **sufficient and stable supply of carbon dioxide**. This ensures that CO2 is not a limiting factor at the start and maintains constant experimental conditions."
+                    },
+                    {
+                        q: "If the oxygen rate plateaus when the lamp is very close, what could be the reason besides light saturation?",
+                        a: "Other factors might have become **limiting factors**, such as insufficient CO2 or sub-optimal temperature. Extreme light can also cause photoinhibition (chloroplast damage)."
+                    },
+                    {
+                        q: "Why is 'bubble counting' considered less accurate for measuring photosynthesis rate?",
+                        a: "Bubbles vary in size. Also, some oxygen produced dissolves in water or is consumed by the plant's own **respiration**, meaning we only measure the 'net photosynthetic rate'."
+                    },
+                    {
+                        q: "Why should you wait for a few minutes after changing the lamp distance before counting bubbles?",
+                        a: "To allow the plant to **equilibrate** and adapt to the new light intensity, ensuring the photosynthetic rate stabilizes for more reliable data collection."
+                    }
+                ]
+            }
+        };
+
+        const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+        // DOM 元素引用
+        const distRange = document.getElementById('distRange');
+        const co2Range = document.getElementById('co2Range');
+        const tempRange = document.getElementById('tempRange');
+        const lampUnit = document.getElementById('lamp-unit');
+        const beam = document.getElementById('beam');
+        const emitter = document.getElementById('emitter');
+        const tableBody = document.getElementById('tableBody');
+
+        // 初始化圖表
+        const ctx = document.getElementById('analysisChart').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'scatter',
+            data: { datasets: [] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: translations.zh.chart_x, font: { size: 12 } } },
+                    y: { title: { display: true, text: translations.zh.chart_y, font: { size: 12 } }, min: 0 }
+                },
+                plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
+            }
+        });
+
+        // 語言切換邏輯
+        function updateUI() {
+            const t = translations[state.language];
+            document.getElementById('title-text').innerHTML = t.title;
+            document.getElementById('hint-text').innerText = t.hint;
+            document.getElementById('label-rate').innerText = t.label_rate;
+            document.getElementById('unit-bpm').innerText = t.unit_bpm;
+            document.getElementById('label-params').innerText = t.params;
+            document.getElementById('label-dist').innerText = t.dist;
+            document.getElementById('label-co2').innerText = t.co2;
+            document.getElementById('label-temp').innerText = t.temp;
+            document.getElementById('addRecord').innerText = t.record;
+            document.getElementById('label-new-group').innerText = t.new_group;
+            document.getElementById('resetExp').innerText = t.reset;
+            document.getElementById('label-progress').innerText = t.progress;
+            document.getElementById('label-current-group').innerText = t.curr_group;
+            document.getElementById('label-points').innerText = t.points;
+            document.getElementById('table-title').innerText = t.table_title;
+            document.getElementById('hot-title').innerText = t.hot_title;
+
+            // 更新表格標頭
+            const headers = document.getElementById('table-headers').children;
+            t.headers.forEach((h, i) => headers[i].innerText = h);
+
+            // 更新數值文字
+            document.getElementById('distText').innerText = `${state.distance} ${t.unit_cm}`;
+            document.getElementById('co2Text').innerText = `${state.co2.toFixed(2)} ${t.unit_pct}`;
+            document.getElementById('tempText').innerText = `${state.temp} ${t.unit_deg}`;
+
+            // 更新圖表標題
+            chart.options.scales.x.title.text = t.chart_x;
+            chart.options.scales.y.title.text = t.chart_y;
+            chart.update();
+
+            // 按鈕樣式
+            document.getElementById('lang-zh').className = `px-3 py-1 rounded-lg text-xs font-bold transition-all ${state.language==='zh' ? 'bg-white text-emerald-900' : 'text-emerald-100 hover:bg-emerald-700'}`;
+            document.getElementById('lang-en').className = `px-3 py-1 rounded-lg text-xs font-bold transition-all ${state.language==='en' ? 'bg-white text-emerald-900' : 'text-emerald-100 hover:bg-emerald-700'}`;
+
+            // 更新 HOT 題目
+            renderHOTQuestions();
+        }
+
+        function renderHOTQuestions() {
+            const container = document.getElementById('hot-questions-container');
+            const t = translations[state.language];
+            container.innerHTML = '';
+
+            t.hot_q.forEach((item, index) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all';
+                qDiv.innerHTML = `
+                    <div class="font-bold text-slate-800 mb-3 flex items-start">
+                        <span class="bg-emerald-100 text-emerald-700 w-6 h-6 rounded-full flex items-center justify-center mr-2 shrink-0 text-xs">${index + 1}</span>
+                        <span>${item.q}</span>
+                    </div>
+                    <div id="ans-${index}" class="hidden mt-3 p-3 bg-white rounded-xl border-l-4 border-emerald-500 text-slate-600 italic">
+                        ${item.a}
+                    </div>
+                    <button onclick="toggleAnswer(${index})" class="mt-2 text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 transition-colors">
+                        <span id="btn-text-${index}">${t.show_ans}</span>
+                        <svg id="icon-${index}" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                `;
+                container.appendChild(qDiv);
+            });
+        }
+
+        window.toggleAnswer = (index) => {
+            const ans = document.getElementById(`ans-${index}`);
+            const btnText = document.getElementById(`btn-text-${index}`);
+            const icon = document.getElementById(`icon-${index}`);
+            const isHidden = ans.classList.contains('hidden');
+            const t = translations[state.language];
+
+            if (isHidden) {
+                ans.classList.remove('hidden');
+                btnText.innerText = t.hide_ans;
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                ans.classList.add('hidden');
+                btnText.innerText = t.show_ans;
+                icon.style.transform = 'rotate(0deg)';
+            }
+        };
+
+        document.getElementById('lang-zh').onclick = () => { state.language = 'zh'; updateUI(); };
+        document.getElementById('lang-en').onclick = () => { state.language = 'en'; updateUI(); };
+
+        function startNewGroup() {
+            state.currentGroupIndex = chart.data.datasets.length;
+            const color = colors[state.currentGroupIndex % colors.length];
+            const t = translations[state.language];
+            
+            const newDataset = {
+                label: `${t.group_prefix} ${state.currentGroupIndex + 1} (T=${state.temp}, CO2=${state.co2}%)`,
+                data: [], borderColor: color, backgroundColor: color, showLine: true, tension: 0.3, pointRadius: 5
+            };
+            
+            chart.data.datasets.push(newDataset);
+            chart.update();
+            
+            document.getElementById('currentGroupLabel').innerText = `${t.group_prefix} ${state.currentGroupIndex + 1}`;
+            document.getElementById('currentGroupLabel').style.color = color;
+            state.pointCount = 0;
+            document.getElementById('pointCountLabel').innerText = "0";
+        }
+
+        function updateSimulation() {
+            const movePx = - (state.distance * 10);
+            lampUnit.style.transform = `translateX(${movePx}px)`;
+
+            const intensity = (10000 / (state.distance * state.distance)).toFixed(1);
+            beam.style.width = (state.distance * 10) + "px";
+            beam.style.opacity = Math.min(0.6, intensity / 100);
+
+            // 速率計算
+            const lightPotential = 120 * (intensity / (parseFloat(intensity) + 18));
+            const co2Potential = 130 * (state.co2 / (state.co2 + 0.12));
+            let tempPotential = 0;
+            if (state.temp <= 38) tempPotential = 100 * (Math.pow(1.06, state.temp - 10) * 0.5);
+            else tempPotential = Math.max(0, 100 - (state.temp - 38) * 15);
+
+            state.rate = Math.round(Math.max(0, Math.min(lightPotential, co2Potential, tempPotential)));
+            document.getElementById('rateLabel').innerText = state.rate;
+        }
+
+        // 氣泡循環
+        let lastB = 0;
+        function animate(t) {
+            if (state.rate > 0) {
+                const interval = 60000 / state.rate;
+                if (t - lastB > interval) { spawnBubble(); lastB = t; }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function spawnBubble() {
+            const b = document.createElement('div');
+            b.className = 'bubble';
+            const size = 3 + Math.random() * 4;
+            b.style.width = size + 'px'; b.style.height = size + 'px';
+            b.style.left = (Math.random() * 6 - 3) + 'px';
+            emitter.appendChild(b);
+            setTimeout(() => b.remove(), 2800);
+        }
+
+        // 事件
+        distRange.oninput = (e) => {
+            state.distance = parseInt(e.target.value);
+            document.getElementById('distText').innerText = `${state.distance} ${translations[state.language].unit_cm}`;
+            updateSimulation();
+        };
+        co2Range.oninput = (e) => {
+            state.co2 = parseFloat((e.target.value / 100).toFixed(2));
+            document.getElementById('co2Text').innerText = `${state.co2.toFixed(2)} ${translations[state.language].unit_pct}`;
+            updateSimulation();
+        };
+        tempRange.oninput = (e) => {
+            state.temp = parseInt(e.target.value);
+            document.getElementById('tempText').innerText = `${state.temp} ${translations[state.language].unit_deg}`;
+            updateSimulation();
+        };
+
+        document.getElementById('addRecord').onclick = () => {
+            if (chart.data.datasets.length === 0) startNewGroup();
+            const intensity = parseFloat((10000 / (state.distance * state.distance)).toFixed(1));
+            const dataset = chart.data.datasets[state.currentGroupIndex];
+            const t = translations[state.language];
+            
+            dataset.data.push({x: intensity, y: state.rate});
+            dataset.data.sort((a,b) => a.x - b.x);
+            chart.update();
+
+            state.pointCount++;
+            document.getElementById('pointCountLabel').innerText = state.pointCount;
+
+            const row = `<tr class="hover:bg-slate-50 transition-colors">
+                <td class="p-3 font-bold" style="color: ${dataset.borderColor}">${t.group_prefix} ${state.currentGroupIndex + 1}</td>
+                <td class="p-3 font-mono">${state.distance}cm</td>
+                <td class="p-3">${state.co2}%</td>
+                <td class="p-3">${state.temp}°C</td>
+                <td class="p-3 font-bold text-emerald-600">${state.rate}</td>
+            </tr>`;
+            tableBody.insertAdjacentHTML('afterbegin', row);
+        };
+
+        document.getElementById('newExperiment').onclick = startNewGroup;
+        document.getElementById('resetExp').onclick = () => location.reload();
+        document.getElementById('clearRows').onclick = () => {
+            tableBody.innerHTML = '';
+            chart.data.datasets = [];
+            startNewGroup();
+            chart.update();
+        };
+
+        // 初始啟動
+        updateSimulation();
+        updateUI();
+        startNewGroup();
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>

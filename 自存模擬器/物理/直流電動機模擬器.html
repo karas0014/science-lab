@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="zh-HK" class="dark">
+<head>
+    <!-- Google Tag -->
+
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DC Motor Simulator | 直流電動機模擬器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Three.js & Chart.js CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body { margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        .ui-layer { position: absolute; z-index: 10; pointer-events: none; }
+        .pointer-events-auto { pointer-events: auto; }
+        
+        /* Draggable Panels */
+        #controlPanel { position: absolute; top: 80px; right: 20px; width: 320px; touch-action: none; }
+        #graphPanel { position: absolute; bottom: 20px; left: 20px; width: 420px; touch-action: none; display: none; }
+        .panel-header { cursor: grab; }
+        .panel-header:active { cursor: grabbing; }
+
+        /* Math font */
+        .math { font-family: "Times New Roman", Times, serif; font-style: italic; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 3px; }
+
+        @media (max-width: 768px) {
+            #controlPanel { width: 280px; right: 10px; top: 70px; }
+            #graphPanel { width: 90%; left: 5%; bottom: 10px; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+
+    <!-- Header Section -->
+    <div class="ui-layer top-0 left-0 w-full p-4 flex justify-between items-start pointer-events-auto">
+        <div class="flex items-center space-x-3">
+            <h1 class="text-2xl font-bold text-slate-800 dark:text-white drop-shadow-md flex items-center gap-2">
+                <span data-i18n="title">直流電動機模擬器</span>
+                <button onclick="togglePanel()" class="text-slate-500 hover:text-slate-800 dark:text-gray-300 dark:hover:text-white transition-colors p-1.5 bg-white/50 dark:bg-white/5 rounded-full hover:bg-white/80 dark:hover:bg-white/15 backdrop-blur-sm border border-slate-200 dark:border-white/10" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transform hover:rotate-90 transition-transform duration-300">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+            </h1>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+            <button onclick="toggleLanguage()" class="flex items-center bg-slate-200 dark:bg-slate-700 rounded-full p-1 transition-colors border border-slate-300 dark:border-slate-600">
+                <span id="lang-zh" class="px-3 py-1 text-sm rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm transition-all font-medium">中</span>
+                <span id="lang-en" class="px-3 py-1 text-sm rounded-full text-slate-500 dark:text-slate-400 transition-all">EN</span>
+            </button>
+            <button onClick="toggleTheme()" class="p-2 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700 transition-colors bg-white/50 dark:bg-white/5 backdrop-blur border border-slate-200 dark:border-white/10" id="themeBtn" title="切換深淺色模式">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Draggable Control Panel -->
+    <div id="controlPanel" class="ui-layer pointer-events-auto bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-xl border border-slate-200 dark:border-white/10 shadow-xl transition-opacity duration-300">
+        <div id="panelHeader" class="panel-header flex justify-between items-center p-3 border-b border-slate-200 dark:border-white/10 bg-slate-100/50 dark:bg-slate-700/50 rounded-t-xl select-none">
+            <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                <span class="font-semibold text-sm text-slate-700 dark:text-gray-200" data-i18n="controls">控制面板</span>
+            </div>
+            <button onclick="togglePanelContent()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors p-1" id="minimizeBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="minimizeIcon"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+        </div>
+        <div id="panelContent" class="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <label class="text-sm text-slate-700 dark:text-gray-300 font-medium" data-i18n="status">狀態</label>
+                    <div class="flex space-x-2">
+                        <button onclick="togglePlay()" id="playBtn" class="bg-primary hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm transition-colors shadow-sm" data-i18n="pause">暫停</button>
+                        <button onclick="resetMotor()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white px-3 py-1.5 rounded-md text-sm transition-colors shadow-sm" data-i18n="reset">重置</button>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm text-slate-700 dark:text-gray-300 font-medium flex justify-between">
+                        <span data-i18n="voltage">電壓極性</span>
+                        <span id="polarityStatus" class="text-primary text-xs font-bold" data-i18n="forward">正向</span>
+                    </label>
+                    <div class="flex rounded-md shadow-sm">
+                        <button onclick="setPolarity(1)" id="polPos" class="flex-1 bg-primary text-white py-1.5 text-sm rounded-l-md transition-colors">+</button>
+                        <button onclick="setPolarity(-1)" id="polNeg" class="flex-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 py-1.5 text-sm rounded-r-md transition-colors">-</button>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm text-slate-700 dark:text-gray-300 font-medium flex justify-between">
+                        <span data-i18n="speed">轉速 <span class="math">v</span></span>
+                    </label>
+                    <input type="range" id="speedSlider" min="0" max="0.1" step="0.01" value="0.02" class="w-full accent-primary">
+                </div>
+            </div>
+            
+            <hr class="border-slate-200 dark:border-slate-700">
+            
+            <div class="space-y-2">
+                <label class="text-sm text-slate-700 dark:text-gray-300 font-medium" data-i18n="visuals">視覺與向量</label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="showGraphToggle" onchange="toggleGraphPanel()" class="rounded text-primary focus:ring-primary accent-emerald-500 w-4 h-4">
+                    <span class="text-sm text-slate-700 dark:text-gray-300 font-bold text-emerald-600 dark:text-emerald-400" data-i18n="showGraphBtn">顯示力學圖表</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="showNormal" onchange="toggleNormal()" class="rounded text-primary focus:ring-primary accent-amber-700 w-4 h-4">
+                    <span class="text-sm text-slate-700 dark:text-gray-300" data-i18n="showNormal">顯示法線 (Normal) & 角</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="showABCD" checked class="rounded text-primary focus:ring-primary accent-purple-500 w-4 h-4">
+                    <span class="text-sm text-slate-700 dark:text-gray-300" data-i18n="abcdLabels">顯示 A, B, C, D 標籤</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="showDynCurrent" checked class="rounded text-primary focus:ring-primary accent-yellow-500 w-4 h-4">
+                    <span class="text-sm text-slate-700 dark:text-gray-300" data-i18n="dynCurrent">動態電流動畫</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="showB" checked class="rounded text-primary focus:ring-primary accent-green-500 w-4 h-4">
+                    <span class="text-sm text-slate-700 dark:text-gray-300"><span data-i18n="magField">磁場</span> <span class="math text-green-500 font-bold">B</span></span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="showI" checked class="rounded text-primary focus:ring-primary accent-blue-500 w-4 h-4">
+                    <span class="text-sm text-slate-700 dark:text-gray-300"><span data-i18n="current">電流向量</span> <span class="math text-blue-500 font-bold">I</span></span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="showF" checked class="rounded text-primary focus:ring-primary accent-red-500 w-4 h-4">
+                    <span class="text-sm text-slate-700 dark:text-gray-300"><span data-i18n="force">磁力</span> <span class="math text-red-500 font-bold">F</span></span>
+                </label>
+            </div>
+
+            <!-- FORMULA BLOCK -->
+            <div class="bg-purple-50 dark:bg-purple-900/30 p-3 rounded-lg border border-purple-200 dark:border-purple-800/50">
+                <h3 class="text-sm font-bold text-purple-800 dark:text-purple-300 mb-1" data-i18n="formulaTitle">力矩公式 (Torque Formula)</h3>
+                <p class="text-center font-serif text-[1.1rem] text-purple-900 dark:text-purple-200 tracking-wider">
+                    <i>Torque = N B A I</i> sin<i>&theta;</i>
+                </p>
+            </div>
+
+            <div class="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-100 dark:border-blue-800/50">
+                <h3 class="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1" data-i18n="dseTips">DSE 觀念提示</h3>
+                <p class="text-xs text-blue-700 dark:text-blue-200 leading-relaxed mb-2" id="infoText1">
+                    留意雙色換向器（黃色及橙色半環）：每半轉它們會交換接觸的碳刷，令線圈內的電流方向反轉。根據弗萊明左手定則，線圈將維持單向順時針轉動。
+                </p>
+                <p class="text-xs text-blue-700 dark:text-blue-200 leading-relaxed mb-2" id="infoText2">
+                    當線圈處於垂直位置，碳刷接觸換向器的絕緣縫隙，電流及磁力矩降為零，線圈僅靠慣性轉過死點。
+                </p>
+                <p class="text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed font-semibold border-t border-blue-200 dark:border-blue-800 pt-2" id="graphTipText">
+                    圖表重點：注意磁力矩（Torque）呈正弦變化（Sinusoidal Curve），在線圈水平（與磁場平行）時力矩最大，在死點位置（法線與磁場平行）時力矩為零。這與恆定的磁力(F)不同。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Draggable Graph Panel -->
+    <div id="graphPanel" class="ui-layer pointer-events-auto bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg rounded-xl border border-slate-200 dark:border-white/10 shadow-xl transition-opacity duration-300">
+        <div id="graphHeader" class="panel-header flex justify-between items-center p-2 border-b border-slate-200 dark:border-white/10 bg-slate-100/50 dark:bg-slate-700/50 rounded-t-xl select-none">
+            <div class="flex items-center space-x-2 px-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-500"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                <span class="font-semibold text-sm text-slate-700 dark:text-gray-200" data-i18n="graphTitle">力矩與旋轉角度圖</span>
+            </div>
+            <button onclick="document.getElementById('showGraphToggle').click()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors p-1 pr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="p-3">
+            <div class="relative w-full" style="aspect-ratio: 16/9;">
+                <canvas id="torqueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <script>
+        // --- 1. Language & Theme Management ---
+        const i18n = {
+            zh: {
+                title: "直流電動機模擬器",
+                controls: "控制面板",
+                status: "狀態",
+                play: "播放",
+                pause: "暫停",
+                reset: "重置視角",
+                voltage: "電池極性",
+                forward: "正向",
+                reverse: "反向",
+                speed: "輸入電壓 (轉速)",
+                visuals: "視覺與向量 (弗萊明左手定則)",
+                formulaTitle: "力矩公式 (Torque Formula)",
+                showGraphBtn: "顯示力學圖表 (Torque Graph)",
+                showNormal: "顯示法線 (Normal) & 角",
+                abcdLabels: "顯示 A, B, C, D 標籤",
+                dynCurrent: "動態電流動畫",
+                magField: "磁場",
+                current: "電流向量",
+                force: "磁力",
+                dseTips: "DSE 觀念提示",
+                info1: "留意雙色換向器（黃色及橙色半環）：每半轉它們會交換接觸的碳刷，令線圈內的電流方向反轉。根據弗萊明左手定則，線圈將維持單向順時針轉動。",
+                info2: "當線圈處於垂直位置，碳刷接觸換向器的絕緣縫隙，電流及磁力矩降為零，線圈僅靠慣性轉過死點。",
+                graphTip: "圖表重點：注意磁力矩（Torque）呈正弦變化（Sinusoidal Curve），在線圈水平（與磁場平行）時力矩最大，在死點位置（法線與磁場平行）時力矩為零。這與恆定的磁力(F)不同。",
+                graphTitle: "線圈力矩與角度 (法線與 B 磁場夾角)",
+                themeBtn: "切換深淺色模式",
+                axisX: "法線與水平磁場 B 夾角 (度)",
+                axisY: "力矩 Torque (Nm)"
+            },
+            en: {
+                title: "DC Motor Simulator",
+                controls: "Control Panel",
+                status: "Status",
+                play: "Play",
+                pause: "Pause",
+                reset: "Reset View",
+                voltage: "Battery Polarity",
+                forward: "Forward",
+                reverse: "Reverse",
+                speed: "Input Voltage (Speed)",
+                visuals: "Visuals & Vectors (Fleming's LHR)",
+                formulaTitle: "Torque Formula",
+                showGraphBtn: "Show Torque Graph",
+                showNormal: "Show Normal Line & Angle",
+                abcdLabels: "Show A, B, C, D Labels",
+                dynCurrent: "Dynamic Current Animation",
+                magField: "Magnetic Field",
+                current: "Current Vector",
+                force: "Force",
+                dseTips: "DSE Concept Focus",
+                info1: "Notice the two-tone commutator: they swap contact with brushes every half turn, reversing the coil's current. By Fleming's Left Hand Rule, this maintains clockwise rotation.",
+                info2: "At vertical position, brushes align with gaps. Current & torque are zero. Coil passes the dead center by inertia.",
+                graphTip: "Chart Highlight: Note that Torque varies sinusoidally. It is maximum when the coil is horizontal (parallel to B-field) and zero at dead center (Normal is parallel to B-field). This is different from the constant force F.",
+                graphTitle: "Torque on Coil vs Angle (Normal & B-field)",
+                themeBtn: "Toggle Dark/Light Mode",
+                axisX: "Angle between Normal & Horizontal B-field (deg)",
+                axisY: "Torque (Nm)"
+            }
+        };
+
+        let lang = navigator.language.startsWith('zh') ? 'zh' : 'en';
+        let isDark = true;
+        let isPlaying = true;
+        let polarity = 1; 
+        let normalVisible = false; // Internal state for normal line visibility
+        
+        function updateUI() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang][key]) el.innerHTML = i18n[lang][key];
+            });
+            
+            document.getElementById('lang-zh').className = lang === 'zh' 
+                ? 'px-3 py-1 text-sm rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm transition-all font-medium'
+                : 'px-3 py-1 text-sm rounded-full text-slate-500 dark:text-slate-400 transition-all cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600';
+            document.getElementById('lang-en').className = lang === 'en' 
+                ? 'px-3 py-1 text-sm rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm transition-all font-medium'
+                : 'px-3 py-1 text-sm rounded-full text-slate-500 dark:text-slate-400 transition-all cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600';
+                
+            document.getElementById('playBtn').innerHTML = isPlaying ? i18n[lang].pause : i18n[lang].play;
+            document.getElementById('polarityStatus').innerHTML = polarity === 1 ? i18n[lang].forward : i18n[lang].reverse;
+            document.getElementById('polarityStatus').className = polarity === 1 ? "text-primary text-xs font-bold" : "text-red-500 text-xs font-bold";
+            document.getElementById('themeBtn').title = i18n[lang].themeBtn;
+            document.getElementById('infoText1').innerHTML = i18n[lang].info1;
+            document.getElementById('infoText2').innerHTML = i18n[lang].info2;
+            document.getElementById('graphTipText').innerHTML = i18n[lang].graphTip;
+
+            if (torqueChart) {
+                torqueChart.options.scales.x.title.text = i18n[lang].axisX;
+                torqueChart.options.scales.y.title.text = i18n[lang].axisY;
+                torqueChart.update();
+            }
+        }
+
+        function toggleLanguage() {
+            lang = lang === 'zh' ? 'en' : 'zh';
+            updateUI();
+        }
+
+        function toggleTheme() {
+            isDark = !isDark;
+            document.documentElement.classList.toggle('dark', isDark);
+            scene.background = new THREE.Color(isDark ? 0x0f172a : 0xf8fafc);
+            extWireMat.color.setHex(isDark ? 0x94a3b8 : 0x333333);
+            updateChartTheme();
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            updateUI();
+        }
+
+        function setPolarity(val) {
+            polarity = val;
+            document.getElementById('polPos').className = val === 1 ? "flex-1 bg-primary text-white py-1.5 text-sm rounded-l-md transition-colors" : "flex-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 py-1.5 text-sm rounded-l-md transition-colors hover:bg-slate-300 dark:hover:bg-slate-600";
+            document.getElementById('polNeg').className = val === -1 ? "flex-1 bg-red-500 text-white py-1.5 text-sm rounded-r-md transition-colors" : "flex-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 py-1.5 text-sm rounded-r-md transition-colors hover:bg-slate-300 dark:hover:bg-slate-600";
+            updateUI();
+        }
+
+        // --- 2. Draggable Panels Setup ---
+        function setupDraggable(panelId, headerId) {
+            const panel = document.getElementById(panelId);
+            const header = document.getElementById(headerId);
+            let isDragging = false, currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+
+            header.addEventListener('mousedown', dragStart);
+            header.addEventListener('touchstart', dragStart, {passive: false});
+            window.addEventListener('mouseup', dragEnd);
+            window.addEventListener('touchend', dragEnd);
+            window.addEventListener('mousemove', drag);
+            window.addEventListener('touchmove', drag, {passive: false});
+
+            function dragStart(e) {
+                if (e.target.closest('button')) return;
+                initialX = e.type === 'touchstart' ? e.touches[0].clientX - xOffset : e.clientX - xOffset;
+                initialY = e.type === 'touchstart' ? e.touches[0].clientY - yOffset : e.clientY - yOffset;
+                isDragging = true;
+            }
+            function dragEnd() {
+                initialX = currentX; initialY = currentY; isDragging = false;
+            }
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.type === 'touchmove' ? e.touches[0].clientX - initialX : e.clientX - initialX;
+                    currentY = e.type === 'touchmove' ? e.touches[0].clientY - initialY : e.clientY - initialY;
+                    xOffset = currentX; yOffset = currentY;
+                    panel.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+                }
+            }
+        }
+
+        setupDraggable('controlPanel', 'panelHeader');
+        setupDraggable('graphPanel', 'graphHeader');
+
+        let isPanelOpen = true;
+        function togglePanelContent() {
+            isPanelOpen = !isPanelOpen;
+            document.getElementById('panelContent').style.display = isPanelOpen ? 'block' : 'none';
+            document.getElementById('minimizeIcon').innerHTML = isPanelOpen 
+                ? '<line x1="5" y1="12" x2="19" y2="12"></line>'
+                : '<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>';
+        }
+        
+        function togglePanel() {
+             const panel = document.getElementById('controlPanel');
+             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleGraphPanel() {
+            const isChecked = document.getElementById('showGraphToggle').checked;
+            document.getElementById('graphPanel').style.display = isChecked ? 'block' : 'none';
+            if(isChecked && !torqueChart) {
+                initChart();
+            }
+        }
+        
+        function toggleNormal() {
+            normalVisible = document.getElementById('showNormal').checked;
+        }
+
+        // --- 3. Chart.js Torque Graph System ---
+        let torqueChart = null;
+
+        function generateTheoreticalData() {
+            let data = [];
+            for(let i=0; i<=360; i++) {
+                let rad = i * Math.PI / 180;
+                let torque = 1.0 * Math.abs(Math.sin(rad)); 
+                data.push({x: i, y: torque});
+            }
+            return data;
+        }
+
+        function updateChartTheme() {
+            if(!torqueChart) return;
+            const textColor = isDark ? '#e2e8f0' : '#475569';
+            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            torqueChart.options.scales.x.ticks.color = textColor;
+            torqueChart.options.scales.x.title.color = textColor;
+            torqueChart.options.scales.x.grid.color = gridColor;
+            torqueChart.options.scales.y.ticks.color = textColor;
+            torqueChart.options.scales.y.title.color = textColor;
+            torqueChart.options.scales.y.grid.color = gridColor;
+            torqueChart.update('none');
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('torqueChart').getContext('2d');
+            const textColor = isDark ? '#e2e8f0' : '#475569';
+            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+            torqueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Torque Curve',
+                        data: generateTheoreticalData(),
+                        borderColor: '#8b5cf6', 
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0.4 
+                    }, {
+                        label: 'Current Status',
+                        data: [{x: 90, y: 1}], 
+                        backgroundColor: '#facc15', 
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        pointRadius: 7,
+                        type: 'scatter'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            min: 0, max: 360,
+                            ticks: { stepSize: 90, color: textColor },
+                            grid: { color: gridColor },
+                            title: { display: true, text: i18n[lang].axisX, color: textColor, font: {weight: 'bold'} }
+                        },
+                        y: {
+                            min: 0, max: 1.2,
+                            ticks: { stepSize: 0.5, color: textColor },
+                            grid: { color: gridColor },
+                            title: { display: true, text: i18n[lang].axisY, color: textColor, font: {weight: 'bold'} }
+                        }
+                    },
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            });
+        }
+
+        // --- 4. Three.js Setup & Physics Model ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(isDark ? 0x0f172a : 0xf8fafc);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 10, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 10;
+        controls.maxDistance = 40;
+
+        function resetMotor() {
+            controls.reset();
+            camera.position.set(0, 10, 20);
+            motorAngle = 0;
+            coilGroup.rotation.z = motorAngle;
+        }
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        function createTextSprite(message, color, bg=null) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 128; canvas.height = 128;
+            if(bg) {
+                context.fillStyle = bg;
+                context.beginPath();
+                context.arc(64, 64, 50, 0, 2*Math.PI);
+                context.fill();
+            }
+            context.font = 'Bold 70px "Times New Roman", Times, serif';
+            context.fillStyle = color;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(message, 64, 68);
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.renderOrder = 999;
+            return sprite;
+        }
+        
+        function createStaticLabel(message, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.font = 'Bold 90px "Times New Roman", Times, serif';
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(message, 64, 68);
+            const texture = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+            const geo = new THREE.PlaneGeometry(1.2, 1.2);
+            return new THREE.Mesh(geo, mat);
+        }
+
+        function createThickArrow(dir, origin, length, color, headLength=1.0, rodRadius=0.1, headRadius=0.3) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshPhongMaterial({ color: color, shininess: 80 });
+            
+            const rodGeo = new THREE.CylinderGeometry(rodRadius, rodRadius, 1, 16);
+            rodGeo.translate(0, 0.5, 0); 
+            const rod = new THREE.Mesh(rodGeo, mat);
+            group.add(rod);
+            
+            const headGeo = new THREE.ConeGeometry(headRadius, 1, 16);
+            headGeo.translate(0, 0.5, 0);
+            const head = new THREE.Mesh(headGeo, mat);
+            group.add(head);
+            
+            group.position.copy(origin);
+            
+            group.setDirection = function(newDir) {
+                const axis = new THREE.Vector3(0, 1, 0);
+                this.quaternion.setFromUnitVectors(axis, newDir);
+            };
+            
+            group.setLength = function(newLen, hLen=1.0) {
+                const rLen = Math.max(0.001, newLen - hLen);
+                rod.scale.set(1, rLen, 1);
+                head.scale.set(1, hLen, 1);
+                head.position.y = rLen;
+            };
+            
+            group.setLength(length, headLength);
+            group.setDirection(dir);
+            return group;
+        }
+
+        // 1. Magnets
+        const magnetGeo = new THREE.BoxGeometry(2, 6, 8);
+        const nMat = new THREE.MeshPhongMaterial({ color: 0xef4444 });
+        const sMat = new THREE.MeshPhongMaterial({ color: 0x3b82f6 });
+        const nPole = new THREE.Mesh(magnetGeo, nMat);
+        nPole.position.set(-6, 0, 0);
+        scene.add(nPole);
+        const sPole = new THREE.Mesh(magnetGeo, sMat);
+        sPole.position.set(6, 0, 0);
+        scene.add(sPole);
+
+        const nText = createTextSprite('N', '#ffffff');
+        nText.scale.set(3, 3, 1);
+        nText.position.set(-4.5, 3.5, 0);
+        scene.add(nText);
+        
+        const sText = createTextSprite('S', '#ffffff');
+        sText.scale.set(3, 3, 1);
+        sText.position.set(4.5, 3.5, 0);
+        scene.add(sText);
+
+        // 2. Armature Coil & Commutator Group
+        const coilGroup = new THREE.Group();
+        scene.add(coilGroup);
+
+        const wireMat = new THREE.MeshPhongMaterial({ 
+            color: 0xe2e8f0, 
+            transparent: true, 
+            opacity: 0.45, 
+            shininess: 100,
+            side: THREE.FrontSide
+        }); 
+        
+        const wireRadius = 0.15;
+        const width = 4;
+        const length = 6;
+        
+        const geomZ = new THREE.CylinderGeometry(wireRadius, wireRadius, length, 16);
+        const geomX = new THREE.CylinderGeometry(wireRadius, wireRadius, width, 16);
+        
+        const side1 = new THREE.Mesh(geomZ, wireMat); // Left (A-B)
+        side1.position.set(-width/2, 0, 0);
+        side1.rotation.x = Math.PI/2;
+        coilGroup.add(side1);
+
+        const side2 = new THREE.Mesh(geomZ, wireMat); // Right (C-D)
+        side2.position.set(width/2, 0, 0);
+        side2.rotation.x = Math.PI/2;
+        coilGroup.add(side2);
+
+        const side3 = new THREE.Mesh(geomX, wireMat); // Back (B-C)
+        side3.position.set(0, 0, -length/2);
+        side3.rotation.z = Math.PI/2;
+        coilGroup.add(side3);
+
+        const front1 = new THREE.Mesh(new THREE.CylinderGeometry(wireRadius, wireRadius, 1.25, 16), wireMat);
+        front1.position.set(-1.375, 0, length/2); 
+        front1.rotation.z = Math.PI/2;
+        coilGroup.add(front1);
+        
+        const front2 = new THREE.Mesh(new THREE.CylinderGeometry(wireRadius, wireRadius, 1.25, 16), wireMat);
+        front2.position.set(1.375, 0, length/2);  
+        front2.rotation.z = Math.PI/2;
+        coilGroup.add(front2);
+
+        const axel1 = new THREE.Mesh(new THREE.CylinderGeometry(wireRadius, wireRadius, 2, 16), wireMat);
+        axel1.position.set(-0.75, 0, length/2 + 1); 
+        axel1.rotation.x = Math.PI/2;
+        coilGroup.add(axel1);
+        
+        const axel2 = new THREE.Mesh(new THREE.CylinderGeometry(wireRadius, wireRadius, 2, 16), wireMat);
+        axel2.position.set(0.75, 0, length/2 + 1);  
+        axel2.rotation.x = Math.PI/2;
+        coilGroup.add(axel2);
+
+        const commRadius = 0.8;
+        const commLength = 1.5;
+        const gap = 0.2; 
+        
+        const coreGeo = new THREE.CylinderGeometry(commRadius - 0.05, commRadius - 0.05, commLength + 0.02, 32);
+        const coreMat = new THREE.MeshPhongMaterial({ color: 0x334155 });
+        const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+        coreMesh.position.set(0, 0, length/2 + 2);
+        coreMesh.rotation.x = Math.PI/2;
+        coilGroup.add(coreMesh);
+
+        const commGeo1 = new THREE.CylinderGeometry(commRadius, commRadius, commLength, 32, 1, false, gap/2, Math.PI - gap);
+        const commMat1 = new THREE.MeshPhongMaterial({ color: 0xfacc15, side: THREE.DoubleSide, shininess: 80 }); 
+        const commHalf1 = new THREE.Mesh(commGeo1, commMat1);
+        commHalf1.position.set(0, 0, length/2 + 2);
+        commHalf1.rotation.x = Math.PI/2;
+        coilGroup.add(commHalf1);
+
+        const commGeo2 = new THREE.CylinderGeometry(commRadius, commRadius, commLength, 32, 1, false, Math.PI + gap/2, Math.PI - gap);
+        const commMat2 = new THREE.MeshPhongMaterial({ color: 0xf97316, side: THREE.DoubleSide, shininess: 80 }); 
+        const commHalf2 = new THREE.Mesh(commGeo2, commMat2);
+        commHalf2.position.set(0, 0, length/2 + 2);
+        commHalf2.rotation.x = Math.PI/2;
+        coilGroup.add(commHalf2);
+        
+        const axisGeo = new THREE.CylinderGeometry(0.05, 0.05, 16, 8);
+        const axisMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
+        const axis = new THREE.Mesh(axisGeo, axisMat);
+        axis.rotation.x = Math.PI/2;
+        scene.add(axis);
+
+        const abcdGroup = new THREE.Group();
+        coilGroup.add(abcdGroup);
+        const lblScale = 1.6;
+        const lblBg = 'rgba(0,0,0,0.5)';
+        
+        const spriteA = createTextSprite('A', '#ffffff', lblBg);
+        spriteA.position.set(-width/2 - 0.7, 0, length/2);
+        spriteA.scale.set(lblScale, lblScale, 1);
+        abcdGroup.add(spriteA);
+
+        const spriteB = createTextSprite('B', '#ffffff', lblBg);
+        spriteB.position.set(-width/2 - 0.7, 0, -length/2);
+        spriteB.scale.set(lblScale, lblScale, 1);
+        abcdGroup.add(spriteB);
+
+        const spriteC = createTextSprite('C', '#ffffff', lblBg);
+        spriteC.position.set(width/2 + 0.7, 0, -length/2);
+        spriteC.scale.set(lblScale, lblScale, 1);
+        abcdGroup.add(spriteC);
+
+        const spriteD = createTextSprite('D', '#ffffff', lblBg);
+        spriteD.position.set(width/2 + 0.7, 0, length/2);
+        spriteD.scale.set(lblScale, lblScale, 1);
+        abcdGroup.add(spriteD);
+
+        // --- Normal Vector (Brown Dotted Line) ---
+        const normalGroup = new THREE.Group();
+        coilGroup.add(normalGroup); 
+        
+        const normalGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, 5, 0)
+        ]);
+        const normalMat = new THREE.LineDashedMaterial({ color: 0xb45309, dashSize: 0.3, gapSize: 0.2, linewidth: 2 });
+        const normalLine = new THREE.Line(normalGeo, normalMat);
+        normalLine.computeLineDistances();
+        normalGroup.add(normalLine);
+
+        const normalLabel = createTextSprite('n', '#b45309');
+        normalLabel.position.set(0, 5.5, 0);
+        normalGroup.add(normalLabel);
+
+        // --- Horizontal B-field line for Normal Angle Reference ---
+        const refGroup = new THREE.Group();
+        scene.add(refGroup); 
+
+        const bRefGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(5, 0, 0) 
+        ]);
+        const bRefMat = new THREE.LineDashedMaterial({ color: 0x22c55e, dashSize: 0.3, gapSize: 0.2, linewidth: 2 });
+        const bRefLine = new THREE.Line(bRefGeo, bRefMat);
+        bRefLine.computeLineDistances();
+        refGroup.add(bRefLine);
+        
+        // --- Angle Arc visualization ---
+        const arcMat = new THREE.MeshBasicMaterial({ color: 0x8b5cf6, side: THREE.DoubleSide }); 
+        let arcMesh = new THREE.Mesh(new THREE.BufferGeometry(), arcMat);
+        scene.add(arcMesh);
+
+        function updateAngleArc(angleRad) {
+            const normalWorld = new THREE.Vector3(0, 1, 0).applyEuler(coilGroup.rotation);
+            const radius = 2.5;
+            
+            let currentTheta = Math.atan2(normalWorld.y, normalWorld.x);
+            if (currentTheta < 0) currentTheta += 2 * Math.PI;
+
+            arcMesh.geometry.dispose(); 
+            if (currentTheta > 0.01) {
+                arcMesh.geometry = new THREE.TorusGeometry(radius, 0.05, 8, 32, currentTheta);
+            } else {
+                arcMesh.geometry = new THREE.BufferGeometry();
+            }
+        }
+
+        // 3. Carbon Brushes
+        const brushGeo = new THREE.BoxGeometry(0.6, 0.4, 1.2);
+        const brushMat = new THREE.MeshPhongMaterial({ color: 0x222222, shininess: 10 });
+        
+        const brush1 = new THREE.Mesh(brushGeo, brushMat); // Left (-)
+        brush1.position.set(-commRadius - 0.3, 0, length/2 + 2);
+        scene.add(brush1);
+        
+        const brush2 = new THREE.Mesh(brushGeo, brushMat); // Right (+)
+        brush2.position.set(commRadius + 0.3, 0, length/2 + 2);
+        scene.add(brush2);
+
+        // 4. Delicate Battery (Static)
+        const batGroup = new THREE.Group();
+        batGroup.position.set(0, -4.5, length/2 + 2);
+        scene.add(batGroup);
+
+        const batBodyGeo = new THREE.CylinderGeometry(0.7, 0.7, 2.8, 32);
+        const batBodyMat = new THREE.MeshPhongMaterial({ color: 0x1e293b });
+        const batBody = new THREE.Mesh(batBodyGeo, batBodyMat);
+        batBody.rotation.z = Math.PI / 2;
+        batGroup.add(batBody);
+
+        const batStripeGeo = new THREE.CylinderGeometry(0.71, 0.71, 1.0, 32);
+        const batStripeMat = new THREE.MeshPhongMaterial({ color: 0x22c55e });
+        const batStripe = new THREE.Mesh(batStripeGeo, batStripeMat);
+        batStripe.rotation.z = Math.PI / 2;
+        batStripe.position.set(0.6, 0, 0);
+        batGroup.add(batStripe);
+
+        const metalMat = new THREE.MeshPhongMaterial({ color: 0xe2e8f0, shininess: 100 });
+        const batPosGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.3, 16);
+        const batPos = new THREE.Mesh(batPosGeo, metalMat);
+        batPos.rotation.z = Math.PI / 2;
+        batPos.position.set(1.55, 0, 0);
+        batGroup.add(batPos);
+
+        const batCapGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.1, 32);
+        const batCap = new THREE.Mesh(batCapGeo, metalMat);
+        batCap.rotation.z = Math.PI / 2;
+        batCap.position.set(1.4, 0, 0);
+        batGroup.add(batCap);
+
+        const batNeg = new THREE.Mesh(batCapGeo, metalMat);
+        batNeg.rotation.z = Math.PI / 2;
+        batNeg.position.set(-1.4, 0, 0);
+        batGroup.add(batNeg);
+
+        const plusZ = createStaticLabel('+', '#ef4444');
+        plusZ.position.set(1.0, 0, 0.72); 
+        batGroup.add(plusZ);
+        
+        const plusNegZ = createStaticLabel('+', '#ef4444');
+        plusNegZ.position.set(1.0, 0, -0.72); 
+        batGroup.add(plusNegZ);
+
+        const minusZ = createStaticLabel('-', '#3b82f6');
+        minusZ.position.set(-1.0, 0, 0.72);
+        batGroup.add(minusZ);
+
+        const minusNegZ = createStaticLabel('-', '#3b82f6');
+        minusNegZ.position.set(-1.0, 0, -0.72);
+        batGroup.add(minusNegZ);
+
+        const extWireMat = new THREE.LineBasicMaterial({ color: isDark ? 0x94a3b8 : 0x333333, linewidth: 2 });
+        
+        const leftWirePoints = [
+            new THREE.Vector3(-commRadius - 0.3, 0, length/2 + 2),
+            new THREE.Vector3(-3.5, 0, length/2 + 2),
+            new THREE.Vector3(-3.5, -4.5, length/2 + 2),
+            new THREE.Vector3(-1.4, -4.5, length/2 + 2)
+        ];
+        const circuitLeft = new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftWirePoints), extWireMat);
+        scene.add(circuitLeft);
+
+        const rightWirePoints = [
+            new THREE.Vector3(1.55, -4.5, length/2 + 2),
+            new THREE.Vector3(3.5, -4.5, length/2 + 2),
+            new THREE.Vector3(3.5, 0, length/2 + 2),
+            new THREE.Vector3(commRadius + 0.3, 0, length/2 + 2)
+        ];
+        const circuitRight = new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightWirePoints), extWireMat);
+        scene.add(circuitRight);
+
+        // 5. Vectors 
+        const bColor = 0x22c55e;
+        const iColor = 0x3b82f6;
+        const fColor = 0xef4444;
+
+        const bArrows = [];
+        for(let z of [-2.5, 2.5]){
+            for(let y of [-1.5, 1.5]){
+                const bArrow = createThickArrow(new THREE.Vector3(1,0,0), new THREE.Vector3(-5, y, z), 10, bColor, 1.0, 0.024, 0.15);
+                scene.add(bArrow);
+                bArrows.push(bArrow);
+            }
+        }
+
+        const iArrowL = createThickArrow(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 3.5, iColor, 0.6, 0.036, 0.2);
+        const iArrowR = createThickArrow(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0,0), 3.5, iColor, 0.6, 0.036, 0.2);
+        const fArrowL = createThickArrow(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 3.0, fColor, 0.6, 0.036, 0.2);
+        const fArrowR = createThickArrow(new THREE.Vector3(0,-1,0), new THREE.Vector3(0,0,0), 3.0, fColor, 0.6, 0.036, 0.2);
+        scene.add(iArrowL); scene.add(iArrowR);
+        scene.add(fArrowL); scene.add(fArrowR);
+
+        // 6. Dynamic Current Particles
+        const particleGeo = new THREE.SphereGeometry(0.06, 8, 8); 
+        const particleMat = new THREE.MeshBasicMaterial({ color: 0xffe600 });
+
+        const coilParticlesGroup = new THREE.Group();
+        coilGroup.add(coilParticlesGroup);
+        const numCoilParticles = 25;
+        const coilParticles = [];
+        for(let i=0; i<numCoilParticles; i++) {
+            const p = new THREE.Mesh(particleGeo, particleMat);
+            coilParticlesGroup.add(p);
+            coilParticles.push(p);
+        }
+        
+        const coilPathPoints = [
+            new THREE.Vector3(0.75, 0, length/2 + 2),       
+            new THREE.Vector3(0.75, 0, length/2),           
+            new THREE.Vector3(width/2, 0, length/2),        
+            new THREE.Vector3(width/2, 0, -length/2),       
+            new THREE.Vector3(-width/2, 0, -length/2),      
+            new THREE.Vector3(-width/2, 0, length/2),       
+            new THREE.Vector3(-0.75, 0, length/2),          
+            new THREE.Vector3(-0.75, 0, length/2 + 2)       
+        ];
+        
+        function calcDistances(points) {
+            let dists = [0];
+            let total = 0;
+            for(let i=1; i<points.length; i++) {
+                total += points[i-1].distanceTo(points[i]);
+                dists.push(total);
+            }
+            return { dists, total };
+        }
+        const coilPathData = calcDistances(coilPathPoints);
+
+        const extParticlesGroup = new THREE.Group();
+        scene.add(extParticlesGroup);
+        const numExtParticles = 8;
+        const extParticlesL = [], extParticlesR = [];
+        for(let i=0; i<numExtParticles; i++) {
+            const pl = new THREE.Mesh(particleGeo, particleMat);
+            const pr = new THREE.Mesh(particleGeo, particleMat);
+            extParticlesGroup.add(pl); extParticlesGroup.add(pr);
+            extParticlesL.push(pl); extParticlesR.push(pr);
+        }
+
+        const extLeftData = calcDistances(leftWirePoints);
+        const extRightData = calcDistances(rightWirePoints);
+
+        function getPointOnPath(fraction, points, dists, total) {
+            let d = fraction * total;
+            for(let i=1; i<dists.length; i++) {
+                if(d <= dists[i]) {
+                    let segFrac = (d - dists[i-1]) / (dists[i] - dists[i-1]);
+                    return new THREE.Vector3().lerpVectors(points[i-1], points[i], segFrac);
+                }
+            }
+            return points[points.length-1];
+        }
+
+        let motorAngle = 0; // Starts at 0 
+        let currentPhase = 0; 
+        let extPhase = 0;     
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const speed = parseFloat(document.getElementById('speedSlider').value);
+            const showABCD = document.getElementById('showABCD').checked;
+            const showDyn = document.getElementById('showDynCurrent').checked;
+            const showB = document.getElementById('showB').checked;
+            const showI = document.getElementById('showI').checked;
+            const showF = document.getElementById('showF').checked;
+
+            if (isPlaying) {
+                motorAngle -= speed * polarity;
+                if(motorAngle < 0) {
+                     motorAngle += Math.PI * 2;
+                }
+                motorAngle %= (Math.PI * 2);
+                coilGroup.rotation.z = motorAngle;
+            }
+
+            batGroup.rotation.y = polarity === 1 ? 0 : Math.PI;
+
+            abcdGroup.visible = showABCD;
+            normalGroup.visible = normalVisible;
+            bRefLine.visible = normalVisible;
+            arcMesh.visible = normalVisible;
+
+            const normalWorld = new THREE.Vector3(0, 1, 0).applyEuler(coilGroup.rotation);
+            let thetaRad = Math.atan2(normalWorld.y, normalWorld.x);
+            if (thetaRad < 0) thetaRad += 2 * Math.PI;
+            
+            if (normalVisible) {
+                updateAngleArc(thetaRad);
+            }
+
+            let modAngle = motorAngle % Math.PI;
+            let isDeadCenter = (modAngle > Math.PI/2 - 0.15 && modAngle < Math.PI/2 + 0.15);
+            let rightSideIsRight = ((motorAngle % (Math.PI*2)) < Math.PI/2 || (motorAngle % (Math.PI*2)) > 3*Math.PI/2);
+
+            if(torqueChart && document.getElementById('showGraphToggle').checked) {
+                let thetaDeg = thetaRad * 180 / Math.PI;
+                let currentTorque = (speed === 0 && isDeadCenter) ? 0 : 1.0 * Math.abs(Math.sin(thetaRad));
+                
+                if (thetaDeg >= 360) thetaDeg = 0;
+
+                torqueChart.data.datasets[1].data[0] = {x: thetaDeg, y: currentTorque};
+                torqueChart.update('none'); 
+            }
+
+            bArrows.forEach(a => a.visible = showB);
+
+            if (isDeadCenter || speed === 0) {
+                iArrowL.visible = false; iArrowR.visible = false;
+                fArrowL.visible = false; fArrowR.visible = false;
+            } else {
+                iArrowL.visible = showI; iArrowR.visible = showI;
+                fArrowL.visible = showF; fArrowR.visible = showF;
+                
+                const speedScale = speed / 0.1; 
+                const currentArrowLength = 2.0 + speedScale * 3.0; 
+                const forceArrowLength = 1.5 + speedScale * 2.5;   
+
+                iArrowL.setLength(currentArrowLength, 0.6);
+                iArrowR.setLength(currentArrowLength, 0.6);
+                fArrowL.setLength(forceArrowLength, 0.6);
+                fArrowR.setLength(forceArrowLength, 0.6);
+
+                const leftPos = new THREE.Vector3(-width/2, 0, 0).applyEuler(coilGroup.rotation);
+                const rightPos = new THREE.Vector3(width/2, 0, 0).applyEuler(coilGroup.rotation);
+
+                let cDir = polarity; 
+                
+                let dirL = new THREE.Vector3(0, 0, leftPos.x < 0 ? cDir : -cDir);
+                iArrowL.setDirection(dirL);
+                iArrowL.position.copy(leftPos).addScaledVector(dirL, -currentArrowLength / 2);
+                fArrowL.setDirection(new THREE.Vector3(0, dirL.z, 0));
+                fArrowL.position.copy(leftPos);
+
+                let dirR = new THREE.Vector3(0, 0, rightPos.x < 0 ? cDir : -cDir);
+                iArrowR.setDirection(dirR);
+                iArrowR.position.copy(rightPos).addScaledVector(dirR, -currentArrowLength / 2);
+                fArrowR.setDirection(new THREE.Vector3(0, dirR.z, 0));
+                fArrowR.position.copy(rightPos);
+            }
+
+            coilParticlesGroup.visible = showDyn;
+            extParticlesGroup.visible = showDyn;
+
+            if (showDyn) {
+                if (isDeadCenter || speed === 0 || !isPlaying) {
+                    particleMat.opacity = 0.2;
+                    particleMat.transparent = true;
+                } else {
+                    particleMat.opacity = 1.0;
+                    particleMat.transparent = false;
+                    
+                    let localCurrentDir = 1;
+                    if (polarity === 1) {
+                        localCurrentDir = rightSideIsRight ? 1 : -1;
+                    } else {
+                        localCurrentDir = rightSideIsRight ? -1 : 1;
+                    }
+                    
+                    currentPhase += 0.015 * localCurrentDir;
+                    if(currentPhase < 0) currentPhase += 1;
+                    currentPhase %= 1;
+
+                    extPhase += 0.015;
+                    extPhase %= 1;
+                }
+
+                for(let i=0; i<numCoilParticles; i++) {
+                    let frac = (currentPhase + i / numCoilParticles) % 1;
+                    let pos = getPointOnPath(frac, coilPathPoints, coilPathData.dists, coilPathData.total);
+                    coilParticles[i].position.copy(pos);
+                }
+
+                for(let i=0; i<numExtParticles; i++) {
+                    let fR, fL;
+                    if(polarity === 1) {
+                        fR = (extPhase + i / numExtParticles) % 1;
+                        fL = (extPhase + i / numExtParticles) % 1;
+                    } else {
+                        fR = 1 - ((extPhase + i / numExtParticles) % 1);
+                        fL = 1 - ((extPhase + i / numExtParticles) % 1);
+                    }
+
+                    extParticlesR[i].position.copy(getPointOnPath(fR, rightWirePoints, extRightData.dists, extRightData.total));
+                    extParticlesL[i].position.copy(getPointOnPath(fL, leftWirePoints, extLeftData.dists, extLeftData.total));
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize Everything
+        // Explicitly set the normal checkbox state to false initially
+        document.getElementById('showNormal').checked = false;
+        
+        updateUI();
+        animate();
+    </script>
+</body>
+</html>

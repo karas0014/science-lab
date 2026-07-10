@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太陽能電池運作原理模擬器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Tone.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body { background-color: #f0f4f8; font-family: sans-serif; overflow-x: hidden; }
+        .canvas-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 800px; 
+            margin: 0 auto;
+        }
+        canvas { 
+            background: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            width: 100%; 
+            height: auto;
+            display: block;
+        }
+        .controls { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .dashboard-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            border-top: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-2xl md:text-3xl font-bold text-center text-slate-800 mb-6">太陽能電池運作原理模擬器</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- 控制面板 -->
+            <div class="lg:col-span-1 space-y-4">
+                <div class="controls">
+                    <h2 class="text-xl font-semibold mb-4 text-slate-700">實驗控制</h2>
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <button id="btnPause" class="py-2 px-2 bg-amber-500 text-white rounded font-bold hover:bg-amber-600 transition text-sm">暫停</button>
+                        <button id="btnReset" class="py-2 px-2 bg-rose-600 text-white rounded font-bold hover:bg-rose-700 transition text-sm">重新開始</button>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">光照強度 (亮度)</label>
+                        <input type="range" id="lightIntensity" min="0" max="100" value="30" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">光子頻率 (能量/顏色)</label>
+                        <input type="range" id="photonFrequency" min="1" max="100" value="50" class="w-full h-2 bg-gradient-to-r from-red-500 via-green-500 to-violet-500 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">粒子移動速度</label>
+                        <input type="range" id="speedMultiplier" min="0.1" max="3" step="0.1" value="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">外部負荷 (Load)</label>
+                        <div class="flex gap-2">
+                            <button id="btnMotor" class="flex-1 py-2 px-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm">馬達</button>
+                            <button id="btnSpeaker" class="flex-1 py-2 px-2 bg-gray-200 text-slate-700 rounded hover:bg-gray-300 transition text-sm">揚聲器</button>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-4 mt-4">
+                        <h3 class="font-bold text-sm mb-2 text-slate-600">圖例說明：</h3>
+                        <div class="grid grid-cols-2 gap-2 text-xs text-slate-500">
+                            <div class="flex items-center"><span class="w-3 h-3 bg-yellow-400 rounded-full mr-1"></span>光子</div>
+                            <div class="flex items-center"><span class="w-3 h-3 bg-blue-500 rounded-full mr-1"></span>電子 (-)</div>
+                            <div class="flex items-center"><span class="w-3 h-3 bg-red-500 rounded-full mr-1"></span>空穴 (+)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模擬區域 -->
+            <div class="lg:col-span-3">
+                <div class="canvas-container">
+                    <canvas id="simCanvas" width="800" height="500"></canvas>
+                </div>
+                
+                <!-- 數據 Dashboard -->
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+                    <div class="dashboard-card" style="border-top-color: #facc15;">
+                        <div class="text-xs text-gray-500 font-bold">光子數量</div>
+                        <div id="statPhotons" class="text-2xl font-mono text-slate-800">0</div>
+                    </div>
+                    <div class="dashboard-card" style="border-top-color: #3b82f6;">
+                        <div class="text-xs text-gray-500 font-bold">電子數量</div>
+                        <div id="statElectrons" class="text-2xl font-mono text-slate-800">0</div>
+                    </div>
+                    <div class="dashboard-card" style="border-top-color: #ef4444;">
+                        <div class="text-xs text-gray-500 font-bold">空穴數量</div>
+                        <div id="statHoles" class="text-2xl font-mono text-slate-800">0</div>
+                    </div>
+                    <div class="dashboard-card" style="border-top-color: #10b981;">
+                        <div class="text-xs text-gray-500 font-bold">電流 (mA)</div>
+                        <div id="statCurrent" class="text-2xl font-mono text-emerald-600">0.0</div>
+                    </div>
+                    <div class="dashboard-card" style="border-top-color: #8b5cf6;">
+                        <div class="text-xs text-gray-500 font-bold">電壓 (V)</div>
+                        <div id="statVoltage" class="text-2xl font-mono text-violet-600">0.00</div>
+                    </div>
+                </div>
+
+                <div id="statusDisplay" class="mt-4 p-4 bg-white rounded shadow text-center text-lg font-medium text-slate-700">
+                    系統運作中
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const intensityInput = document.getElementById('lightIntensity');
+        const freqInput = document.getElementById('photonFrequency');
+        const speedInput = document.getElementById('speedMultiplier');
+        const btnPause = document.getElementById('btnPause');
+        const btnReset = document.getElementById('btnReset');
+        const btnMotor = document.getElementById('btnMotor');
+        const btnSpeaker = document.getElementById('btnSpeaker');
+        const statusDisplay = document.getElementById('statusDisplay');
+
+        // Dashboard Elements
+        const statPhotons = document.getElementById('statPhotons');
+        const statElectrons = document.getElementById('statElectrons');
+        const statHoles = document.getElementById('statHoles');
+        const statCurrent = document.getElementById('statCurrent');
+        const statVoltage = document.getElementById('statVoltage');
+
+        let isPaused = false;
+        let loadType = 'motor';
+        let motorAngle = 0;
+        let speakerVibration = 0;
+        let currentFlow = 0;
+
+        let photons = [];
+        let particles = [];
+        let circuitParticles = [];
+        let effects = []; // 用於存放閃光特效
+
+        // Tone.js 音訊物件
+        let osc = null;
+        let gainNode = null;
+
+        const cellX = 200; 
+        const cellY = 120;
+        const cellWidth = 350;
+        const nHeight = 80;
+        const junctionHeight = 70; 
+        const pHeight = 100;
+        const cellHeight = nHeight + junctionHeight + pHeight;
+
+        const sunX = 50;
+        const sunY = 50;
+        const sunRadius = 35;
+
+        // 初始化音訊
+        async function initAudio() {
+            try {
+                await Tone.start();
+                if (!osc) {
+                    gainNode = new Tone.Gain(0).toDestination();
+                    // 使用三角波讓聲音比較柔和但有特色
+                    osc = new Tone.Oscillator(440, "triangle").connect(gainNode).start();
+                }
+            } catch (e) {
+                console.log("Audio init failed:", e);
+            }
+        }
+
+        // 更新音訊狀態
+        function updateAudio() {
+            if (loadType === 'speaker' && !isPaused && osc && gainNode) {
+                if (currentFlow > 0) {
+                    // 頻率隨電流大小變化: 200Hz 為基底，每個單位增加 30Hz
+                    // 限制最大頻率以防太刺耳
+                    const targetFreq = 200 + Math.min(currentFlow * 30, 800);
+                    osc.frequency.rampTo(targetFreq, 0.1);
+                    
+                    // 音量隨電流開啟
+                    gainNode.gain.rampTo(0.1, 0.1);
+                } else {
+                    gainNode.gain.rampTo(0, 0.1);
+                }
+            } else {
+                // 如果不是揚聲器模式或暫停，靜音
+                if (gainNode) gainNode.gain.rampTo(0, 0.1);
+            }
+        }
+
+        btnPause.onclick = () => {
+            isPaused = !isPaused;
+            btnPause.textContent = isPaused ? "恢復" : "暫停";
+            btnPause.classList.toggle('bg-amber-500');
+            btnPause.classList.toggle('bg-green-500');
+            statusDisplay.textContent = isPaused ? "模擬已暫停" : "系統運作中";
+            // 暫停時音訊會透過 updateAudio() 靜音
+        };
+
+        btnReset.onclick = () => {
+            photons = [];
+            particles = [];
+            circuitParticles = [];
+            effects = [];
+            motorAngle = 0;
+            speakerVibration = 0;
+            currentFlow = 0;
+            
+            statPhotons.textContent = "0";
+            statElectrons.textContent = "0";
+            statHoles.textContent = "0";
+            statCurrent.textContent = "0.0";
+            statVoltage.textContent = "0.00";
+
+            if (gainNode) gainNode.gain.rampTo(0, 0.1); // 重置時靜音
+
+            statusDisplay.textContent = "已重新開始";
+            setTimeout(() => { if(!isPaused) statusDisplay.textContent = "系統運作中"; }, 1500);
+        };
+
+        btnMotor.onclick = () => {
+            loadType = 'motor';
+            btnMotor.className = "flex-1 py-2 px-2 bg-blue-600 text-white rounded text-sm";
+            btnSpeaker.className = "flex-1 py-2 px-2 bg-gray-200 text-slate-700 rounded text-sm";
+        };
+
+        btnSpeaker.onclick = async () => {
+            loadType = 'speaker';
+            btnSpeaker.className = "flex-1 py-2 px-2 bg-blue-600 text-white rounded text-sm";
+            btnMotor.className = "flex-1 py-2 px-2 bg-gray-200 text-slate-700 rounded text-sm";
+            await initAudio(); // 啟動音訊
+        };
+
+        function getPhotonColor(freq) {
+            const hue = 240 - (freq * 2.4); 
+            return `hsl(${hue}, 100%, 60%)`;
+        }
+
+        function createPhoton() {
+            if (isPaused) return;
+            const adjustedIntensity = intensityInput.value * 0.6;
+            if (Math.random() * 100 < adjustedIntensity) {
+                const angle = (Math.random() * Math.PI) - (Math.PI / 2); 
+                const startX = sunX + Math.cos(angle) * sunRadius;
+                const startY = sunY + Math.sin(angle) * sunRadius;
+
+                photons.push({
+                    x: startX,
+                    y: startY,
+                    targetX: cellX + Math.random() * cellWidth,
+                    targetY: cellY + nHeight + Math.random() * junctionHeight,
+                    speed: (2 + Math.random() * 2) * speedInput.value,
+                    color: getPhotonColor(freqInput.value)
+                });
+            }
+        }
+
+        // 添加特效 (放大半徑至原本的 4 倍，即 1.5 * 4 = 6.0)
+        function addEffect(x, y, color) {
+            effects.push({
+                x: x,
+                y: y,
+                color: color,
+                life: 1.0, 
+                radius: 6.0
+            });
+        }
+
+        function update() {
+            if (isPaused) {
+                updateAudio(); // 確保暫停時靜音
+                return;
+            }
+
+            const globalSpeed = parseFloat(speedInput.value);
+
+            createPhoton();
+
+            // 更新特效生命值
+            for (let i = effects.length - 1; i >= 0; i--) {
+                effects[i].life -= 0.08;
+                effects[i].radius += 1.8; // 增長率也相應放大 (0.45 * 4 = 1.8)
+                if (effects[i].life <= 0) effects.splice(i, 1);
+            }
+
+            for (let i = photons.length - 1; i >= 0; i--) {
+                let p = photons[i];
+                let dx = p.targetX - p.x;
+                let dy = p.targetY - p.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < 5) {
+                    // 撞擊 PN 接面原子：發出藍閃光
+                    addEffect(p.targetX, p.targetY, 'rgba(59, 130, 246, 0.8)'); 
+
+                    particles.push({ x: p.targetX, y: p.targetY, type: 'e', speed: 1.2 * globalSpeed });
+                    particles.push({ x: p.targetX, y: p.targetY, type: 'h', speed: 1.2 * globalSpeed });
+                    photons.splice(i, 1);
+                } else {
+                    p.x += (dx / dist) * p.speed;
+                    p.y += (dy / dist) * p.speed;
+                }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.speed = 1.2 * globalSpeed; 
+                if (p.type === 'e') {
+                    p.y -= p.speed;
+                    if (p.y <= cellY + 5) {
+                        if (Math.random() > 0.6) {
+                            circuitParticles.push({ pos: 0, speed: 0.015 * globalSpeed });
+                            particles.splice(i, 1);
+                        } else {
+                            p.y = cellY + 5;
+                            p.x += (Math.random() - 0.5) * 2;
+                        }
+                    }
+                } else {
+                    p.y += p.speed;
+                    if (p.y >= cellY + cellHeight - 5) {
+                        p.y = cellY + cellHeight - 5;
+                        p.x += (Math.random() - 0.5) * 2;
+                    }
+                }
+            }
+
+            currentFlow = circuitParticles.length;
+            for (let i = circuitParticles.length - 1; i >= 0; i--) {
+                let cp = circuitParticles[i];
+                cp.speed = 0.015 * globalSpeed;
+                cp.pos += cp.speed;
+                if (cp.pos >= 1) {
+                    let holeIdx = particles.findIndex(p => p.type === 'h' && p.y >= cellY + cellHeight - 15);
+                    if (holeIdx !== -1) {
+                        // 電子與空穴結合：發出紅閃光
+                        addEffect(particles[holeIdx].x, particles[holeIdx].y, 'rgba(239, 68, 68, 0.8)'); 
+                        particles.splice(holeIdx, 1);
+                    }
+                    circuitParticles.splice(i, 1);
+                }
+            }
+
+            if (loadType === 'motor') {
+                motorAngle += (currentFlow * 0.08 * globalSpeed);
+            } else {
+                speakerVibration = Math.sin(Date.now() * 0.01) * (currentFlow * 0.5);
+            }
+
+            updateDashboard();
+            updateAudio(); // 每幀更新音訊
+        }
+
+        function updateDashboard() {
+            if (photons.length === 0 && particles.length === 0 && circuitParticles.length === 0) {
+                statPhotons.textContent = "0";
+                statElectrons.textContent = "0";
+                statHoles.textContent = "0";
+                statCurrent.textContent = "0.0";
+                statVoltage.textContent = "0.00";
+                return;
+            }
+
+            const eCount = particles.filter(p => p.type === 'e').length + circuitParticles.length;
+            const hCount = particles.filter(p => p.type === 'h').length;
+            
+            statPhotons.textContent = photons.length;
+            statElectrons.textContent = eCount;
+            statHoles.textContent = hCount;
+            
+            const currentVal = (currentFlow * 2.5).toFixed(1);
+            statCurrent.textContent = currentVal;
+            
+            const frequencyBonus = (freqInput.value / 100) * 0.35;
+            const baseV = intensityInput.value > 0 ? 0.40 : 0;
+            const voltageVal = (baseV + frequencyBonus + (currentFlow > 0 ? 0.05 : 0)).toFixed(2);
+            statVoltage.textContent = intensityInput.value > 0 ? voltageVal : "0.00";
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'right';
+            
+            ctx.fillStyle = '#1e40af';
+            ctx.fillText("N-型半導體 ⮕", cellX - 15, cellY + nHeight/2 + 5);
+            ctx.fillStyle = '#854d0e';
+            ctx.fillText("PN 接面 (耗盡區) ⮕", cellX - 15, cellY + nHeight + junctionHeight/2 + 5);
+            ctx.fillStyle = '#991b1b';
+            ctx.fillText("P-型半導體 ⮕", cellX - 15, cellY + nHeight + junctionHeight + pHeight/2 + 5);
+
+            ctx.lineWidth = 1;
+            ctx.textAlign = 'left';
+            
+            ctx.fillStyle = '#dbeafe';
+            ctx.fillRect(cellX, cellY, cellWidth, nHeight);
+            ctx.strokeStyle = '#1e40af';
+            ctx.strokeRect(cellX, cellY, cellWidth, nHeight);
+
+            ctx.fillStyle = '#fef3c7';
+            ctx.fillRect(cellX, cellY + nHeight, cellWidth, junctionHeight);
+            ctx.strokeStyle = '#854d0e';
+            ctx.strokeRect(cellX, cellY + nHeight, cellWidth, junctionHeight);
+
+            ctx.fillStyle = '#fee2e2';
+            ctx.fillRect(cellX, cellY + nHeight + junctionHeight, cellWidth, pHeight);
+            ctx.strokeStyle = '#991b1b';
+            ctx.strokeRect(cellX, cellY + nHeight + junctionHeight, cellWidth, pHeight);
+
+            const loadX = 720;
+            const loadY = 250;
+            const topContactX = cellX + cellWidth/2;
+            const bottomContactX = cellX + cellWidth/2;
+
+            // 判斷連接位置的偏移量：馬達為半徑 35，揚聲器為高度 30
+            const contactOffset = loadType === 'motor' ? 35 : 30;
+
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#475569';
+            
+            // 上方導線：從電池頂部連到負載頂端
+            ctx.moveTo(topContactX, cellY);
+            ctx.lineTo(topContactX, cellY - 40);
+            ctx.lineTo(loadX, cellY - 40);
+            ctx.lineTo(loadX, loadY - contactOffset); // 修改連接點
+
+            // 下方導線：從電池底部連到負載底端
+            ctx.moveTo(bottomContactX, cellY + cellHeight);
+            ctx.lineTo(bottomContactX, cellY + cellHeight + 40);
+            ctx.lineTo(loadX, cellY + cellHeight + 40);
+            ctx.lineTo(loadX, loadY + contactOffset); // 修改連接點
+            
+            ctx.stroke();
+
+            drawLoad(loadX, loadY);
+
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            photons.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+            });
+
+            // 繪製閃光特效
+            effects.forEach(eff => {
+                ctx.save();
+                ctx.globalAlpha = eff.life;
+                ctx.beginPath();
+                ctx.arc(eff.x, eff.y, eff.radius, 0, Math.PI * 2);
+                ctx.fillStyle = eff.color;
+                ctx.fill();
+                ctx.restore();
+            });
+
+            particles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = p.type === 'e' ? '#3b82f6' : '#ef4444';
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 9px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(p.type === 'e' ? '-' : '+', p.x, p.y + 3);
+            });
+
+            circuitParticles.forEach(cp => {
+                let px, py;
+                const path1 = 40; 
+                const path2 = loadX - topContactX; 
+                const contactOffset = loadType === 'motor' ? 35 : 30; // 根據負載類型調整路徑
+
+                const path3 = (loadY - contactOffset) - (cellY - 40); // 向下連到負載
+                const path4 = contactOffset * 2; // 穿過負載
+                const path5 = (cellY + cellHeight + 40) - (loadY + contactOffset); // 從負載向下
+                const path6 = loadX - bottomContactX; 
+                const path7 = 40; 
+
+                const total = path1 + path2 + path3 + path4 + path5 + path6 + path7;
+                let prog = cp.pos * total;
+
+                if(prog < path1) { px = topContactX; py = cellY - prog; }
+                else if(prog < path1+path2) { px = topContactX + (prog-path1); py = cellY - 40; }
+                else if(prog < path1+path2+path3) { px = loadX; py = (cellY - 40) + (prog-path1-path2); }
+                else if(prog < path1+path2+path3+path4) { px = loadX; py = (loadY-contactOffset) + (prog-path1-path2-path3); } // 穿過負載內部
+                else if(prog < path1+path2+path3+path4+path5) { px = loadX; py = (loadY+contactOffset) + (prog-path1-path2-path3-path4); }
+                else if(prog < path1+path2+path3+path4+path5+path6) { px = loadX - (prog-path1-path2-path3-path4-path5); py = cellY + cellHeight + 40; }
+                else { px = bottomContactX; py = (cellY+cellHeight+40) - (prog-path1-path2-path3-path4-path5-path6); }
+
+                ctx.beginPath();
+                ctx.arc(px, py, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#3b82f6';
+                ctx.fill();
+            });
+
+            if (currentFlow > 0) {
+                ctx.font = 'bold 13px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillText("電子流 (Electron Flow) ➡➡", loadX - 120, cellY - 55);
+                ctx.fillStyle = '#ef4444';
+                ctx.fillText("傳統電流 (I) ➡➡", loadX - 120, cellY + cellHeight + 65);
+            }
+        }
+
+        function drawLoad(x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            const drawLabel = (text) => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.fillRect(-95, -10, 55, 20); 
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillText(text, -45, 5);
+            };
+
+            if (loadType === 'motor') {
+                ctx.beginPath();
+                ctx.arc(0, 0, 35, 0, Math.PI * 2);
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fill();
+                ctx.strokeStyle = '#475569';
+                ctx.stroke();
+
+                drawLabel("MOTOR");
+
+                ctx.rotate(motorAngle);
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(-4, -30, 8, 60);
+                ctx.fillRect(-30, -4, 60, 8);
+                ctx.rotate(-motorAngle);
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(-15, -15);
+                ctx.lineTo(15, -30);
+                ctx.lineTo(15, 30);
+                ctx.lineTo(-15, 15);
+                ctx.closePath();
+                ctx.fillStyle = '#475569';
+                ctx.fill();
+                ctx.strokeStyle = '#1e293b';
+                ctx.stroke();
+
+                drawLabel("SPEAKER");
+
+                if (currentFlow > 0) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#475569';
+                    ctx.lineWidth = 2;
+                    for(let i=1; i<=3; i++) {
+                        let offset = (Date.now() * 0.05 + i * 20) % 40;
+                        let radius = 10 + offset * (currentFlow / 5); 
+                        if (radius > 5 && radius < 60) {
+                            ctx.beginPath();
+                            ctx.arc(15, 0, radius, -Math.PI/4, Math.PI/4);
+                            ctx.globalAlpha = 1 - (radius / 60);
+                            ctx.stroke();
+                        }
+                    }
+                    ctx.globalAlpha = 1;
+                }
+            }
+            ctx.restore();
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>細胞膜構造與物質轉運模擬器</title>
+    
+    <!-- 引入 Tailwind CSS 進行樣式設計 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 React 及 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 引入 Babel 以便在瀏覽器中直接編譯 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 多語言 UI 翻譯 ---
+        const uiText = {
+          zh: {
+            title: "細胞膜構造與物質轉運模擬器",
+            subtitle: "中四級生物科：探索流動鑲嵌模型 (Fluid Mosaic Model) 及細胞膜的差異透性。",
+            step1: "選擇要觀察的分子",
+            step2: "物質特性與轉運機制",
+            play: "▶ 播放動畫",
+            playing: "播放中...",
+            extracellular: "細胞外 (Extracellular)",
+            intracellular: "細胞內 (Intracellular)",
+            highConc: "高濃度 (High Conc.)",
+            lowConc: "低濃度 (Low Conc.)",
+            mixedConc: "混合場景 (順/逆濃度皆有)",
+            channelProtein: "通道蛋白",
+            carrierProtein: "載體蛋白",
+            carrierFacilitated: "(易化擴散)",
+            carrierActive: "(主動轉運)",
+            phospholipid: "磷脂雙層",
+            hydrophobic: "疏水性核心 (Hydrophobic core)",
+            quizTitle: "概念大考驗",
+            quizDesc: "完成模擬觀察後，試回答以下 5 條選擇題，測試你對細胞膜構造及物質透性的理解。點擊選項即可查看答案及解釋。",
+            correct: "答對了！",
+            incorrect: "答錯了！正確答案是 "
+          },
+          en: {
+            title: "Cell Membrane & Transport Simulator",
+            subtitle: "S4 Biology: Exploring the Fluid Mosaic Model and Differential Permeability.",
+            step1: "Select a Molecule to Observe",
+            step2: "Properties & Transport Mechanism",
+            play: "▶ Play Animation",
+            playing: "Playing...",
+            extracellular: "Extracellular",
+            intracellular: "Intracellular",
+            highConc: "High Conc.",
+            lowConc: "Low Conc.",
+            mixedConc: "Mixed (Along/Against Gradient)",
+            channelProtein: "Channel Protein",
+            carrierProtein: "Carrier Protein",
+            carrierFacilitated: "(Facilitated)",
+            carrierActive: "(Active)",
+            phospholipid: "Phospholipid Bilayer",
+            hydrophobic: "Hydrophobic core",
+            quizTitle: "Concept Quiz",
+            quizDesc: "After the simulation, try answering these 5 questions to test your understanding. Click an option to see the answer and explanation.",
+            correct: "Correct!",
+            incorrect: "Incorrect! The correct answer is "
+          }
+        };
+
+        // --- 測驗題目數據 ---
+        const quizQuestions = [
+          {
+            id: 1,
+            question: {
+              zh: "氧氣 (O2) 和二氧化碳 (CO2) 主要透過哪種方式進出細胞？",
+              en: "How do Oxygen (O2) and Carbon Dioxide (CO2) mainly enter/exit the cell?"
+            },
+            options: [
+              { id: 'A', text: { zh: "簡單擴散 (Simple diffusion)", en: "Simple diffusion" }, isCorrect: true },
+              { id: 'B', text: { zh: "易化擴散 (Facilitated diffusion)", en: "Facilitated diffusion" }, isCorrect: false },
+              { id: 'C', text: { zh: "主動轉運 (Active transport)", en: "Active transport" }, isCorrect: false },
+              { id: 'D', text: { zh: "滲透作用 (Osmosis)", en: "Osmosis" }, isCorrect: false }
+            ],
+            explanation: {
+              zh: "氧氣和二氧化碳是細小且無極性（脂溶性）的分子，能直接穿過細胞膜的磷脂雙層，這過程稱為簡單擴散，不需要消耗能量。",
+              en: "O2 and CO2 are small, non-polar molecules that can move directly through the phospholipid bilayer. This process is called simple diffusion and requires no energy."
+            }
+          },
+          {
+            id: 2,
+            question: {
+              zh: "葡萄糖和氨基酸等水溶性分子需要藉助細胞膜上的甚麼構造才能進出細胞？",
+              en: "What structure on the cell membrane do water-soluble molecules like glucose and amino acids need to cross the membrane?"
+            },
+            options: [
+              { id: 'A', text: { zh: "磷脂雙層的縫隙", en: "Gaps in the phospholipid bilayer" }, isCorrect: false },
+              { id: 'B', text: { zh: "膽固醇", en: "Cholesterol" }, isCorrect: false },
+              { id: 'C', text: { zh: "膜蛋白（如載體蛋白或通道蛋白）", en: "Membrane proteins (e.g., carrier or channel proteins)" }, isCorrect: true },
+              { id: 'D', text: { zh: "糖鏈", en: "Glycoproteins / Carbohydrate chains" }, isCorrect: false }
+            ],
+            explanation: {
+              zh: "水溶性或較大的分子無法直接穿透疏水性的磷脂雙層，必須透過膜蛋白（如載體蛋白 Carrier proteins）的協助，以易化擴散或主動轉運的方式進出。",
+              en: "Water-soluble or large molecules cannot directly penetrate the hydrophobic phospholipid bilayer and must rely on membrane proteins (like carrier proteins) via facilitated diffusion or active transport."
+            }
+          },
+          {
+            id: 3,
+            question: {
+              zh: "在流動鑲嵌模型中，磷脂分子在細胞膜中的排列方式為何？",
+              en: "In the fluid mosaic model, how are phospholipid molecules arranged in the cell membrane?"
+            },
+            options: [
+              { id: 'A', text: { zh: "親水性頭部向外（接觸水份），疏水性尾部向內（互相相對）", en: "Hydrophilic heads face outwards, hydrophobic tails face inwards (towards each other)" }, isCorrect: true },
+              { id: 'B', text: { zh: "疏水性尾部向外，親水性頭部向內", en: "Hydrophobic tails face outwards, hydrophilic heads face inwards" }, isCorrect: false },
+              { id: 'C', text: { zh: "親水性和疏水性部分隨機交替排列", en: "Hydrophilic and hydrophobic parts alternate randomly" }, isCorrect: false },
+              { id: 'D', text: { zh: "形成單層結構，頭部朝向細胞外", en: "Forms a single layer with heads facing outside" }, isCorrect: false }
+            ],
+            explanation: {
+              zh: "細胞內外皆為水性環境，因此磷脂分子的親水性頭部會朝向內外兩側的水性環境，而疏水性尾部則藏於膜的內部，形成穩定的磷脂雙層 (Phospholipid bilayer)。",
+              en: "The environments inside and outside the cell are aqueous, so the hydrophilic heads of phospholipids point outwards towards the water, while the hydrophobic tails hide inside the membrane, forming a stable phospholipid bilayer."
+            }
+          },
+          {
+            id: 4,
+            question: {
+              zh: "水分 (H2O) 進出細胞的過程稱為「滲透作用」。水分主要是透過甚麼途徑快速大量地穿越細胞膜？",
+              en: "Water (H2O) crosses the cell membrane through 'Osmosis'. Through which pathway does the majority of water rapidly cross?"
+            },
+            options: [
+              { id: 'A', text: { zh: "直接溶解於磷脂雙層中", en: "Dissolving directly into the phospholipid bilayer" }, isCorrect: false },
+              { id: 'B', text: { zh: "透過主動轉運泵", en: "Through active transport pumps" }, isCorrect: false },
+              { id: 'C', text: { zh: "透過特定的通道蛋白（水通道蛋白 Aquaporins）", en: "Through specific channel proteins (Aquaporins)" }, isCorrect: true },
+              { id: 'D', text: { zh: "透過胞吞作用", en: "Through endocytosis" }, isCorrect: false }
+            ],
+            explanation: {
+              zh: "雖然少部分水分子可以緩慢穿過磷脂雙層，但大部分的水分是透過稱為「水通道蛋白」(Aquaporins) 的特異性通道蛋白快速進出細胞。",
+              en: "Although a small amount of water can slowly diffuse through the phospholipid bilayer, most water crosses the membrane rapidly through specific channel proteins called 'Aquaporins'."
+            }
+          },
+          {
+            id: 5,
+            question: {
+              zh: "下列關於易化擴散 (Facilitated diffusion) 的敘述，何者正確？",
+              en: "Which of the following statements about Facilitated Diffusion is correct?"
+            },
+            options: [
+              { id: 'A', text: { zh: "需要消耗細胞內的能量 (ATP)", en: "It requires energy (ATP) from the cell" }, isCorrect: false },
+              { id: 'B', text: { zh: "物質由低濃度區域移動到高濃度區域", en: "Substances move from a region of low concentration to high concentration" }, isCorrect: false },
+              { id: 'C', text: { zh: "需要膜蛋白的協助，但不消耗能量", en: "It requires assistance from membrane proteins but consumes no energy" }, isCorrect: true },
+              { id: 'D', text: { zh: "任何分子都可以透過此方式自由進出", en: "Any molecule can freely enter and exit using this method" }, isCorrect: false }
+            ],
+            explanation: {
+              zh: "易化擴散是順著濃度梯度（由高至低）進行的，因此不需要消耗細胞能量 (ATP)，但必須依靠細胞膜上的通道蛋白或載體蛋白協助。",
+              en: "Facilitated diffusion occurs down a concentration gradient (from high to low), so it does not require cellular energy (ATP), but it relies on channel or carrier proteins on the membrane."
+            }
+          }
+        ];
+
+        // --- 分子數據 ---
+        const moleculeData = {
+          O2: {
+            id: 'O2', color: '#38bdf8', type: 'simple',
+            name: { zh: '氧氣 (O2)', en: 'Oxygen (O2)' },
+            description: {
+              zh: '氧氣是細小且無極性的分子。它可以直接透過「簡單擴散」(Simple Diffusion) 穿過磷脂雙層，從高濃度區域移動到低濃度區域，不需消耗能量。',
+              en: 'Oxygen is a small, non-polar molecule. It moves directly through the phospholipid bilayer via "Simple Diffusion" from a region of high concentration to low concentration without using energy.'
+            }
+          },
+          CO2: {
+            id: 'CO2', color: '#94a3b8', type: 'simple-out',
+            name: { zh: '二氧化碳 (CO2)', en: 'Carbon Dioxide (CO2)' },
+            description: {
+              zh: '二氧化碳同樣是細小且無極性的分子，主要由細胞呼吸作用產生。它也是透過「簡單擴散」直接穿過磷脂雙層離開細胞（由細胞內高濃度擴散至細胞外低濃度）。',
+              en: 'Carbon dioxide is also a small, non-polar molecule, mainly produced by cellular respiration. It leaves the cell by moving through the phospholipid bilayer via "Simple Diffusion" (from high intracellular concentration to low extracellular concentration).'
+            }
+          },
+          H2O: {
+            id: 'H2O', color: '#60a5fa', type: 'channel',
+            name: { zh: '水分子 (H2O)', en: 'Water (H2O)' },
+            description: {
+              zh: '水是極性分子。雖然它可以緩慢地直接穿過膜，但為了快速轉運，細胞膜上有稱為「水通道蛋白」(Aquaporins) 的專屬通道，讓水分能以「滲透作用」(Osmosis) 快速進出。',
+              en: 'Water is a polar molecule. While it can slowly cross the membrane directly, for rapid transport, the cell membrane has specific channels called "Aquaporins" that allow water to enter and exit quickly via "Osmosis".'
+            }
+          },
+          Glucose: {
+            id: 'Glucose', color: '#f472b6', type: 'both',
+            name: { zh: '葡萄糖 (Glucose)', en: 'Glucose' },
+            description: {
+              zh: '葡萄糖是較大的水溶性分子。在人體吸收（例如小腸）時，若細胞外濃度較高，會透過「易化擴散」進入；若細胞外濃度變低，則會消耗能量透過「主動轉運」繼續吸收，確保營養完全被吸收。兩者皆需載體蛋白協助。',
+              en: 'Glucose is a large, water-soluble molecule. During absorption (e.g., in the small intestine), if the extracellular concentration is high, it enters via "Facilitated Diffusion". If the extracellular concentration drops, it uses energy to continue absorption via "Active Transport". Both require carrier proteins.'
+            }
+          },
+          AminoAcid: {
+            id: 'AminoAcid', color: '#fbbf24', type: 'both',
+            name: { zh: '氨基酸 (Amino Acid)', en: 'Amino Acid' },
+            description: {
+              zh: '氨基酸是帶有極性或電荷的水溶性分子。與葡萄糖類似，氨基酸的吸收也會根據濃度梯度的不同，同時利用「易化擴散」（順着濃度）與「主動轉運」（逆着濃度）兩種機制進入細胞。',
+              en: 'Amino acids are polar or charged water-soluble molecules. Similar to glucose, their absorption utilizes both "Facilitated Diffusion" (down the gradient) and "Active Transport" (against the gradient) depending on the concentration differences.'
+            }
+          },
+          Ion: {
+            id: 'Ion', color: '#ef4444', type: 'active',
+            name: { zh: '礦物質離子 (如 Mg²⁺)', en: 'Mineral Ion (e.g. Mg²⁺)' },
+            description: {
+              zh: '當細胞需要逆着濃度梯度（由低濃度至高濃度）吸收物質時，例如根毛細胞吸收泥土中的礦物質，必須透過「主動轉運」(Active Transport)。這過程需要消耗由呼吸作用產生的能量 (ATP)，並由載體蛋白協助泵入細胞。',
+              en: 'When a cell needs to absorb substances against a concentration gradient (from low to high), such as root hair cells absorbing minerals from soil, it uses "Active Transport". This process consumes energy (ATP) generated by respiration and requires carrier proteins to pump the ions.'
+            }
+          }
+        };
+
+        function App() {
+          const [lang, setLang] = useState('zh');
+          const [selectedMolId, setSelectedMolId] = useState('O2');
+          const [animating, setAnimating] = useState(false);
+          const [animKey, setAnimKey] = useState(0); 
+          const [quizAnswers, setQuizAnswers] = useState({});
+
+          const activeMolecule = moleculeData[selectedMolId];
+
+          const handlePlayAnimation = () => {
+            setAnimating(true);
+            setAnimKey(prev => prev + 1);
+            setTimeout(() => {
+              setAnimating(false);
+            }, 3000);
+          };
+
+          const handleOptionSelect = (questionId, optionId) => {
+            if (!quizAnswers[questionId]) { 
+              setQuizAnswers(prev => ({
+                ...prev,
+                [questionId]: optionId
+              }));
+            }
+          };
+
+          const renderPhospholipids = (startX, count) => {
+            const lipids = [];
+            for (let i = 0; i < count; i++) {
+              const x = startX + i * 25;
+              lipids.push(
+                <g key={`lipid-${startX}-${i}`}>
+                  <circle cx={x} cy="80" r="10" fill="#fca5a5" stroke="#ef4444" strokeWidth="2" />
+                  <path d={`M ${x - 4} 90 Q ${x - 8} 105 ${x - 2} 120`} stroke="#fbbf24" strokeWidth="2" fill="none" />
+                  <path d={`M ${x + 4} 90 Q ${x + 8} 105 ${x + 2} 120`} stroke="#fbbf24" strokeWidth="2" fill="none" />
+                  <circle cx={x} cy="200" r="10" fill="#fca5a5" stroke="#ef4444" strokeWidth="2" />
+                  <path d={`M ${x - 4} 190 Q ${x - 8} 175 ${x - 2} 160`} stroke="#fbbf24" strokeWidth="2" fill="none" />
+                  <path d={`M ${x + 4} 190 Q ${x + 8} 175 ${x + 2} 160`} stroke="#fbbf24" strokeWidth="2" fill="none" />
+                </g>
+              );
+            }
+            return lipids;
+          };
+
+          const animationStyles = `
+            @keyframes simple-diff {
+              0% { transform: translate(80px, 20px); opacity: 1; }
+              100% { transform: translate(80px, 260px); opacity: 0; }
+            }
+            @keyframes simple-diff-out {
+              0% { transform: translate(80px, 260px); opacity: 1; }
+              100% { transform: translate(80px, 20px); opacity: 0; }
+            }
+            @keyframes channel-diff {
+              0% { transform: translate(170px, 20px); opacity: 1; }
+              100% { transform: translate(170px, 260px); opacity: 0; }
+            }
+            @keyframes carrier-diff {
+              0% { transform: translate(380px, 20px); opacity: 1; }
+              30% { transform: translate(380px, 140px); opacity: 1; }
+              60% { transform: translate(380px, 140px); opacity: 1; transform: translate(380px, 140px) scale(0.8); }
+              100% { transform: translate(380px, 260px); opacity: 0; }
+            }
+            .anim-simple { animation: simple-diff 2s ease-in-out forwards; }
+            .anim-simple-out { animation: simple-diff-out 2s ease-in-out forwards; }
+            .anim-channel { animation: channel-diff 2s ease-in-out forwards; }
+            .anim-carrier { animation: carrier-diff 3s ease-in-out forwards; }
+            .anim-active { animation: active-diff 3s ease-in-out forwards; }
+            .anim-atp { animation: atp-move 3s ease-in-out forwards; }
+            .anim-adp { animation: adp-move 3s ease-in-out forwards; }
+            .anim-flash { animation: flash-burst 3s ease-in-out forwards; }
+            
+            @keyframes active-diff {
+              0% { transform: translate(580px, 20px); opacity: 1; }
+              30% { transform: translate(580px, 140px); opacity: 1; }
+              60% { transform: translate(580px, 140px); opacity: 1; transform: translate(580px, 140px) scale(0.8); }
+              100% { transform: translate(580px, 260px); opacity: 0; }
+            }
+            @keyframes atp-move {
+              0% { transform: translate(480px, 250px); opacity: 0; }
+              20% { transform: translate(480px, 250px); opacity: 1; }
+              40% { transform: translate(540px, 180px); opacity: 1; }
+              45% { transform: translate(540px, 180px) scale(1.2); opacity: 1; }
+              50% { transform: translate(540px, 180px); opacity: 0; }
+              100% { transform: translate(540px, 180px); opacity: 0; }
+            }
+            @keyframes adp-move {
+              0% { transform: translate(540px, 180px); opacity: 0; }
+              45% { transform: translate(540px, 180px); opacity: 0; }
+              50% { transform: translate(540px, 180px); opacity: 1; }
+              100% { transform: translate(510px, 280px); opacity: 0; }
+            }
+            @keyframes flash-burst {
+              0% { transform: translate(560px, 180px) scale(0); opacity: 0; }
+              40% { transform: translate(560px, 180px) scale(0); opacity: 1; }
+              45% { transform: translate(560px, 180px) scale(1.5); opacity: 1; }
+              60% { transform: translate(560px, 180px) scale(2); opacity: 0; }
+              100% { transform: translate(560px, 180px) scale(2); opacity: 0; }
+            }
+            
+            .protein-carrier-activate {
+              animation: carrier-shape 3s ease-in-out forwards;
+            }
+            .protein-active-activate {
+              animation: active-shape 3s ease-in-out forwards;
+            }
+            @keyframes carrier-shape {
+              0% { d: path('M 340 70 C 340 70, 340 210, 340 210 C 360 180, 400 180, 420 210 C 420 210, 420 70, 420 70 C 400 100, 360 100, 340 70 Z'); }
+              40% { d: path('M 340 70 C 340 70, 340 210, 340 210 C 370 210, 390 210, 420 210 C 420 210, 420 70, 420 70 C 370 70, 390 70, 340 70 Z'); }
+              60% { d: path('M 340 70 C 340 70, 340 210, 340 210 C 370 210, 390 210, 420 210 C 420 210, 420 70, 420 70 C 370 70, 390 70, 340 70 Z'); }
+              100% { d: path('M 340 70 C 340 70, 340 210, 340 210 C 360 180, 400 180, 420 210 C 420 210, 420 70, 420 70 C 400 100, 360 100, 340 70 Z'); }
+            }
+            @keyframes active-shape {
+              0% { d: path('M 540 70 C 540 70, 540 210, 540 210 C 560 180, 600 180, 620 210 C 620 210, 620 70, 620 70 C 600 100, 560 100, 540 70 Z'); } 
+              30% { d: path('M 540 70 C 540 70, 540 210, 540 210 C 570 210, 590 210, 620 210 C 620 210, 620 70, 620 70 C 570 70, 590 70, 540 70 Z'); }
+              40% { d: path('M 540 70 C 540 70, 540 210, 540 210 C 570 210, 590 210, 620 210 C 620 210, 620 70, 620 70 C 570 70, 590 70, 540 70 Z'); } 
+              60% { d: path('M 540 70 C 540 70, 540 210, 540 210 C 560 180, 600 180, 620 210 C 620 210, 620 70, 620 70 C 570 70, 590 70, 540 70 Z'); } 
+              100% { d: path('M 540 70 C 540 70, 540 210, 540 210 C 560 180, 600 180, 620 210 C 620 210, 620 70, 620 70 C 600 100, 560 100, 540 70 Z'); } 
+            }
+          `;
+
+          const ui = uiText[lang];
+
+          return (
+            <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-16">
+              <style>{animationStyles}</style>
+              
+              {/* 標題與簡介 */}
+              <header className="bg-emerald-600 text-white p-6 shadow-md relative">
+                <div className="max-w-5xl mx-auto flex justify-between items-center">
+                  <div>
+                    <h1 className="text-3xl font-bold mb-2">{ui.title}</h1>
+                    <p className="text-emerald-100">{ui.subtitle}</p>
+                  </div>
+                  <button 
+                    onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+                    className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors"
+                  >
+                    {lang === 'zh' ? 'English' : '繁體中文'}
+                  </button>
+                </div>
+              </header>
+
+              <main className="max-w-5xl mx-auto mt-8 px-4">
+                
+                {/* 控制面板與說明 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1 md:col-span-1">
+                    <h2 className="text-lg font-bold mb-4 flex items-center">
+                      <span className="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-full flex items-center justify-center mr-2">1</span>
+                      {ui.step1}
+                    </h2>
+                    <div className="flex flex-col gap-2">
+                      {Object.values(moleculeData).map(mol => (
+                        <button
+                          key={mol.id}
+                          onClick={() => { setSelectedMolId(mol.id); setAnimating(false); }}
+                          className={`px-4 py-3 rounded-lg text-left font-medium transition-colors border-l-4 ${
+                            selectedMolId === mol.id 
+                              ? 'bg-slate-100 border-emerald-500 shadow-inner' 
+                              : 'bg-white border-transparent hover:bg-slate-50 border-slate-200 border'
+                          }`}
+                        >
+                          <span className="inline-block w-3 h-3 rounded-full mr-2" style={{ backgroundColor: mol.color }}></span>
+                          {mol.name[lang]}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={handlePlayAnimation}
+                      disabled={animating}
+                      className={`mt-6 w-full py-3 rounded-lg font-bold text-white transition-all ${
+                        animating ? 'bg-emerald-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 shadow-md hover:shadow-lg'
+                      }`}
+                    >
+                      {animating ? ui.playing : ui.play}
+                    </button>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1 md:col-span-2 flex flex-col justify-center">
+                    <div className="flex items-start mb-4">
+                       <span className="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-full flex items-center justify-center mr-3 shrink-0">2</span>
+                       <div>
+                          <h3 className="text-xl font-bold text-slate-800 mb-2">{ui.step2}</h3>
+                          <div className="flex items-center mb-2">
+                            <span className="inline-block w-4 h-4 rounded-full mr-2 shadow-sm" style={{ backgroundColor: activeMolecule.color }}></span>
+                            <span className="font-semibold text-emerald-600 text-lg">{activeMolecule.name[lang]}</span>
+                          </div>
+                          <p className="text-slate-600 leading-relaxed text-lg">
+                            {activeMolecule.description[lang]}
+                          </p>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 動畫展示區 */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-12 overflow-hidden relative">
+                  <div className="absolute top-4 left-6 text-sm font-bold text-slate-400 uppercase tracking-widest">
+                    {ui.extracellular} {
+                      (activeMolecule.type === 'active' || activeMolecule.type === 'simple-out') ? ui.lowConc : 
+                      (activeMolecule.type === 'both' ? ui.mixedConc : ui.highConc)
+                    }
+                  </div>
+                  <div className="absolute bottom-4 left-6 text-sm font-bold text-slate-400 uppercase tracking-widest">
+                    {ui.intracellular} {
+                      (activeMolecule.type === 'active' || activeMolecule.type === 'simple-out') ? ui.highConc : 
+                      (activeMolecule.type === 'both' ? ui.mixedConc : ui.lowConc)
+                    }
+                  </div>
+                  
+                  <svg viewBox="0 0 700 300" className="w-full max-w-4xl mx-auto bg-slate-50 rounded-lg">
+                    <rect width="700" height="300" fill="#f8fafc" />
+
+                    <text x="170" y="50" fontSize="12" fill="#64748b" textAnchor="middle">{ui.channelProtein}</text>
+                    <text x="380" y="40" fontSize="12" fill="#64748b" textAnchor="middle">{ui.carrierProtein}</text>
+                    <text x="380" y="55" fontSize="10" fill="#64748b" textAnchor="middle">{ui.carrierFacilitated}</text>
+                    <text x="580" y="40" fontSize="12" fill="#64748b" textAnchor="middle">{ui.carrierProtein}</text>
+                    <text x="580" y="55" fontSize="10" fill="#64748b" textAnchor="middle">{ui.carrierActive}</text>
+                    <text x="70" y="50" fontSize="12" fill="#64748b" textAnchor="middle">{ui.phospholipid}</text>
+                    
+                    {/* 磷脂雙層 */}
+                    {renderPhospholipids(20, 4)}
+                    
+                    {/* 通道蛋白 */}
+                    <g>
+                      <rect x="140" y="70" width="20" height="140" rx="10" fill="#818cf8" />
+                      <rect x="180" y="70" width="20" height="140" rx="10" fill="#818cf8" />
+                      <rect x="150" y="60" width="40" height="15" fill="#818cf8" opacity="0.3"/>
+                    </g>
+
+                    {renderPhospholipids(220, 4)}
+
+                    {/* 載體蛋白 1 */}
+                    <g>
+                      <path 
+                        className={
+                          animating && (activeMolecule.type === 'carrier' || activeMolecule.type === 'both') 
+                            ? 'protein-carrier-activate' : ''
+                        }
+                        d="M 340 70 C 340 70, 340 210, 340 210 C 360 180, 400 180, 420 210 C 420 210, 420 70, 420 70 C 400 100, 360 100, 340 70 Z" 
+                        fill="#a78bfa" 
+                      />
+                    </g>
+
+                    {renderPhospholipids(440, 3)}
+
+                    {/* 載體蛋白 2 */}
+                    <g>
+                      <path 
+                        className={
+                          animating && (activeMolecule.type === 'active' || activeMolecule.type === 'both') 
+                            ? 'protein-active-activate' : ''
+                        }
+                        d="M 540 70 C 540 70, 540 210, 540 210 C 560 180, 600 180, 620 210 C 620 210, 620 70, 620 70 C 600 100, 560 100, 540 70 Z" 
+                        fill="#f43f5e" 
+                      />
+                    </g>
+
+                    {renderPhospholipids(640, 2)}
+
+                    {/* 動畫分子 */}
+                    {animating && (
+                      <g key={animKey}>
+                        {activeMolecule.type === 'both' ? (
+                          <>
+                            <g className="anim-carrier">
+                              <circle cx="0" cy="0" r="12" fill={activeMolecule.color} stroke="#fff" strokeWidth="2" />
+                              <text x="0" y="4" fontSize="10" fill="#fff" textAnchor="middle" fontWeight="bold">
+                                {activeMolecule.id === 'AminoAcid' ? 'AA' : activeMolecule.id}
+                              </text>
+                            </g>
+                            <g className="anim-active">
+                              <circle cx="0" cy="0" r="12" fill={activeMolecule.color} stroke="#fff" strokeWidth="2" />
+                              <text x="0" y="4" fontSize="10" fill="#fff" textAnchor="middle" fontWeight="bold">
+                                {activeMolecule.id === 'AminoAcid' ? 'AA' : activeMolecule.id}
+                              </text>
+                            </g>
+                            <g className="anim-atp">
+                              <rect x="-15" y="-10" width="30" height="20" rx="4" fill="#fbbf24" stroke="#d97706" strokeWidth="2"/>
+                              <text x="0" y="4" fontSize="10" fill="#92400e" textAnchor="middle" fontWeight="bold">ATP</text>
+                            </g>
+                            <g className="anim-adp">
+                              <rect x="-18" y="-10" width="36" height="20" rx="4" fill="#cbd5e1" stroke="#64748b" strokeWidth="2"/>
+                              <text x="0" y="3" fontSize="8" fill="#1e293b" textAnchor="middle" fontWeight="bold">ADP+Pi</text>
+                            </g>
+                            <g className="anim-flash">
+                              <path d="M 0 -20 L 5 -5 L 20 0 L 5 5 L 0 20 L -5 5 L -20 0 L -5 -5 Z" fill="#fde047" opacity="0.8"/>
+                            </g>
+                          </>
+                        ) : (
+                          <>
+                            <g className={`anim-${activeMolecule.type}`}>
+                              <circle cx="0" cy="0" r="12" fill={activeMolecule.color} stroke="#fff" strokeWidth="2" />
+                              <text x="0" y="4" fontSize="10" fill="#fff" textAnchor="middle" fontWeight="bold">
+                                {activeMolecule.id === 'AminoAcid' ? 'AA' : (activeMolecule.id === 'Ion' ? 'Mg²⁺' : activeMolecule.id)}
+                              </text>
+                            </g>
+                            
+                            {activeMolecule.type === 'active' && (
+                              <>
+                                <g className="anim-atp">
+                                  <rect x="-15" y="-10" width="30" height="20" rx="4" fill="#fbbf24" stroke="#d97706" strokeWidth="2"/>
+                                  <text x="0" y="4" fontSize="10" fill="#92400e" textAnchor="middle" fontWeight="bold">ATP</text>
+                                </g>
+                                <g className="anim-adp">
+                                  <rect x="-18" y="-10" width="36" height="20" rx="4" fill="#cbd5e1" stroke="#64748b" strokeWidth="2"/>
+                                  <text x="0" y="3" fontSize="8" fill="#1e293b" textAnchor="middle" fontWeight="bold">ADP+Pi</text>
+                                </g>
+                                <g className="anim-flash">
+                                  <path d="M 0 -20 L 5 -5 L 20 0 L 5 5 L 0 20 L -5 5 L -20 0 L -5 -5 Z" fill="#fde047" opacity="0.8"/>
+                                </g>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </g>
+                    )}
+
+                    <g stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4">
+                       <line x1="15" y1="140" x2="685" y2="140" />
+                    </g>
+                    <text x="680" y="135" fontSize="10" fill="#94a3b8" textAnchor="end">{ui.hydrophobic}</text>
+                  </svg>
+                </div>
+
+                {/* 測驗區 */}
+                <div className="bg-slate-800 text-white p-8 rounded-2xl shadow-lg mt-16">
+                  <h2 className="text-3xl font-bold mb-6 text-emerald-400 flex items-center">
+                    <svg className="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    {ui.quizTitle}
+                  </h2>
+                  <p className="mb-8 text-slate-300">{ui.quizDesc}</p>
+
+                  <div className="space-y-8">
+                    {quizQuestions.map((q, index) => {
+                      const answeredId = quizAnswers[q.id];
+                      const isAnswered = !!answeredId;
+
+                      return (
+                        <div key={q.id} className="bg-slate-700 rounded-xl p-6">
+                          <h3 className="text-xl font-medium mb-4"><span className="text-emerald-400 font-bold mr-2">Q{index + 1}.</span>{q.question[lang]}</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {q.options.map(opt => {
+                              let btnClass = "bg-slate-600 hover:bg-slate-500 border border-slate-500 text-left p-4 rounded-lg transition-colors";
+                              
+                              if (isAnswered) {
+                                if (opt.isCorrect) {
+                                  btnClass = "bg-emerald-600/50 border border-emerald-400 text-white font-medium p-4 rounded-lg";
+                                } else if (answeredId === opt.id && !opt.isCorrect) {
+                                  btnClass = "bg-red-500/50 border border-red-400 text-white font-medium p-4 rounded-lg";
+                                } else {
+                                  btnClass = "bg-slate-700 border border-slate-600 text-slate-400 p-4 rounded-lg opacity-50 cursor-not-allowed";
+                                }
+                              }
+
+                              return (
+                                <button
+                                  key={opt.id}
+                                  disabled={isAnswered}
+                                  onClick={() => handleOptionSelect(q.id, opt.id)}
+                                  className={btnClass}
+                                >
+                                  <span className="font-bold mr-2">{opt.id}.</span> {opt.text[lang]}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          
+                          {isAnswered && (
+                            <div className={`mt-4 p-4 rounded-lg flex items-start ${
+                              q.options.find(o => o.id === answeredId)?.isCorrect 
+                                ? 'bg-emerald-900/40 text-emerald-100 border-l-4 border-emerald-500' 
+                                : 'bg-amber-900/40 text-amber-100 border-l-4 border-amber-500'
+                            }`}>
+                              <div className="mr-3 mt-1">
+                                {q.options.find(o => o.id === answeredId)?.isCorrect ? '✅' : '💡'}
+                              </div>
+                              <div>
+                                <p className="font-bold mb-1">
+                                  {q.options.find(o => o.id === answeredId)?.isCorrect ? ui.correct : ui.incorrect + q.options.find(o=>o.isCorrect).id + '。'}
+                                </p>
+                                <p className="text-sm opacity-90">{q.explanation[lang]}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </main>
+            </div>
+          );
+        }
+
+        // 將 React 元件渲染到畫面上
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

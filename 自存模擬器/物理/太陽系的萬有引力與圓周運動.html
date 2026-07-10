@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>萬有引力與圓周運動模擬器 | HKDSE Physics</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #03050c; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        /* 確保畫布填滿螢幕 */
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
+        
+        /* 毛玻璃 UI 面板 */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 範圍滑桿 */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%;
+            background: #3b82f6; cursor: pointer; margin-top: -7px; box-shadow: 0 0 12px rgba(59,130,246,0.6);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer; background: rgba(255,255,255,0.15); border-radius: 2px;
+        }
+        
+        /* 滾動條 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        
+        .math-font { font-family: 'Times New Roman', Times, serif; font-style: italic; }
+        
+        /* 面板平滑過渡 */
+        .hide-panel { opacity: 0; pointer-events: none; transform: translateY(-10px) scale(0.98); }
+        .collapse-panel { max-height: 0; overflow: hidden; padding-top: 0; padding-bottom: 0; opacity: 0; border-color: transparent; margin-top: 0 !important; }
+        
+        /* 藥丸形狀按鈕 */
+        .pill-toggle {
+            display: inline-flex; background: rgba(255,255,255,0.08); border-radius: 9999px; padding: 3px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .pill-btn {
+            padding: 4px 14px; border-radius: 9999px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; color: #94a3b8;
+        }
+        .pill-btn.active { background: #3b82f6; color: white; box-shadow: 0 2px 8px rgba(59,130,246,0.4); }
+
+        /* 分數樣式 */
+        .fraction { display: inline-block; vertical-align: middle; margin: 0 0.2em; text-align: center; line-height: 1.2;}
+        .fraction > span { display: block; padding: 0.1em; }
+        .fraction span.bottom { border-top: 1px solid #e2e8f0; }
+
+        /* 自訂開關 */
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #3b82f6; }
+        .toggle-checkbox:checked + .toggle-label:after { transform: translateX(100%); border-color: white; }
+        .toggle-label { width: 44px; height: 24px; background-color: #4b5563; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.3s; }
+        .toggle-label:after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background-color: white; border-radius: 50%; transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body class="antialiased select-none">
+
+    <!-- 高效能 Canvas 畫布 -->
+    <canvas id="simCanvas"></canvas>
+
+    <!-- 頂部標題與控制 -->
+    <header class="absolute top-0 left-0 w-full p-4 md:p-5 flex justify-between items-start z-10 pointer-events-none">
+        <div class="flex items-center gap-3 pointer-events-auto">
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-wide" style="text-shadow: 0 2px 10px rgba(0,0,0,0.8);" id="titleText">萬有引力與圓周運動</h1>
+            <button onclick="togglePanel('controlPanel')" class="text-gray-300 hover:text-white transition-colors p-1.5 bg-white/5 rounded-full hover:bg-white/15 backdrop-blur-sm border border-white/10" title="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transform hover:rotate-90 transition-transform duration-300"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+        </div>
+        <div class="pointer-events-auto">
+            <div class="pill-toggle">
+                <div id="btn-zh" class="pill-btn active" onclick="setLang('zh')">中文</div>
+                <div id="btn-en" class="pill-btn" onclick="setLang('en')">EN</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 數據表 (左側) -->
+    <div class="absolute top-20 left-4 z-10 pointer-events-auto flex flex-col gap-2">
+        <button onclick="togglePanel('dataTable')" class="glass-panel px-4 py-2.5 text-sm font-semibold flex justify-between items-center w-64 hover:bg-white/10 transition group">
+            <span id="ui-data-title" class="tracking-wide">天文數據表</span>
+            <svg id="icon-data" class="w-4 h-4 transform transition-transform duration-300 text-gray-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+        <div id="dataTable" class="glass-panel p-5 w-64 text-sm flex flex-col gap-3.5 mt-2 origin-top">
+            <div>
+                <div class="text-gray-400 text-xs mb-1 flex justify-between">
+                    <span id="ui-center-mass">中心天體質量</span> <span class="math-font text-gray-500">M</span>
+                </div>
+                <div id="val-M" class="font-mono text-blue-300 tracking-wider"></div>
+            </div>
+            <div>
+                <div class="text-gray-400 text-xs mb-1 flex justify-between">
+                    <span id="ui-orbit-mass">環繞天體質量</span> <span class="math-font text-gray-500">m</span>
+                </div>
+                <div id="val-m" class="font-mono text-emerald-300 tracking-wider"></div>
+            </div>
+            <div>
+                <div class="text-gray-400 text-xs mb-1 flex justify-between">
+                    <span id="ui-distance">軌道半徑</span> <span class="math-font text-gray-500">r</span>
+                </div>
+                <div id="val-r" class="font-mono text-amber-300 tracking-wider"></div>
+            </div>
+            <div class="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent my-0.5"></div>
+            <div>
+                <div class="text-gray-400 text-xs mb-1 flex justify-between">
+                    <span id="ui-velocity">軌道速度</span> <span class="math-font text-gray-500">v</span>
+                </div>
+                <div id="val-v" class="font-mono tracking-wider text-white"></div>
+            </div>
+            <div>
+                <div class="text-gray-400 text-xs mb-1 flex justify-between">
+                    <span id="ui-force">萬有引力</span> <span class="math-font text-gray-500">F<sub>g</sub></span>
+                </div>
+                <div id="val-f" class="font-mono text-rose-400 tracking-wider font-semibold"></div>
+            </div>
+            <div class="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent my-0.5"></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-black/20 p-2 rounded border border-white/5">
+                    <div class="text-gray-400 text-[10px] mb-1 flex justify-between"><span id="ui-period">公轉週期</span><span class="math-font">T</span></div>
+                    <div id="val-T" class="font-mono text-xs text-indigo-300"></div>
+                </div>
+                <div class="bg-black/20 p-2 rounded border border-white/5">
+                    <div class="text-gray-400 text-[10px] mb-1"><span id="ui-rot">自轉週期</span></div>
+                    <div id="val-rot" class="font-mono text-xs text-gray-300"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 控制面板 (右側) -->
+    <div id="controlPanel" class="absolute top-20 right-4 z-10 pointer-events-auto glass-panel p-5 w-72 flex flex-col gap-5 origin-top-right">
+        
+        <!-- 系統選擇 -->
+        <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2" id="ui-select-sys">選擇天體系統</label>
+            <div class="relative">
+                <select id="systemSelector" class="appearance-none w-full bg-black/40 text-white text-sm rounded-lg border border-white/10 p-2.5 pl-3 focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+                    <option value="earth_moon" data-zh="地球 - 月球" data-en="Earth - Moon">地球 - 月球</option>
+                    <option value="sun_mercury" data-zh="太陽 - 水星" data-en="Sun - Mercury">太陽 - 水星</option>
+                    <option value="sun_venus" data-zh="太陽 - 金星" data-en="Sun - Venus">太陽 - 金星</option>
+                    <option value="sun_earth" data-zh="太陽 - 地球" data-en="Sun - Earth" selected>太陽 - 地球</option>
+                    <option value="sun_mars" data-zh="太陽 - 火星" data-en="Sun - Mars">太陽 - 火星</option>
+                    <option value="sun_jupiter" data-zh="太陽 - 木星" data-en="Sun - Jupiter">太陽 - 木星</option>
+                    <option value="sun_saturn" data-zh="太陽 - 土星" data-en="Sun - Saturn">太陽 - 土星</option>
+                    <option value="sun_uranus" data-zh="太陽 - 天王星" data-en="Sun - Uranus">太陽 - 天王星</option>
+                    <option value="sun_neptune" data-zh="太陽 - 海王星" data-en="Sun - Neptune">太陽 - 海王星</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- 播放速度 -->
+        <div>
+            <div class="flex justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label id="ui-sim-speed">模擬速度</label>
+                <span id="speedDisplay" class="font-mono text-blue-400 bg-blue-900/30 px-1.5 rounded">1.0x</span>
+            </div>
+            <div class="pt-2 pb-1">
+                <input type="range" id="speedSlider" min="0" max="100" value="50">
+            </div>
+        </div>
+
+        <!-- 切換開關 -->
+        <div class="pt-1">
+            <label class="flex items-center cursor-pointer group">
+                <div class="relative">
+                    <input type="checkbox" id="toggleVectors" class="sr-only toggle-checkbox" checked>
+                    <div class="toggle-label block"></div>
+                </div>
+                <div class="ml-3 text-sm text-gray-300 font-medium group-hover:text-white transition" id="ui-show-vectors">顯示物理向量</div>
+            </label>
+        </div>
+
+        <!-- 播放控制按鈕 -->
+        <div class="flex gap-2 mt-2">
+            <button id="btnPlay" class="flex-2 bg-blue-600 hover:bg-blue-500 text-white py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 w-full">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
+                <span id="ui-pause">暫停</span>
+            </button>
+            <button id="btnReset" class="flex-1 bg-white/10 hover:bg-white/20 text-white py-2.5 px-3 rounded-lg font-medium transition-all flex items-center justify-center border border-white/5" title="Reset">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 公式面板 (底部) -->
+    <div class="absolute bottom-5 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-auto z-10 pointer-events-auto flex flex-col gap-2">
+        <button onclick="togglePanel('formulaPanel')" class="glass-panel px-5 py-2.5 text-sm font-semibold flex justify-between items-center hover:bg-white/10 transition mx-auto w-full md:w-[28rem] group">
+            <span id="ui-formula-title" class="tracking-wide">核心物理公式</span>
+            <svg id="icon-formula" class="w-4 h-4 transform transition-transform duration-300 text-gray-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+        </button>
+        <div id="formulaPanel" class="glass-panel p-5 text-sm w-full md:w-[28rem] mt-2 origin-bottom">
+            <div class="flex flex-col md:flex-row gap-4 items-center justify-center">
+                <div class="text-center flex-1">
+                    <div class="text-gray-400 text-xs mb-2 tracking-wide" id="ui-form-grav">牛頓萬有引力</div>
+                    <div class="text-xl math-font bg-black/40 px-3 py-2.5 rounded border border-white/5 shadow-inner">
+                        F = G <span class="fraction"><span class="top">Mm</span><span class="bottom">r<sup>2</sup></span></span>
+                    </div>
+                </div>
+                <div class="hidden md:flex text-gray-500 font-bold text-xl h-full items-center pt-5">=</div>
+                <div class="text-center flex-1">
+                    <div class="text-gray-400 text-xs mb-2 tracking-wide" id="ui-form-cent">向心力 (由引力提供)</div>
+                    <div class="text-xl math-font bg-black/40 px-3 py-2.5 rounded border border-white/5 shadow-inner">
+                        F<sub>c</sub> = <span class="fraction"><span class="top">mv<sup>2</sup></span><span class="bottom">r</span></span> = mr&omega;<sup>2</sup>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 text-[11px] text-gray-500 text-center leading-relaxed" id="ui-disclaimer">
+                * 為便於觀察，天體大小及距離之視覺比例已作調整。<br>數據表與計算則完全採用真實天文物理數值。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 物理常數與系統數據 ---
+        const G = 6.67430e-11; // N m^2 kg^-2
+        const TWO_PI = Math.PI * 2;
+
+        const bodies = {
+            sun:     { mass: 1.989e30, radius: 45, color: '#FDB813', type: 'star' },
+            mercury: { mass: 3.30e23, dist: 57.9e9,  period: 88 * 86400,    rot: 58.6 * 86400,  radius: 8,  color: '#A8A8A8' },
+            venus:   { mass: 4.87e24, dist: 108.2e9, period: 224.7 * 86400, rot: 243 * 86400,   radius: 14, color: '#E3BB76' },
+            earth:   { mass: 5.97e24, dist: 149.6e9, period: 365.2 * 86400, rot: 1 * 86400,     radius: 16, color: '#2B82C9' },
+            moon:    { mass: 0.073e24,dist: 0.384e9, period: 27.3 * 86400,  rot: 27.3 * 86400,  radius: 6,  color: '#D3D3D3' },
+            mars:    { mass: 0.642e24,dist: 228.0e9, period: 687 * 86400,   rot: 1.03 * 86400,  radius: 12, color: '#E27B58' },
+            jupiter: { mass: 1898e24, dist: 778.5e9, period: 4331 * 86400,  rot: 0.41 * 86400,  radius: 32, color: '#C88B3A', type: 'gas' },
+            saturn:  { mass: 568e24,  dist: 1432e9,  period: 10747 * 86400, rot: 0.45 * 86400,  radius: 28, color: '#EAD6B8', type: 'rings' },
+            uranus:  { mass: 86.8e24, dist: 2867e9,  period: 30589 * 86400, rot: 0.72 * 86400,  radius: 20, color: '#4b70dd' },
+            neptune: { mass: 102e24,  dist: 4515e9,  period: 59800 * 86400, rot: 0.67 * 86400,  radius: 19, color: '#274687' }
+        };
+
+        let state = {
+            lang: 'zh', isPlaying: true, time: 0, baseSpeed: 0, speedMultiplier: 1,
+            system: 'sun_earth', showVectors: true, centerBody: null, orbitBody: null
+        };
+
+        const i18n = {
+            zh: {
+                title: "萬有引力與圓周運動", uiDataTitle: "天文數據表", uiCenterMass: "中心天體質量", uiOrbitMass: "環繞天體質量",
+                uiDist: "軌道半徑", uiVel: "軌道速度", uiForce: "萬有引力", uiPeriod: "公轉週期", uiRot: "自轉週期",
+                uiSelSys: "選擇天體系統", uiSimSpeed: "模擬速度", uiShowVec: "顯示物理向量",
+                uiPause: "暫停", uiPlay: "播放",
+                uiFormTitle: "核心物理公式", uiFormGrav: "牛頓萬有引力定律", uiFormCent: "向心力 (由引力提供)",
+                uiDisclaimer: "* 為便於觀察，天體大小及距離之視覺比例已作調整。<br>數據表與計算則完全採用真實天文物理數值。",
+                units: { kg: "kg", m: "m", ms: "m s⁻¹", N: "N", days: "日", years: "年", hrs: "小時" },
+                bodies: { sun: "太陽", mercury: "水星", venus: "金星", earth: "地球", moon: "月球", mars: "火星", jupiter: "木星", saturn: "土星", uranus: "天王星", neptune: "海王星" }
+            },
+            en: {
+                title: "Gravitation & Circular Motion", uiDataTitle: "Astronomical Data", uiCenterMass: "Central Mass", uiOrbitMass: "Orbital Mass",
+                uiDist: "Orbital Radius", uiVel: "Orbital Speed", uiForce: "Gravitational Force", uiPeriod: "Orbital Period", uiRot: "Rotation Period",
+                uiSelSys: "Select System", uiSimSpeed: "Sim Speed", uiShowVec: "Show Vectors",
+                uiPause: "Pause", uiPlay: "Play",
+                uiFormTitle: "Core Formulas", uiFormGrav: "Newton's Law of Gravitation", uiFormCent: "Centripetal Force",
+                uiDisclaimer: "* Visual sizes and distances are scaled for screen viewing.<br>Data tables use real astronomical values.",
+                units: { kg: "kg", m: "m", ms: "m s⁻¹", N: "N", days: "days", years: "yrs", hrs: "hrs" },
+                bodies: { sun: "Sun", mercury: "Mercury", venus: "Venus", earth: "Earth", moon: "Moon", mars: "Mars", jupiter: "Jupiter", saturn: "Saturn", uranus: "Uranus", neptune: "Neptune" }
+            }
+        };
+
+        // --- 高效能 Canvas 渲染設定 ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false }); // 關閉 alpha 通道以優化效能
+        let cssWidth = 0, cssHeight = 0;
+        
+        // 離屏 Canvas (用於靜態星空背景)
+        const bgCanvas = document.createElement('canvas');
+        const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+
+        function init() {
+            window.addEventListener('resize', handleResize);
+            handleResize(); // 初始設定尺寸
+
+            // 事件監聽器
+            document.getElementById('systemSelector').addEventListener('change', (e) => setSystem(e.target.value));
+            document.getElementById('btnPlay').addEventListener('click', togglePlay);
+            document.getElementById('btnReset').addEventListener('click', resetSim);
+            
+            document.getElementById('speedSlider').addEventListener('input', (e) => {
+                const val = e.target.value;
+                state.speedMultiplier = val < 50 ? 0.1 + (val/50)*0.9 : 1 + ((val-50)/50)*9;
+                document.getElementById('speedDisplay').innerText = state.speedMultiplier.toFixed(1) + 'x';
+            });
+
+            document.getElementById('toggleVectors').addEventListener('change', (e) => state.showVectors = e.target.checked);
+
+            setSystem('sun_earth');
+            setLang('zh');
+            requestAnimationFrame(simLoop);
+        }
+
+        // --- High-DPI 畫布處理 ---
+        function handleResize() {
+            cssWidth = window.innerWidth;
+            cssHeight = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            
+            // 設置實際像素解析度
+            canvas.width = cssWidth * dpr;
+            canvas.height = cssHeight * dpr;
+            bgCanvas.width = cssWidth * dpr;
+            bgCanvas.height = cssHeight * dpr;
+            
+            // 設置 CSS 顯示大小
+            canvas.style.width = cssWidth + 'px';
+            canvas.style.height = cssHeight + 'px';
+            
+            // 縮放 Context，後續繪圖只需用 CSS 座標即可
+            ctx.scale(dpr, dpr);
+            bgCtx.scale(dpr, dpr);
+            
+            generateStarBackground();
+        }
+
+        function generateStarBackground() {
+            bgCtx.fillStyle = '#03050c';
+            bgCtx.fillRect(0, 0, cssWidth, cssHeight);
+            bgCtx.fillStyle = '#ffffff';
+            // 產生隨機星空
+            const numStars = Math.floor((cssWidth * cssHeight) / 5000); 
+            for(let i=0; i<numStars; i++) {
+                const x = Math.random() * cssWidth;
+                const y = Math.random() * cssHeight;
+                const r = Math.random() * 1.2;
+                bgCtx.globalAlpha = Math.random() * 0.8 + 0.1;
+                bgCtx.beginPath();
+                bgCtx.arc(x, y, r, 0, TWO_PI);
+                bgCtx.fill();
+            }
+            bgCtx.globalAlpha = 1.0;
+        }
+
+        // --- 核心邏輯與 UI ---
+        function setSystem(sysId) {
+            state.system = sysId;
+            const parts = sysId.split('_');
+            state.centerBody = { id: parts[0], ...bodies[parts[0]] };
+            state.orbitBody = { id: parts[1], ...bodies[parts[1]] };
+            state.time = 0;
+            // 基準速度：以1秒前進約 1/360 圈為準
+            state.baseSpeed = state.orbitBody.period / 360; 
+            updateDataTable();
+        }
+
+        function togglePlay() { state.isPlaying = !state.isPlaying; updatePlayBtnUI(); }
+        function resetSim() { state.time = 0; if(!state.isPlaying) togglePlay(); }
+
+        function updatePlayBtnUI() {
+            const t = i18n[state.lang];
+            const btn = document.getElementById('btnPlay');
+            if(state.isPlaying) {
+                btn.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4h4v12H5V4zm6 0h4v12h-4V4z"/></svg> <span id="ui-pause">${t.uiPause}</span>`;
+                btn.classList.replace('bg-emerald-600', 'bg-blue-600');
+                btn.classList.replace('hover:bg-emerald-500', 'hover:bg-blue-500');
+                btn.classList.replace('shadow-emerald-500/30', 'shadow-blue-500/30');
+            } else {
+                btn.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" fill-rule="evenodd"></path></svg> <span id="ui-pause">${t.uiPlay}</span>`;
+                btn.classList.replace('bg-blue-600', 'bg-emerald-600');
+                btn.classList.replace('hover:bg-blue-500', 'hover:bg-emerald-500');
+                btn.classList.replace('shadow-blue-500/30', 'shadow-emerald-500/30');
+            }
+        }
+
+        function formatSci(num) {
+            if(num === 0) return "0";
+            const exp = Math.floor(Math.log10(num));
+            const mantissa = (num / Math.pow(10, exp)).toFixed(2);
+            return `${mantissa} &times; 10<sup>${exp}</sup>`;
+        }
+        
+        function formatTime(seconds, lang) {
+            const days = seconds / 86400;
+            if (days < 2) return (seconds/3600).toFixed(1) + " " + i18n[lang].units.hrs;
+            if (days > 1000) return (days/365.25).toFixed(1) + " " + i18n[lang].units.years;
+            return days.toFixed(1) + " " + i18n[lang].units.days;
+        }
+
+        function updateDataTable() {
+            const { centerBody: c, orbitBody: o, lang } = state;
+            const t = i18n[lang];
+            const r = o.dist, v = (TWO_PI * r) / o.period, f = (G * c.mass * o.mass) / (r * r);
+            
+            document.getElementById('val-M').innerHTML = `${formatSci(c.mass)} <span class="text-xs text-gray-500">${t.units.kg}</span>`;
+            document.getElementById('val-m').innerHTML = `${formatSci(o.mass)} <span class="text-xs text-gray-500">${t.units.kg}</span>`;
+            document.getElementById('val-r').innerHTML = `${formatSci(r)} <span class="text-xs text-gray-500">${t.units.m}</span>`;
+            document.getElementById('val-v').innerHTML = `${formatSci(v)} <span class="text-xs text-gray-400">${t.units.ms}</span>`;
+            document.getElementById('val-f').innerHTML = `${formatSci(f)} <span class="text-xs text-gray-500">${t.units.N}</span>`;
+            document.getElementById('val-T').innerHTML = formatTime(o.period, lang);
+            document.getElementById('val-rot').innerHTML = formatTime(o.rot, lang);
+        }
+
+        function setLang(lang) {
+            state.lang = lang;
+            const t = i18n[lang];
+            
+            ['title', 'uiDataTitle', 'uiCenterMass', 'uiOrbitMass', 'uiSimSpeed', 
+             'uiFormTitle', 'uiFormGrav', 'uiFormCent'].forEach(id => {
+                 const el = document.getElementById(id === 'title' ? 'titleText' : id.replace(/([A-Z])/g, "-$1").toLowerCase());
+                 if(el) el.innerText = t[id];
+            });
+            
+            document.getElementById('ui-select-sys').innerText = t.uiSelSys;
+            document.getElementById('ui-show-vectors').innerText = t.uiShowVec;
+            document.getElementById('ui-distance').innerText = t.uiDist;
+            document.getElementById('ui-velocity').innerText = t.uiVel;
+            document.getElementById('ui-force').innerText = t.uiForce;
+            document.getElementById('ui-period').innerText = t.uiPeriod;
+            document.getElementById('ui-rot').innerText = t.uiRot;
+            document.getElementById('ui-disclaimer').innerHTML = t.uiDisclaimer;
+
+            Array.from(document.getElementById('systemSelector').options).forEach(opt => {
+                opt.text = opt.getAttribute(`data-${lang}`);
+            });
+            
+            document.getElementById('btn-zh').className = `pill-btn ${lang === 'zh' ? 'active' : ''}`;
+            document.getElementById('btn-en').className = `pill-btn ${lang === 'en' ? 'active' : ''}`;
+            
+            updatePlayBtnUI(); updateDataTable();
+        }
+
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            const isCollapsing = panel.classList.contains('hide-panel') || panel.classList.contains('collapse-panel');
+            const iconId = panelId === 'dataTable' ? 'icon-data' : (panelId === 'formulaPanel' ? 'icon-formula' : null);
+            
+            if(isCollapsing) {
+                panel.classList.remove('hide-panel', 'collapse-panel');
+                if(iconId) document.getElementById(iconId).style.transform = "rotate(0deg)";
+            } else {
+                panelId === 'controlPanel' ? panel.classList.add('hide-panel') : panel.classList.add('collapse-panel');
+                if(iconId) document.getElementById(iconId).style.transform = "rotate(180deg)";
+            }
+        }
+
+        // --- 繪圖工具函數 ---
+        function drawBackground() {
+            // 每幀直接將離屏星空背景完整覆蓋到主畫布，確保不會留下任何殘影
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(bgCanvas, 0, 0, cssWidth, cssHeight);
+        }
+
+        function drawBody(x, y, radius, color, type, rotationAngle) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            if (type === 'star') {
+                const grad = ctx.createRadialGradient(0, 0, radius*0.3, 0, 0, radius*2);
+                grad.addColorStop(0, color);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.arc(0, 0, radius*2, 0, TWO_PI); ctx.fill();
+            }
+
+            ctx.rotate(rotationAngle);
+            ctx.beginPath(); ctx.arc(0, 0, radius, 0, TWO_PI);
+            ctx.fillStyle = color; ctx.fill();
+
+            // 為不同天體添加簡單的特徵細節
+            if (type === 'earth' || color === '#2B82C9') {
+                ctx.fillStyle = '#4CAF50';
+                ctx.beginPath(); ctx.arc(-radius*0.3, -radius*0.2, radius*0.4, 0, TWO_PI); ctx.fill();
+                ctx.beginPath(); ctx.arc(radius*0.4, radius*0.3, radius*0.3, 0, TWO_PI); ctx.fill();
+            } else if (type === 'gas') {
+                ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                ctx.fillRect(-radius, -radius*0.4, radius*2, radius*0.2);
+                ctx.fillRect(-radius, radius*0.2, radius*2, radius*0.3);
+            } else if (type === 'rings') {
+                ctx.beginPath(); ctx.ellipse(0, 0, radius * 2.2, radius * 0.6, Math.PI/8, 0, TWO_PI);
+                ctx.strokeStyle = 'rgba(234, 214, 184, 0.6)'; ctx.lineWidth = radius * 0.4; ctx.stroke();
+            } else if (type !== 'star') {
+                const shadow = ctx.createRadialGradient(-radius*0.3, -radius*0.3, radius*0.1, 0, 0, radius);
+                shadow.addColorStop(0, 'rgba(255,255,255,0.2)');
+                shadow.addColorStop(1, 'rgba(0,0,0,0.7)');
+                ctx.fillStyle = shadow; ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawVector(x, y, angle, length, color, label) {
+            ctx.save();
+            ctx.translate(x, y); ctx.rotate(angle);
+            
+            // 畫線段
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(length, 0);
+            ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round'; ctx.stroke();
+            
+            // 畫箭頭
+            ctx.beginPath(); ctx.moveTo(length + 2, 0); ctx.lineTo(length - 8, -5); ctx.lineTo(length - 8, 5);
+            ctx.fillStyle = color; ctx.fill();
+            
+            // 畫文字
+            ctx.translate(length + 12, 0); ctx.rotate(-angle);
+            ctx.fillStyle = color; ctx.font = 'italic 600 14px "Times New Roman", serif';
+            ctx.shadowColor = 'black'; ctx.shadowBlur = 4;
+            ctx.fillText(label, -5, -6);
+            
+            ctx.restore();
+        }
+
+        let lastTime = performance.now();
+
+        // --- 主渲染循環 ---
+        function simLoop(currentTime) {
+            // 限制最大 dt 防止切換分頁後產生跳躍
+            let dt = Math.min((currentTime - lastTime) / 1000, 0.1); 
+            lastTime = currentTime;
+
+            if (state.isPlaying && state.orbitBody) {
+                state.time += dt * 60 * state.baseSpeed * state.speedMultiplier;
+            }
+
+            if(!state.centerBody) return requestAnimationFrame(simLoop);
+
+            // 確保每幀完全重繪背景，不留任何殘影
+            drawBackground();
+
+            const cx = cssWidth / 2;
+            const cy = cssHeight / 2;
+            const visualOrbitRadius = Math.min(cssWidth, cssHeight) * 0.35;
+            
+            // 靜態軌道虛線
+            ctx.beginPath();
+            ctx.arc(cx, cy, visualOrbitRadius, 0, TWO_PI);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 6]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 繪製中心天體
+            const cRotAngle = (state.time / state.centerBody.rot) * TWO_PI;
+            drawBody(cx, cy, state.centerBody.radius, state.centerBody.color, state.centerBody.type || state.centerBody.id, cRotAngle);
+            
+            // 中心天體名稱
+            ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(i18n[state.lang].bodies[state.centerBody.id], cx, cy + state.centerBody.radius + 18);
+
+            // 繪製環繞天體
+            const angle = (state.time / state.orbitBody.period) * TWO_PI;
+            const ox = cx + Math.cos(angle) * visualOrbitRadius;
+            const oy = cy + Math.sin(angle) * visualOrbitRadius;
+            const oRotAngle = (state.time / state.orbitBody.rot) * TWO_PI;
+            
+            drawBody(ox, oy, state.orbitBody.radius, state.orbitBody.color, state.orbitBody.type || state.orbitBody.id, oRotAngle);
+            
+            // 環繞天體名稱
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.fillText(i18n[state.lang].bodies[state.orbitBody.id], ox, oy + state.orbitBody.radius + 18);
+
+            // 繪製物理向量
+            if(state.showVectors) {
+                const fAngle = angle + Math.PI; // 引力指向圓心
+                drawVector(ox, oy, fAngle, 65, '#f43f5e', 'Fg = Fc');
+                const vAngle = angle + Math.PI/2; // 速度與引力垂直
+                drawVector(ox, oy, vAngle, 55, '#f59e0b', 'v');
+            }
+
+            requestAnimationFrame(simLoop);
+        }
+
+        // 啟動模擬
+        window.onload = init;
+    </script>
+</body>
+</html>

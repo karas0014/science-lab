@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>放射性衰變模擬器</title>
+    <!-- Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Babylon.js Core -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <!-- Babylon.js Loaders (optional, but good practice) -->
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        /* Prevent bounce scroll on mobile but allow internal scrolling */
+        html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+        
+        #canvas-container { 
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
+            border-radius: 8px; 
+            background: #111; 
+            overflow: hidden;
+        }
+        
+        /* Babylon.js needs touch-action: none for camera controls */
+        #renderCanvas { width: 100%; height: 100%; touch-action: none; outline: none; }
+        
+        .checkbox-wrapper input:checked + div {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        /* Custom scrollbar for desktop look */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 flex flex-col h-full">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm p-3 sm:p-4 z-10 flex-shrink-0 overflow-y-auto max-h-[30vh]">
+        <div class="container mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div class="text-center lg:text-left">
+                <h1 class="text-xl sm:text-2xl font-bold text-blue-900 leading-tight">放射性衰變模擬器</h1>
+                <p class="text-xs sm:text-sm text-slate-500">香港高中物理 - 原子核物理模擬(由陳淳義老師使用AI製成)</p>
+            </div>
+            
+            <!-- Controls -->
+            <div class="flex flex-wrap gap-3 items-center justify-center bg-slate-50 p-2 sm:p-3 rounded-lg border border-slate-200 w-full lg:w-auto">
+                <!-- N0 Selection -->
+                <div class="flex flex-col items-center sm:items-start">
+                    <label class="text-[10px] sm:text-xs font-semibold text-slate-600 mb-1">骰子數量 (N)</label>
+                    <select id="diceCount" class="text-xs sm:text-sm border rounded p-1 w-20 sm:w-24 bg-white">
+                        <option value="100">100</option>
+                        <option value="1000" selected>1000</option>
+                        <option value="10000">10000</option>
+                    </select>
+                </div>
+
+                <!-- Decay Conditions -->
+                <div class="flex flex-col items-center sm:items-start">
+                    <label class="text-[10px] sm:text-xs font-semibold text-slate-600 mb-1">衰變點數 (Decay condition)</label>
+                    <div class="flex gap-1">
+                        <!-- Loop for 1-6 checkboxes -->
+                        <label class="cursor-pointer checkbox-wrapper">
+                            <input type="checkbox" class="hidden decay-option" value="1" checked>
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">1</div>
+                        </label>
+                        <label class="cursor-pointer checkbox-wrapper">
+                            <input type="checkbox" class="hidden decay-option" value="2">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">2</div>
+                        </label>
+                        <label class="cursor-pointer checkbox-wrapper">
+                            <input type="checkbox" class="hidden decay-option" value="3">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">3</div>
+                        </label>
+                        <label class="cursor-pointer checkbox-wrapper">
+                            <input type="checkbox" class="hidden decay-option" value="4">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">4</div>
+                        </label>
+                        <label class="cursor-pointer checkbox-wrapper">
+                            <input type="checkbox" class="hidden decay-option" value="5">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">5</div>
+                        </label>
+                        <label class="cursor-pointer checkbox-wrapper">
+                            <input type="checkbox" class="hidden decay-option" value="6">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">6</div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Interval Slider -->
+                <div class="flex flex-col w-24 sm:w-32 items-center sm:items-start">
+                    <label class="text-[10px] sm:text-xs font-semibold text-slate-600 mb-1">速度: <span id="intervalDisplay">1.0</span>s</label>
+                    <input type="range" id="intervalSlider" min="0.2" max="2" step="0.1" value="1.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2 w-full sm:w-auto justify-center mt-1 sm:mt-0">
+                    <button id="startBtn" class="flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm sm:text-base font-bold shadow transition whitespace-nowrap">開始</button>
+                    <button id="resetBtn" class="flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-500 hover:bg-slate-600 text-white rounded text-sm sm:text-base font-bold shadow transition whitespace-nowrap">重置</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <!-- Mobile: Allows vertical scrolling (overflow-y-auto on main) -->
+    <!-- Desktop: Side-by-side, no main scroll, individual panel scroll (md:overflow-hidden) -->
+    <main class="flex-grow flex flex-col md:flex-row overflow-y-auto md:overflow-hidden p-2 sm:p-4 gap-3 sm:gap-4 relative">
+        
+        <!-- Left Side: 3D Simulation (Babylon.js) -->
+        <!-- Mobile: Fixed Height to ensure visibility (h-[45vh] min-h-[300px]) -->
+        <!-- Desktop: Full Height (h-full) -->
+        <div class="w-full md:w-1/2 flex flex-col gap-2 flex-shrink-0 h-[45vh] min-h-[300px] md:h-full">
+            <div class="flex justify-between items-end px-1">
+                <h2 class="text-base sm:text-lg font-bold text-slate-700">模擬過程</h2>
+                <div class="text-[10px] sm:text-xs text-slate-500">
+                    <span class="inline-block w-2 h-2 sm:w-3 sm:h-3 bg-green-500 mr-1 rounded-sm"></span>Parent
+                    <span class="inline-block w-2 h-2 sm:w-3 sm:h-3 bg-gray-700 ml-2 mr-1 rounded-sm"></span>Daughter
+                </div>
+            </div>
+            <div id="canvas-container" class="flex-grow shadow-inner border border-slate-300">
+                <canvas id="renderCanvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Right Side: Graph & Stats -->
+        <!-- Mobile: Auto height (expands with content) -->
+        <!-- Desktop: Full height, internal scroll (md:h-full md:overflow-y-auto) -->
+        <div class="w-full md:w-1/2 flex flex-col gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-lg shadow-sm border border-slate-200 h-auto md:h-full md:overflow-y-auto">
+            
+            <div class="flex justify-between items-center border-b pb-2">
+                <h2 class="text-base sm:text-lg font-bold text-slate-700">衰變曲線 (Decay Curve)</h2>
+                <div class="text-right">
+                    <div class="text-xl sm:text-2xl font-mono font-bold text-blue-600" id="currentN">N: 0</div>
+                    <div class="text-[10px] sm:text-xs text-slate-500">Remaining Nuclei</div>
+                </div>
+            </div>
+
+            <!-- Chart Container -->
+            <div class="relative h-48 sm:h-64 w-full flex-shrink-0">
+                <canvas id="decayChart"></canvas>
+            </div>
+
+            <!-- Statistics Panel -->
+            <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded border border-slate-100">
+                <div>
+                    <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">次數 (Throws)</p>
+                    <p class="text-lg sm:text-xl font-mono text-slate-800" id="timeElapsed">0</p>
+                </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold">衰變常數 (k)</p>
+                    <p class="text-lg sm:text-xl font-mono text-slate-800" id="decayConstant">-</p>
+                    <p class="text-[10px] text-slate-400 leading-tight">k ≈ P(decay)</p>
+                </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold">理論半衰期 (t<sub>1/2</sub>)</p>
+                    <p class="text-lg sm:text-xl font-mono text-slate-800" id="halfLifeTheoretical">-</p>
+                </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">剩餘 %</p>
+                    <p class="text-lg sm:text-xl font-mono text-slate-800" id="percentageLeft">100%</p>
+                </div>
+            </div>
+
+            <div class="text-[10px] sm:text-xs text-slate-400 mt-2 md:mt-auto bg-yellow-50 p-2 rounded border border-yellow-100">
+                <p><strong>物理筆記:</strong></p>
+                <p class="mb-1">放射性衰變是隨機過程。未衰變數量 N 隨時間 t 呈指數下降：N = N<sub>0</sub> e<sup>-kt</sup>。</p>
+                <p>在此模擬中，每次投擲代表一個時間單位。半衰期是指 N 降至 N<sub>0</sub>/2 所需的平均次數。</p>
+            </div>
+            
+            <!-- Spacer for mobile scrolling comfort -->
+            <div class="h-4 md:hidden"></div>
+        </div>
+    </main>
+
+    <script>
+        // --- Configuration & State ---
+        const state = {
+            totalDice: 1000,
+            currentDice: 1000,
+            decayConditions: [1], // Faces that cause decay
+            interval: 1000, // ms
+            isPlaying: false,
+            throwCount: 0,
+            history: [],
+            theoreticalHistory: []
+        };
+
+        let timer = null;
+
+        // --- Babylon.js Variables ---
+        let engine, scene, diceMesh;
+        let diceData = []; 
+        let matrixBuffer;
+        let colorBuffer;
+
+        // Colors (RGBA)
+        const colorActive = new BABYLON.Color4(0.13, 0.77, 0.37, 1); // Green-500
+        const colorDecayed = new BABYLON.Color4(0.2, 0.25, 0.33, 1); // Slate-700
+
+        // --- Chart.js Variables ---
+        let decayChart;
+
+        // --- Initialization ---
+        window.onload = function() {
+            initBabylon();
+            initChart();
+            updateStatsUI();
+            
+            // UI Event Listeners
+            document.getElementById('intervalSlider').addEventListener('input', (e) => {
+                state.interval = parseFloat(e.target.value) * 1000;
+                document.getElementById('intervalDisplay').innerText = e.target.value;
+                if (state.isPlaying) {
+                    clearInterval(timer);
+                    timer = setInterval(simulationStep, state.interval);
+                }
+            });
+
+            document.getElementById('startBtn').addEventListener('click', toggleSimulation);
+            document.getElementById('resetBtn').addEventListener('click', resetSimulation);
+            
+            document.getElementById('diceCount').addEventListener('change', (e) => {
+                state.totalDice = parseInt(e.target.value);
+                resetSimulation();
+            });
+
+            const checkboxes = document.querySelectorAll('.decay-option');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const selected = [];
+                    document.querySelectorAll('.decay-option:checked').forEach(c => selected.push(parseInt(c.value)));
+                    state.decayConditions = selected;
+                    updateMathStats(); 
+                });
+            });
+
+            updateMathStats();
+            
+            // Robust resize handler
+            window.addEventListener('resize', () => {
+                if(engine) engine.resize();
+            });
+        };
+
+        // --- Math & Physics Calculations ---
+        function updateMathStats() {
+            const p = state.decayConditions.length / 6.0;
+            let tHalf = 0;
+            if (p > 0 && p < 1) {
+                tHalf = Math.log(0.5) / Math.log(1 - p);
+            } else if (p === 1) {
+                tHalf = 1;
+            } else {
+                tHalf = Infinity;
+            }
+
+            document.getElementById('decayConstant').innerText = p.toFixed(3);
+            document.getElementById('halfLifeTheoretical').innerText = (tHalf === Infinity) ? "∞" : tHalf.toFixed(2);
+        }
+
+        // --- Babylon.js Implementation ---
+        function initBabylon() {
+            const canvas = document.getElementById("renderCanvas");
+            engine = new BABYLON.Engine(canvas, true);
+
+            const createScene = function () {
+                const scene = new BABYLON.Scene(engine);
+                scene.clearColor = new BABYLON.Color4(0.07, 0.07, 0.07, 1); 
+
+                // Camera
+                const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 30, BABYLON.Vector3.Zero(), scene);
+                camera.attachControl(canvas, true);
+                camera.wheelPrecision = 50;
+                // Limit Zoom
+                camera.lowerRadiusLimit = 10;
+                camera.upperRadiusLimit = 80;
+
+                // Lighting
+                const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+                light.intensity = 0.7;
+                const dirLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-1, -2, -1), scene);
+                dirLight.position = new BABYLON.Vector3(20, 40, 20);
+                dirLight.intensity = 0.5;
+
+                // Base Mesh (Dice)
+                const box = BABYLON.MeshBuilder.CreateBox("rootBox", {size: 0.8}, scene);
+                const material = new BABYLON.StandardMaterial("boxMat", scene);
+                material.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+                box.material = material;
+                
+                diceMesh = box;
+
+                return scene;
+            };
+
+            scene = createScene();
+
+            generateDiceInstances();
+
+            engine.runRenderLoop(function () {
+                if(scene) {
+                    if(state.isPlaying) {
+                       scene.activeCamera.alpha += 0.002;
+                    }
+                    scene.render();
+                }
+            });
+        }
+
+        function generateDiceInstances() {
+            if (!diceMesh) return;
+
+            const count = state.totalDice;
+            diceData = [];
+
+            const matricesData = new Float32Array(count * 16);
+            const colorData = new Float32Array(count * 4);
+
+            const side = Math.ceil(Math.pow(count, 1/3));
+            const offset = (side - 1) * 0.5 * 1.5; 
+
+            let index = 0;
+            const tempMatrix = BABYLON.Matrix.Identity();
+            const tempVector = new BABYLON.Vector3();
+            const tempQuat = new BABYLON.Quaternion();
+            const scale = new BABYLON.Vector3(1, 1, 1);
+
+            for (let x = 0; x < side; x++) {
+                for (let y = 0; y < side; y++) {
+                    for (let z = 0; z < side; z++) {
+                        if (index >= count) break;
+
+                        const posX = x * 1.5 - offset;
+                        const posY = y * 1.5 - offset;
+                        const posZ = z * 1.5 - offset;
+                        
+                        tempVector.set(posX, posY, posZ);
+                        
+                        BABYLON.Quaternion.RotationYawPitchRollToRef(
+                            Math.random() * Math.PI, 
+                            Math.random() * Math.PI, 
+                            0, 
+                            tempQuat
+                        );
+
+                        BABYLON.Matrix.ComposeToRef(scale, tempQuat, tempVector, tempMatrix);
+                        tempMatrix.copyToArray(matricesData, index * 16);
+
+                        colorData[index * 4] = colorActive.r;
+                        colorData[index * 4 + 1] = colorActive.g;
+                        colorData[index * 4 + 2] = colorActive.b;
+                        colorData[index * 4 + 3] = colorActive.a;
+
+                        diceData.push({
+                            id: index,
+                            status: 1, 
+                            basePosition: tempVector.clone()
+                        });
+
+                        index++;
+                    }
+                }
+            }
+
+            diceMesh.thinInstanceSetBuffer("matrix", matricesData, 16);
+            diceMesh.thinInstanceSetBuffer("color", colorData, 4);
+            
+            matrixBuffer = matricesData;
+            colorBuffer = colorData;
+        }
+
+        function updateDiceVisuals() {
+            const count = state.totalDice;
+            const tempMatrix = BABYLON.Matrix.Identity();
+            const tempQuat = new BABYLON.Quaternion();
+            const scale = new BABYLON.Vector3(1, 1, 1);
+            
+            for (let i = 0; i < count; i++) {
+                const isDecayed = diceData[i].status === 0;
+
+                if (isDecayed) {
+                    colorBuffer[i * 4] = colorDecayed.r;
+                    colorBuffer[i * 4 + 1] = colorDecayed.g;
+                    colorBuffer[i * 4 + 2] = colorDecayed.b;
+                    colorBuffer[i * 4 + 3] = colorDecayed.a;
+                } else {
+                    BABYLON.Quaternion.RotationYawPitchRollToRef(
+                        Math.random() * Math.PI * 2,
+                        Math.random() * Math.PI * 2,
+                        Math.random() * Math.PI * 2,
+                        tempQuat
+                    );
+                    
+                    const jitterX = (Math.random() - 0.5) * 0.2;
+                    const jitterY = (Math.random() - 0.5) * 0.2;
+                    const jitterZ = (Math.random() - 0.5) * 0.2;
+                    
+                    const pos = diceData[i].basePosition.clone();
+                    pos.x += jitterX;
+                    pos.y += jitterY;
+                    pos.z += jitterZ;
+
+                    BABYLON.Matrix.ComposeToRef(scale, tempQuat, pos, tempMatrix);
+                    tempMatrix.copyToArray(matrixBuffer, i * 16);
+                }
+            }
+
+            diceMesh.thinInstanceSetBuffer("color", colorBuffer, 4);
+            diceMesh.thinInstanceSetBuffer("matrix", matrixBuffer, 16);
+        }
+
+        // --- Chart.js Implementation ---
+        function initChart() {
+            const ctx = document.getElementById('decayChart').getContext('2d');
+            decayChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [0],
+                    datasets: [{
+                        label: '未衰變 (N)',
+                        data: [state.totalDice],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointRadius: 2,
+                        fill: true
+                    },
+                    {
+                        label: '理論值',
+                        data: [state.totalDice],
+                        borderColor: '#94a3b8',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: '次數 (Time)' },
+                            grid: { display: false }
+                        },
+                        y: { 
+                            title: { display: true, text: '數量 N' }, 
+                            beginAtZero: true, 
+                            max: state.totalDice 
+                        }
+                    },
+                    plugins: { 
+                        legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } 
+                    }
+                }
+            });
+        }
+
+        // --- Simulation Logic ---
+
+        function toggleSimulation() {
+            const btn = document.getElementById('startBtn');
+            if (state.isPlaying) {
+                clearInterval(timer);
+                state.isPlaying = false;
+                btn.innerText = "繼續";
+                btn.classList.replace('bg-yellow-500', 'bg-green-600');
+                btn.classList.replace('hover:bg-yellow-600', 'hover:bg-green-700');
+            } else {
+                if (state.currentDice === 0 && state.throwCount > 0) {
+                    resetSimulation(); 
+                    return;
+                }
+                
+                if (state.throwCount === 0) resetSimulationData();
+
+                state.isPlaying = true;
+                btn.innerText = "暫停";
+                btn.classList.replace('bg-green-600', 'bg-yellow-500');
+                btn.classList.replace('hover:bg-green-700', 'hover:bg-yellow-600');
+                
+                timer = setInterval(simulationStep, state.interval);
+            }
+        }
+
+        function resetSimulation() {
+            clearInterval(timer);
+            state.isPlaying = false;
+            
+            const btn = document.getElementById('startBtn');
+            btn.innerText = "開始";
+            btn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+            btn.classList.add('bg-green-600', 'hover:bg-green-700');
+
+            resetSimulationData();
+            generateDiceInstances(); 
+            updateChart();
+            updateStatsUI();
+        }
+
+        function resetSimulationData() {
+            state.currentDice = state.totalDice;
+            state.throwCount = 0;
+            state.history = [state.totalDice];
+            state.theoreticalHistory = [state.totalDice];
+            updateMathStats();
+        }
+
+        function simulationStep() {
+            if (state.currentDice === 0) {
+                clearInterval(timer);
+                state.isPlaying = false;
+                document.getElementById('startBtn').innerText = "完成";
+                return;
+            }
+
+            let decayedThisRound = 0;
+            
+            for (let i = 0; i < state.totalDice; i++) {
+                if (diceData[i].status === 1) {
+                    const roll = Math.floor(Math.random() * 6) + 1;
+                    if (state.decayConditions.includes(roll)) {
+                        diceData[i].status = 0;
+                        decayedThisRound++;
+                    }
+                }
+            }
+
+            state.currentDice -= decayedThisRound;
+            state.throwCount++;
+
+            state.history.push(state.currentDice);
+            
+            const p = state.decayConditions.length / 6.0;
+            const theoreticalN = state.totalDice * Math.pow((1 - p), state.throwCount);
+            state.theoreticalHistory.push(theoreticalN);
+
+            updateDiceVisuals();
+            updateChart();
+            updateStatsUI();
+        }
+
+        function updateChart() {
+            decayChart.data.labels = Array.from({length: state.throwCount + 1}, (_, i) => i);
+            decayChart.data.datasets[0].data = state.history;
+            decayChart.data.datasets[1].data = state.theoreticalHistory;
+            decayChart.options.scales.y.max = state.totalDice;
+            decayChart.update();
+        }
+
+        function updateStatsUI() {
+            document.getElementById('currentN').innerText = `N: ${state.currentDice}`;
+            document.getElementById('timeElapsed').innerText = state.throwCount;
+            const percent = ((state.currentDice / state.totalDice) * 100).toFixed(1);
+            document.getElementById('percentageLeft').innerText = `${percent}%`;
+        }
+
+    </script>
+</body>
+</html>

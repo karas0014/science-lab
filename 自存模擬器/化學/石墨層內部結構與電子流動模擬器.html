@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>石墨層內部結構與電子流動</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden p-6 md:p-10 flex flex-col items-center border border-gray-100">
+        
+        <div class="text-center mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">石墨導電原理可視化</h1>
+            <p class="text-gray-500 text-sm md:text-base">觀察離域電子（π電子）如何在連續的六角蜂窩網狀結構中自由移動</p>
+        </div>
+
+        <!-- SVG 容器 -->
+        <div class="w-full overflow-x-auto flex justify-center bg-[#f0f2f5] rounded-xl border border-gray-200">
+            <svg width="600" height="370" viewBox="0 0 600 370" xmlns="http://www.w3.org/2000/svg" class="max-w-full h-auto">
+                <defs>
+                    <circle id="carbonAtom" r="5" fill="#444" stroke="#222" stroke-width="1.5"/>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#007bff" />
+                    </marker>
+                </defs>
+
+                <rect width="100%" height="100%" fill="#f0f2f5" rx="12"/>
+                <text x="300" y="22" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">石墨層內部結構與電子流動</text>
+
+                <!-- 碳原子之間的強共價鍵 (連續蜂窩網狀結構) -->
+                <g stroke="#888" stroke-width="2.5" stroke-linecap="round" fill="none">
+                    <!-- 橫向閃電狀連接線 (Zig-zags) -->
+                    <path d="M 25,50 L 59.6,30 L 94.2,50 L 128.8,30 L 163.4,50 L 198,30 L 232.6,50 L 267.2,30 L 301.8,50 L 336.4,30 L 371,50 L 405.6,30 L 440.2,50 L 474.8,30 L 509.4,50 L 544,30 L 578.6,50" />
+                    <path d="M 25,90 L 59.6,110 L 94.2,90 L 128.8,110 L 163.4,90 L 198,110 L 232.6,90 L 267.2,110 L 301.8,90 L 336.4,110 L 371,90 L 405.6,110 L 440.2,90 L 474.8,110 L 509.4,90 L 544,110 L 578.6,90" />
+                    <path d="M 25,170 L 59.6,150 L 94.2,170 L 128.8,150 L 163.4,170 L 198,150 L 232.6,170 L 267.2,150 L 301.8,170 L 336.4,150 L 371,170 L 405.6,150 L 440.2,170 L 474.8,150 L 509.4,170 L 544,150 L 578.6,170" />
+                    <path d="M 25,210 L 59.6,230 L 94.2,210 L 128.8,230 L 163.4,210 L 198,230 L 232.6,210 L 267.2,230 L 301.8,210 L 336.4,230 L 371,210 L 405.6,230 L 440.2,210 L 474.8,230 L 509.4,210 L 544,230 L 578.6,210" />
+                    
+                    <!-- 垂直連接線 (Vertical bonds) -->
+                    <path d="M 25,50 L 25,90 M 94.2,50 L 94.2,90 M 163.4,50 L 163.4,90 M 232.6,50 L 232.6,90 M 301.8,50 L 301.8,90 M 371,50 L 371,90 M 440.2,50 L 440.2,90 M 509.4,50 L 509.4,90 M 578.6,50 L 578.6,90" />
+                    <path d="M 59.6,110 L 59.6,150 M 128.8,110 L 128.8,150 M 198,110 L 198,150 M 267.2,110 L 267.2,150 M 336.4,110 L 336.4,150 M 405.6,110 L 405.6,150 M 474.8,110 L 474.8,150 M 544,110 L 544,150" />
+                    <path d="M 25,170 L 25,210 M 94.2,170 L 94.2,210 M 163.4,170 L 163.4,210 M 232.6,170 L 232.6,210 M 301.8,170 L 301.8,210 M 371,170 L 371,210 M 440.2,170 L 440.2,210 M 509.4,170 L 509.4,210 M 578.6,170 L 578.6,210" />
+                </g>
+
+                <!-- 碳原子繪製 -->
+                <g>
+                    <!-- Row 1 -->
+                    <use href="#carbonAtom" x="59.6" y="30"/><use href="#carbonAtom" x="128.8" y="30"/><use href="#carbonAtom" x="198" y="30"/><use href="#carbonAtom" x="267.2" y="30"/><use href="#carbonAtom" x="336.4" y="30"/><use href="#carbonAtom" x="405.6" y="30"/><use href="#carbonAtom" x="474.8" y="30"/><use href="#carbonAtom" x="544" y="30"/>
+                    <!-- Row 2 -->
+                    <use href="#carbonAtom" x="25" y="50"/><use href="#carbonAtom" x="94.2" y="50"/><use href="#carbonAtom" x="163.4" y="50"/><use href="#carbonAtom" x="232.6" y="50"/><use href="#carbonAtom" x="301.8" y="50"/><use href="#carbonAtom" x="371" y="50"/><use href="#carbonAtom" x="440.2" y="50"/><use href="#carbonAtom" x="509.4" y="50"/><use href="#carbonAtom" x="578.6" y="50"/>
+                    <!-- Row 3 -->
+                    <use href="#carbonAtom" x="25" y="90"/><use href="#carbonAtom" x="94.2" y="90"/><use href="#carbonAtom" x="163.4" y="90"/><use href="#carbonAtom" x="232.6" y="90"/><use href="#carbonAtom" x="301.8" y="90"/><use href="#carbonAtom" x="371" y="90"/><use href="#carbonAtom" x="440.2" y="90"/><use href="#carbonAtom" x="509.4" y="90"/><use href="#carbonAtom" x="578.6" y="90"/>
+                    <!-- Row 4 -->
+                    <use href="#carbonAtom" x="59.6" y="110"/><use href="#carbonAtom" x="128.8" y="110"/><use href="#carbonAtom" x="198" y="110"/><use href="#carbonAtom" x="267.2" y="110"/><use href="#carbonAtom" x="336.4" y="110"/><use href="#carbonAtom" x="405.6" y="110"/><use href="#carbonAtom" x="474.8" y="110"/><use href="#carbonAtom" x="544" y="110"/>
+                    <!-- Row 5 -->
+                    <use href="#carbonAtom" x="59.6" y="150"/><use href="#carbonAtom" x="128.8" y="150"/><use href="#carbonAtom" x="198" y="150"/><use href="#carbonAtom" x="267.2" y="150"/><use href="#carbonAtom" x="336.4" y="150"/><use href="#carbonAtom" x="405.6" y="150"/><use href="#carbonAtom" x="474.8" y="150"/><use href="#carbonAtom" x="544" y="150"/>
+                    <!-- Row 6 -->
+                    <use href="#carbonAtom" x="25" y="170"/><use href="#carbonAtom" x="94.2" y="170"/><use href="#carbonAtom" x="163.4" y="170"/><use href="#carbonAtom" x="232.6" y="170"/><use href="#carbonAtom" x="301.8" y="170"/><use href="#carbonAtom" x="371" y="170"/><use href="#carbonAtom" x="440.2" y="170"/><use href="#carbonAtom" x="509.4" y="170"/><use href="#carbonAtom" x="578.6" y="170"/>
+                    <!-- Row 7 -->
+                    <use href="#carbonAtom" x="25" y="210"/><use href="#carbonAtom" x="94.2" y="210"/><use href="#carbonAtom" x="163.4" y="210"/><use href="#carbonAtom" x="232.6" y="210"/><use href="#carbonAtom" x="301.8" y="210"/><use href="#carbonAtom" x="371" y="210"/><use href="#carbonAtom" x="440.2" y="210"/><use href="#carbonAtom" x="509.4" y="210"/><use href="#carbonAtom" x="578.6" y="210"/>
+                    <!-- Row 8 -->
+                    <use href="#carbonAtom" x="59.6" y="230"/><use href="#carbonAtom" x="128.8" y="230"/><use href="#carbonAtom" x="198" y="230"/><use href="#carbonAtom" x="267.2" y="230"/><use href="#carbonAtom" x="336.4" y="230"/><use href="#carbonAtom" x="405.6" y="230"/><use href="#carbonAtom" x="474.8" y="230"/><use href="#carbonAtom" x="544" y="230"/>
+                </g>
+
+                <!-- 電子動畫 -->
+                <!-- 直向流動的電子 -->
+                <circle r="4" fill="#007bff" opacity="0.9">
+                    <animateMotion dur="7s" repeatCount="indefinite" path="M 25,50 L 59.6,30 L 94.2,50 L 128.8,30 L 163.4,50 L 198,30 L 232.6,50 L 267.2,30 L 301.8,50 L 336.4,30 L 371,50 L 405.6,30 L 440.2,50 L 474.8,30 L 509.4,50 L 544,30 L 578.6,50" />
+                </circle>
+                <circle r="4" fill="#007bff" opacity="0.9">
+                    <animateMotion dur="6s" begin="1.5s" repeatCount="indefinite" path="M 25,90 L 59.6,110 L 94.2,90 L 128.8,110 L 163.4,90 L 198,110 L 232.6,90 L 267.2,110 L 301.8,90 L 336.4,110 L 371,90 L 405.6,110 L 440.2,90 L 474.8,110 L 509.4,90 L 544,110 L 578.6,90" />
+                </circle>
+                <circle r="4" fill="#007bff" opacity="0.9">
+                    <animateMotion dur="6.5s" begin="0.5s" repeatCount="indefinite" path="M 25,170 L 59.6,150 L 94.2,170 L 128.8,150 L 163.4,170 L 198,150 L 232.6,170 L 267.2,150 L 301.8,170 L 336.4,150 L 371,170 L 405.6,150 L 440.2,170 L 474.8,150 L 509.4,170 L 544,150 L 578.6,170" />
+                </circle>
+                
+                <!-- 跨行不規則流動的電子 (綠色標記) -->
+                <circle r="4" fill="#00bd56" opacity="0.9">
+                    <animateMotion dur="8s" begin="0s" repeatCount="indefinite" path="M 25,90 L 59.6,110 L 59.6,150 L 94.2,170 L 128.8,150 L 128.8,110 L 163.4,90 L 198,110 L 232.6,90 L 267.2,110 L 267.2,150 L 301.8,170 L 336.4,150 L 371,170 L 405.6,150 L 405.6,110 L 440.2,90 L 474.8,110 L 509.4,90 L 544,110 L 578.6,90" />
+                </circle>
+                <circle r="4" fill="#00bd56" opacity="0.9">
+                    <animateMotion dur="7.5s" begin="3s" repeatCount="indefinite" path="M 25,50 L 25,90 L 59.6,110 L 94.2,90 L 128.8,110 L 128.8,150 L 163.4,170 L 198,150 L 232.6,170 L 267.2,150 L 267.2,110 L 301.8,90 L 336.4,110 L 371,90 L 405.6,110 L 440.2,90 L 474.8,110 L 474.8,150 L 509.4,170 L 544,150 L 578.6,170" />
+                </circle>
+
+                <!-- 下方圖例說明 -->
+                <g transform="translate(45, 265)">
+                    <rect x="-10" y="-10" width="300" height="90" fill="white" opacity="0.85" rx="8" />
+                    <circle cx="10" cy="10" r="5" fill="#444" stroke="#222"/>
+                    <text x="25" y="14" font-family="Arial" font-size="12">碳原子 (Carbon Atom)</text>
+                    
+                    <line x1="0" y1="35" x2="20" y2="35" stroke="#888" stroke-width="2.5"/>
+                    <text x="25" y="39" font-family="Arial" font-size="12">強共價鍵 (Sigma Bond) - 固定晶格</text>
+                    
+                    <circle cx="10" cy="60" r="4" fill="#007bff"/>
+                    <text x="25" y="64" font-family="Arial" font-size="12" fill="#007bff" font-weight="bold">離域電子 (Delocalized Electron)</text>
+                </g>
+                
+                <g transform="translate(390, 290)">
+                    <rect x="-10" y="-30" width="180" height="60" fill="white" opacity="0.85" rx="8" />
+                    <text x="0" y="-10" font-family="Arial" font-size="12">外加電場時的總體流向</text>
+                    <line x1="0" y1="10" x2="120" y2="10" stroke="#007bff" stroke-width="2" marker-end="url(#arrow)"/>
+                </g>
+            </svg>
+        </div>
+        
+        <div class="mt-6 text-gray-600 text-sm leading-relaxed max-w-2xl w-full text-justify">
+            <strong>科學原理解析：</strong> 在真實的單層石墨（石墨烯）中，碳原子以完美的「蜂窩狀（Honeycomb）」六角晶格排列。圖中每個碳原子都與相鄰的三個碳原子形成穩定的 sp² 共價鍵。剩下的第四個價電子並未被侷限在單一化學鍵中，而是形成遍佈整個網狀結構的離域軌域。正如動畫所示，藍色與綠色電子能沿著相連的碳原子軌道不受限制地「跨行、隨機但整體朝向正極」流動，這就是石墨能導電的根本原因。
+        </div>
+    </div>
+
+</body>
+</html>

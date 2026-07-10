@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動量守恆模擬器</title>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 設定 MathJax -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['\\(', '\\)']] },
+            startup: { typeset: false }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- 引入 React (不依賴 Babel) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #f8fafc; }
+        /* 隱藏卷軸但保持可滾動 */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        // 使用原生的 React 語法取代 JSX
+        const { useState, useEffect, useRef, useCallback, createElement: e } = React;
+
+        // --- Icons (SVG Inline) ---
+        const IconGlobe = () => e("svg", { xmlns: "http://www.w3.org/2000/svg", width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, 
+            e("circle", { cx: "12", cy: "12", r: "10" }), 
+            e("line", { x1: "2", y1: "12", x2: "22", y2: "12" }), 
+            e("path", { d: "M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" })
+        );
+        const IconPlay = () => e("svg", { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, 
+            e("polygon", { points: "5 3 19 12 5 21 5 3" })
+        );
+        const IconPause = () => e("svg", { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, 
+            e("rect", { x: "6", y: "4", width: "4", height: "16" }), 
+            e("rect", { x: "14", y: "4", width: "4", height: "16" })
+        );
+        const IconReset = () => e("svg", { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, 
+            e("path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" }), 
+            e("path", { d: "M3 3v5h5" })
+        );
+        const IconMaximize = () => e("svg", { xmlns: "http://www.w3.org/2000/svg", width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, 
+            e("path", { d: "M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" })
+        );
+        const IconClose = () => e("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, 
+            e("line", { x1: "18", y1: "6", x2: "6", y2: "18" }), 
+            e("line", { x1: "6", y1: "6", x2: "18", y2: "18" })
+        );
+
+        // --- MathJax Wrapper ---
+        const MathText = ({ content, className = "" }) => {
+            const containerRef = useRef(null);
+            useEffect(() => {
+                if (containerRef.current && window.MathJax && window.MathJax.typesetPromise) {
+                    containerRef.current.innerHTML = content;
+                    window.MathJax.typesetPromise([containerRef.current]).catch((err) => console.error(err));
+                }
+            }, [content]);
+            return e("span", { ref: containerRef, className, dangerouslySetInnerHTML: { __html: content } });
+        };
+
+        const App = () => {
+            // --- Constants ---
+            const TRACK_WIDTH = 800;
+            const CAR_WIDTH = 80;
+            const CAR_HEIGHT = 50;
+            const WHEEL_RADIUS = 10;
+            const GRAPH_WIDTH = 300;
+            const GRAPH_HEIGHT = 150;
+            const WINDOW_SIZE = 5;
+
+            // --- Dictionary ---
+            const dict = {
+                zh: {
+                    title: "高中物理：動量與碰撞模擬器", langToggle: "EN", redCar: "紅車設定", blueCar: "藍車設定",
+                    mass: "質量 \\(m\\)", velocity: "初速 \\(v_0\\)", collisionType: "碰撞類型：", elastic: "彈性碰撞 (Elastic)", inelastic: "完全非彈性 (Inelastic)",
+                    play: "開始", pause: "暫停", reset: "重置", positionView: "位置視圖 (Position)",
+                    vtGraph: "速度-時間圖 \\(v-t\\) \\(\\left[\\text{m/s}\\right]\\)", ptGraph: "動量-時間圖 \\(p-t\\) \\(\\left[\\text{kg}\\cdot\\text{m/s}\\right]\\)", ktGraph: "動能-時間圖 \\(K-t\\) \\(\\left[\\text{J}\\right]\\)",
+                    redData: "紅車數據", blueData: "藍車數據", totalData: "總系統 (Total)",
+                    currentV: "速度 \\(v\\):", currentP: "動量 \\(p\\):", currentK: "動能 \\(K\\):", totalP: "總動量 \\(P_{total}\\):", totalK: "總動能 \\(K_{total}\\):",
+                    elasticMsg: "彈性：動能守恆 \\(\\Delta K = 0\\)", inelasticMsg: "非彈性：動能流失 \\(\\Delta K < 0\\)",
+                    redLegend: "紅車", blueLegend: "藍車", totalLegend: "總和"
+                },
+                en: {
+                    title: "Physics: Momentum & Collision", langToggle: "中", redCar: "Red Car Settings", blueCar: "Blue Car Settings",
+                    mass: "Mass \\(m\\)", velocity: "Initial Vel \\(v_0\\)", collisionType: "Collision:", elastic: "Elastic", inelastic: "Perfectly Inelastic",
+                    play: "Play", pause: "Pause", reset: "Reset", positionView: "Position View",
+                    vtGraph: "Velocity-Time \\(v-t\\) \\(\\left[\\text{m/s}\\right]\\)", ptGraph: "Momentum-Time \\(p-t\\) \\(\\left[\\text{kg}\\cdot\\text{m/s}\\right]\\)", ktGraph: "Kinetic Energy-Time \\(K-t\\) \\(\\left[\\text{J}\\right]\\)",
+                    redData: "Red Car Data", blueData: "Blue Car Data", totalData: "System Total",
+                    currentV: "Velocity \\(v\\):", currentP: "Momentum \\(p\\):", currentK: "Kinetic Eng \\(K\\):", totalP: "Total Momentum \\(P_{total}\\):", totalK: "Total KE \\(K_{total}\\):",
+                    elasticMsg: "Elastic: KE is conserved \\(\\Delta K = 0\\)", inelasticMsg: "Inelastic: KE is lost \\(\\Delta K < 0\\)",
+                    redLegend: "Red", blueLegend: "Blue", totalLegend: "Total"
+                }
+            };
+
+            // --- State ---
+            const [lang, setLang] = useState('zh');
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [collisionType, setCollisionType] = useState('elastic');
+            const [expandedGraph, setExpandedGraph] = useState(null);
+            
+            const [chartZoom, setChartZoom] = useState(5);
+            const [chartScroll, setChartScroll] = useState(null);
+
+            const t = dict[lang];
+
+            const stateRef = useRef({
+                red: { x: 100, v: 5, m: 2 },
+                blue: { x: 500, v: -3, m: 2 },
+                time: 0,
+                history: []
+            });
+
+            const [uiState, setUiState] = useState(stateRef.current);
+            const requestRef = useRef();
+
+            // --- Helpers ---
+            const calcDerivedPhysics = (s) => {
+                const vR = s.red.v, mR = s.red.m;
+                const vB = s.blue.v, mB = s.blue.m;
+                const pR = mR * vR, pB = mB * vB, pT = pR + pB;
+                const kR = 0.5 * mR * vR * vR, kB = 0.5 * mB * vB * vB, kT = kR + kB;
+                return { vR, vB, pR, pB, pT, kR, kB, kT };
+            };
+
+            const resetSimulation = () => {
+                setIsPlaying(false);
+                stateRef.current = {
+                    red: { x: 100, v: 5, m: stateRef.current.red.m },
+                    blue: { x: 500, v: -3, m: stateRef.current.blue.m },
+                    time: 0,
+                    history: []
+                };
+                const initialDerived = calcDerivedPhysics(stateRef.current);
+                initialDerived.time = 0;
+                stateRef.current.history.push(initialDerived);
+                setUiState({ ...stateRef.current });
+                
+                setChartZoom(5);
+                setChartScroll(null);
+            };
+
+            useEffect(() => {
+                if (stateRef.current.history.length === 0) resetSimulation();
+            }, []);
+
+            // --- Physics Engine ---
+            const updatePhysics = useCallback(() => {
+                const s = stateRef.current;
+                const dt = 1/60;
+                s.time += dt;
+
+                s.red.x += s.red.v;
+                s.blue.x += s.blue.v;
+
+                if (s.red.x <= 0) { s.red.x = 0; s.red.v *= -1; }
+                if (s.blue.x + CAR_WIDTH >= TRACK_WIDTH) { s.blue.x = TRACK_WIDTH - CAR_WIDTH; s.blue.v *= -1; }
+
+                const dist = s.blue.x - (s.red.x + CAR_WIDTH);
+                if (dist <= 0 && (s.red.v > s.blue.v)) {
+                    const m1 = s.red.m, m2 = s.blue.m, u1 = s.red.v, u2 = s.blue.v;
+                    if (collisionType === 'elastic') {
+                        s.red.v = ((m1 - m2) * u1 + 2 * m2 * u2) / (m1 + m2);
+                        s.blue.v = ((m2 - m1) * u2 + 2 * m1 * u1) / (m1 + m2);
+                    } else {
+                        const vCommon = (m1 * u1 + m2 * u2) / (m1 + m2);
+                        s.red.v = vCommon;
+                        s.blue.v = vCommon;
+                    }
+                    const overlap = Math.abs(dist) + 1;
+                    s.red.x -= overlap / 2;
+                    s.blue.x += overlap / 2;
+                }
+
+                const derived = calcDerivedPhysics(s);
+                derived.time = s.time;
+                s.history.push(derived);
+
+                if (s.history.length > 10000) {
+                    s.history.shift();
+                }
+
+                setUiState({ ...s });
+                requestRef.current = requestAnimationFrame(updatePhysics);
+            }, [collisionType]);
+
+            useEffect(() => {
+                if (isPlaying) requestRef.current = requestAnimationFrame(updatePhysics);
+                else cancelAnimationFrame(requestRef.current);
+                return () => cancelAnimationFrame(requestRef.current);
+            }, [isPlaying, updatePhysics]);
+
+            // --- Render Logic ---
+            const currentData = uiState.history.length > 0 ? uiState.history[uiState.history.length - 1] : calcDerivedPhysics(uiState);
+            const V_MAX = 12, P_MAX = 120, K_MAX = 600;
+            const maxTime = uiState.history.length > 0 ? uiState.history[uiState.history.length - 1].time : 0;
+            const miniMinT = Math.max(0, maxTime - WINDOW_SIZE);
+            const miniMaxT = Math.max(WINDOW_SIZE, maxTime);
+
+            const getPolyline = (history, key, yMin, yMax, minT, maxT, marginLeft = 0, chartW = GRAPH_WIDTH, marginTop = 0, chartH = GRAPH_HEIGHT) => {
+                if (!history || history.length === 0) return "";
+                const timeRange = maxT - minT || 1;
+                return history.map((pt) => {
+                    const x = marginLeft + ((pt.time - minT) / timeRange) * chartW;
+                    let val = Math.max(yMin, Math.min(yMax, pt[key]));
+                    const y = marginTop + chartH - ((val - yMin) / (yMax - yMin)) * chartH;
+                    return `${x},${y}`;
+                }).join(' ');
+            };
+
+            const renderExpandedGraph = (type) => {
+                let config = {};
+                if (type === 'vt') config = { title: t.vtGraph, yMin: -V_MAX, yMax: V_MAX, lines: [{key: 'vR', color: '#ef4444', label: t.redLegend}, {key: 'vB', color: '#3b82f6', label: t.blueLegend}] };
+                if (type === 'pt') config = { title: t.ptGraph, yMin: -P_MAX, yMax: P_MAX, lines: [{key: 'pR', color: '#ef4444', label: t.redLegend}, {key: 'pB', color: '#3b82f6', label: t.blueLegend}, {key: 'pT', color: '#475569', label: t.totalLegend, dash: "8"}] };
+                if (type === 'kt') config = { title: t.ktGraph, yMin: -50, yMax: K_MAX, lines: [{key: 'kR', color: '#ef4444', label: t.redLegend}, {key: 'kB', color: '#3b82f6', label: t.blueLegend}, {key: 'kT', color: '#16a34a', label: t.totalLegend, dash: "8"}] };
+
+                const exViewBoxW = 1000, exViewBoxH = 500;
+                const mLeft = 80, mRight = 40, mTop = 40, mBottom = 60;
+                const chartW = exViewBoxW - mLeft - mRight;
+                const chartH = exViewBoxH - mTop - mBottom;
+
+                let exMinT, exMaxT;
+                if (chartScroll === null || chartScroll >= maxTime - chartZoom) {
+                    exMaxT = Math.max(chartZoom, maxTime);
+                    exMinT = Math.max(0, maxTime - chartZoom);
+                } else {
+                    exMinT = chartScroll;
+                    exMaxT = chartScroll + chartZoom;
+                }
+
+                const yTicks = 11;
+                const yStep = (config.yMax - config.yMin) / (yTicks - 1);
+                const yGridLines = Array.from({length: yTicks}).map((_, i) => {
+                   const val = config.yMin + i * yStep;
+                   const y = mTop + chartH - (i / (yTicks - 1)) * chartH;
+                   return e("g", { key: `y-${i}` },
+                       e("line", { x1: mLeft, y1: y, x2: exViewBoxW - mRight, y2: y, stroke: "#e2e8f0", strokeWidth: "1", strokeDasharray: Math.abs(val) < 0.1 ? "" : "4" }),
+                       e("text", { x: mLeft - 10, y: y + 5, textAnchor: "end", className: "text-sm fill-gray-600 font-mono" }, val.toFixed(0))
+                   );
+                });
+
+                const xTicks = 6;
+                const xGridLines = Array.from({length: xTicks}).map((_, i) => {
+                   const x = mLeft + (i / (xTicks - 1)) * chartW;
+                   const tickTime = exMinT + i * ((exMaxT - exMinT) / (xTicks - 1));
+                   return e("g", { key: `x-${i}` },
+                       e("line", { x1: x, y1: mTop, x2: x, y2: exViewBoxH - mBottom + 5, stroke: "#cbd5e1", strokeWidth: "1", strokeDasharray: "4" }),
+                       e("text", { x: x, y: exViewBoxH - mBottom + 25, textAnchor: "middle", className: "text-base fill-gray-600 font-mono" }, `${tickTime.toFixed(1)}s`)
+                   );
+                });
+
+                return e("svg", { viewBox: `0 0 ${exViewBoxW} ${exViewBoxH}`, className: "w-full h-full drop-shadow-sm bg-white" },
+                    e("defs", null, e("clipPath", { id: "expandedClip" }, e("rect", { x: mLeft, y: mTop, width: chartW, height: chartH }))),
+                    e("rect", { x: mLeft, y: mTop, width: chartW, height: chartH, fill: "#f8fafc", rx: "4" }),
+                    (config.yMin < 0 && config.yMax > 0) ? e("line", { x1: mLeft, y1: mTop + chartH - ((0 - config.yMin) / (config.yMax - config.yMin)) * chartH, x2: exViewBoxW - mRight, y2: mTop + chartH - ((0 - config.yMin) / (config.yMax - config.yMin)) * chartH, stroke: "#94a3b8", strokeWidth: "2" }) : null,
+                    ...yGridLines,
+                    ...xGridLines,
+                    e("line", { x1: mLeft, y1: mTop, x2: mLeft, y2: exViewBoxH - mBottom, stroke: "#475569", strokeWidth: "2" }),
+                    e("line", { x1: mLeft, y1: exViewBoxH - mBottom, x2: exViewBoxW - mRight, y2: exViewBoxH - mBottom, stroke: "#475569", strokeWidth: "2" }),
+                    e("g", { clipPath: "url(#expandedClip)" },
+                        ...config.lines.map((l) => e("polyline", { key: l.key, points: getPolyline(uiState.history, l.key, config.yMin, config.yMax, exMinT, exMaxT, mLeft, chartW, mTop, chartH), fill: "none", stroke: l.color, strokeWidth: "3", strokeDasharray: l.dash || "" }))
+                    ),
+                    e("g", { transform: `translate(${mLeft + 20}, ${mTop + 20})` },
+                        ...config.lines.map((l, i) => e("g", { key: `leg-${l.key}`, transform: `translate(0, ${i * 25})` },
+                            e("line", { x1: "0", y1: "0", x2: "30", y2: "0", stroke: l.color, strokeWidth: "3", strokeDasharray: l.dash || "" }),
+                            e("text", { x: "40", y: "5", className: "text-base fill-gray-700 font-bold" }, l.label)
+                        ))
+                    )
+                );
+            };
+
+            return e("div", { className: "flex flex-col items-center p-4 min-h-screen font-sans text-gray-800" },
+                // Header
+                e("div", { className: "w-full max-w-5xl flex justify-between items-center mb-6" },
+                    e("h1", { className: "text-2xl md:text-3xl font-bold text-gray-900" }, t.title),
+                    e("button", { onClick: () => setLang(lang === 'zh' ? 'en' : 'zh'), className: "flex items-center gap-2 px-3 md:px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 transition font-bold text-sm md:text-base" },
+                        e(IconGlobe), ` ${t.langToggle}`
+                    )
+                ),
+
+                // Settings Cards
+                e("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl bg-white p-6 rounded-xl shadow-md mb-6" },
+                    e("div", { className: "space-y-4 border-l-4 border-red-500 pl-4" },
+                        e("h2", { className: "text-xl font-bold text-red-600" }, t.redCar),
+                        e("div", null,
+                            e("label", { className: "flex justify-between text-sm font-medium text-gray-700 mb-1" }, e(MathText, { content: t.mass }), e("span", null, `${uiState.red.m.toFixed(1)} kg`)),
+                            e("input", { type: "range", min: "1", max: "10", step: "0.5", value: uiState.red.m, onChange: (ev) => { stateRef.current.red.m = parseFloat(ev.target.value); setUiState({...stateRef.current}); }, className: "w-full accent-red-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" })
+                        ),
+                        e("div", null,
+                            e("label", { className: "flex justify-between text-sm font-medium text-gray-700 mb-1" }, e(MathText, { content: t.velocity }), e("span", null, `${uiState.red.v.toFixed(1)} m/s`)),
+                            e("input", { type: "range", min: "-10", max: "10", step: "0.5", value: uiState.red.v, onChange: (ev) => { stateRef.current.red.v = parseFloat(ev.target.value); setUiState({...stateRef.current}); }, className: "w-full accent-red-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" })
+                        )
+                    ),
+                    e("div", { className: "space-y-4 border-l-4 border-blue-500 pl-4" },
+                        e("h2", { className: "text-xl font-bold text-blue-600" }, t.blueCar),
+                        e("div", null,
+                            e("label", { className: "flex justify-between text-sm font-medium text-gray-700 mb-1" }, e(MathText, { content: t.mass }), e("span", null, `${uiState.blue.m.toFixed(1)} kg`)),
+                            e("input", { type: "range", min: "1", max: "10", step: "0.5", value: uiState.blue.m, onChange: (ev) => { stateRef.current.blue.m = parseFloat(ev.target.value); setUiState({...stateRef.current}); }, className: "w-full accent-blue-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" })
+                        ),
+                        e("div", null,
+                            e("label", { className: "flex justify-between text-sm font-medium text-gray-700 mb-1" }, e(MathText, { content: t.velocity }), e("span", null, `${uiState.blue.v.toFixed(1)} m/s`)),
+                            e("input", { type: "range", min: "-10", max: "10", step: "0.5", value: uiState.blue.v, onChange: (ev) => { stateRef.current.blue.v = parseFloat(ev.target.value); setUiState({...stateRef.current}); }, className: "w-full accent-blue-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" })
+                        )
+                    )
+                ),
+
+                // Controls
+                e("div", { className: "flex flex-wrap gap-4 md:gap-6 mb-6 items-center justify-center w-full max-w-5xl bg-white p-4 rounded-xl shadow-sm" },
+                    e("div", { className: "flex items-center gap-4" },
+                        e("span", { className: "font-bold text-gray-700" }, t.collisionType),
+                        e("label", { className: "inline-flex items-center cursor-pointer" },
+                            e("input", { type: "radio", value: "elastic", checked: collisionType === 'elastic', onChange: () => setCollisionType('elastic'), className: "form-radio text-green-600 w-4 h-4" }),
+                            e("span", { className: "ml-2 mr-2 text-sm md:text-base" }, t.elastic)
+                        ),
+                        e("label", { className: "inline-flex items-center cursor-pointer" },
+                            e("input", { type: "radio", value: "inelastic", checked: collisionType === 'inelastic', onChange: () => setCollisionType('inelastic'), className: "form-radio text-orange-600 w-4 h-4" }),
+                            e("span", { className: "ml-2 text-sm md:text-base" }, t.inelastic)
+                        )
+                    ),
+                    e("div", { className: "h-8 w-px bg-gray-300 mx-2 hidden md:block" }),
+                    e("div", { className: "flex gap-3" },
+                        e("button", { onClick: () => setIsPlaying(!isPlaying), className: `flex items-center gap-2 px-5 py-2 rounded-full font-bold transition-colors ${isPlaying ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}` },
+                            isPlaying ? e(IconPause) : e(IconPlay), ` ${isPlaying ? t.pause : t.play}`
+                        ),
+                        e("button", { onClick: resetSimulation, className: "flex items-center gap-2 px-5 py-2 bg-gray-100 text-gray-700 rounded-full font-bold hover:bg-gray-200 transition-colors" },
+                            e(IconReset), ` ${t.reset}`
+                        )
+                    )
+                ),
+
+                // Simulation Track
+                e("div", { className: "relative w-full max-w-5xl bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 mb-6" },
+                    e("div", { className: "absolute top-2 left-4 text-sm font-bold text-gray-400" }, t.positionView),
+                    e("svg", { viewBox: `0 0 ${TRACK_WIDTH} 250`, className: "w-full h-auto bg-slate-50" },
+                        e("defs", null,
+                            e("pattern", { id: "grid", width: "50", height: "250", patternUnits: "userSpaceOnUse" }, e("path", { d: "M 50 0 L 50 250", fill: "none", stroke: "#e2e8f0", strokeWidth: "1" })),
+                            e("marker", { id: "arrow-red", markerWidth: "10", markerHeight: "7", refX: "9", refY: "3.5", orient: "auto" }, e("polygon", { points: "0 0, 10 3.5, 0 7", fill: "#ef4444" })),
+                            e("marker", { id: "arrow-blue", markerWidth: "10", markerHeight: "7", refX: "9", refY: "3.5", orient: "auto" }, e("polygon", { points: "0 0, 10 3.5, 0 7", fill: "#3b82f6" }))
+                        ),
+                        e("rect", { width: "100%", height: "100%", fill: "url(#grid)" }),
+                        e("line", { x1: "0", y1: "200", x2: TRACK_WIDTH, y2: "200", stroke: "#475569", strokeWidth: "4" }),
+                        
+                        // Red Car Render
+                        e("g", { transform: `translate(${uiState.red.x}, 150)` },
+                            Math.abs(uiState.red.v) > 0.1 ? e("line", { x1: CAR_WIDTH/2, y1: "-10", x2: CAR_WIDTH/2 + uiState.red.v * 10, y2: "-10", stroke: "#ef4444", strokeWidth: "3", markerEnd: "url(#arrow-red)" }) : null,
+                            e("rect", { width: CAR_WIDTH, height: CAR_HEIGHT, rx: "8", fill: "#fca5a5", stroke: "#ef4444", strokeWidth: "2" }),
+                            e("text", { x: CAR_WIDTH/2, y: CAR_HEIGHT/2 + 5, textAnchor: "middle", className: "text-sm font-bold fill-red-900 pointer-events-none" }, `${uiState.red.m}kg`),
+                            e("circle", { cx: "20", cy: CAR_HEIGHT, r: WHEEL_RADIUS, fill: "#333" }),
+                            e("circle", { cx: CAR_WIDTH - 20, cy: CAR_HEIGHT, r: WHEEL_RADIUS, fill: "#333" })
+                        ),
+
+                        // Blue Car Render
+                        e("g", { transform: `translate(${uiState.blue.x}, 150)` },
+                            Math.abs(uiState.blue.v) > 0.1 ? e("line", { x1: CAR_WIDTH/2, y1: "-10", x2: CAR_WIDTH/2 + uiState.blue.v * 10, y2: "-10", stroke: "#3b82f6", strokeWidth: "3", markerEnd: "url(#arrow-blue)" }) : null,
+                            e("rect", { width: CAR_WIDTH, height: CAR_HEIGHT, rx: "8", fill: "#93c5fd", stroke: "#3b82f6", strokeWidth: "2" }),
+                            e("text", { x: CAR_WIDTH/2, y: CAR_HEIGHT/2 + 5, textAnchor: "middle", className: "text-sm font-bold fill-blue-900 pointer-events-none" }, `${uiState.blue.m}kg`),
+                            e("circle", { cx: "20", cy: CAR_HEIGHT, r: WHEEL_RADIUS, fill: "#333" }),
+                            e("circle", { cx: CAR_WIDTH - 20, cy: CAR_HEIGHT, r: WHEEL_RADIUS, fill: "#333" })
+                        )
+                    )
+                ),
+
+                // Mini Graphs
+                e("div", { className: "w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" },
+                    // VT Mini
+                    e("div", { onClick: () => setExpandedGraph('vt'), className: "bg-white rounded-xl shadow-md border border-gray-100 p-4 flex flex-col items-center cursor-pointer transition-all hover:scale-105 hover:shadow-xl hover:border-blue-300 relative group" },
+                        e("div", { className: "absolute top-2 right-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" }, e(IconMaximize)),
+                        e("h3", { className: "text-sm font-bold text-gray-700 mb-2 border-b w-full text-center pb-2" }, e(MathText, { content: t.vtGraph })),
+                        e("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, className: "w-full h-auto bg-white border border-gray-100" },
+                            e("defs", null, e("clipPath", { id: "clipMini1" }, e("rect", { x: "0", y: "0", width: GRAPH_WIDTH, height: GRAPH_HEIGHT }))),
+                            e("g", { clipPath: "url(#clipMini1)" },
+                                e("line", { x1: "0", y1: GRAPH_HEIGHT/2, x2: GRAPH_WIDTH, y2: GRAPH_HEIGHT/2, stroke: "#94a3b8", strokeWidth: "1.5", strokeDasharray: "4" }),
+                                e("polyline", { points: getPolyline(uiState.history, 'vR', -V_MAX, V_MAX, miniMinT, miniMaxT, 0, GRAPH_WIDTH, 0, GRAPH_HEIGHT), fill: "none", stroke: "#ef4444", strokeWidth: "2" }),
+                                e("polyline", { points: getPolyline(uiState.history, 'vB', -V_MAX, V_MAX, miniMinT, miniMaxT, 0, GRAPH_WIDTH, 0, GRAPH_HEIGHT), fill: "none", stroke: "#3b82f6", strokeWidth: "2" })
+                            )
+                        ),
+                        e("div", { className: "mt-2 flex gap-3 text-xs" },
+                            e("span", { className: "flex items-center gap-1 text-red-600" }, e("div", { className: "w-2 h-2 bg-red-500 rounded-full" }), t.redLegend),
+                            e("span", { className: "flex items-center gap-1 text-blue-600" }, e("div", { className: "w-2 h-2 bg-blue-500 rounded-full" }), t.blueLegend)
+                        )
+                    ),
+                    // PT Mini
+                    e("div", { onClick: () => setExpandedGraph('pt'), className: "bg-white rounded-xl shadow-md border border-gray-100 p-4 flex flex-col items-center cursor-pointer transition-all hover:scale-105 hover:shadow-xl hover:border-blue-300 relative group" },
+                        e("div", { className: "absolute top-2 right-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" }, e(IconMaximize)),
+                        e("h3", { className: "text-sm font-bold text-gray-700 mb-2 border-b w-full text-center pb-2" }, e(MathText, { content: t.ptGraph })),
+                        e("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, className: "w-full h-auto bg-white border border-gray-100" },
+                            e("defs", null, e("clipPath", { id: "clipMini2" }, e("rect", { x: "0", y: "0", width: GRAPH_WIDTH, height: GRAPH_HEIGHT }))),
+                            e("g", { clipPath: "url(#clipMini2)" },
+                                e("line", { x1: "0", y1: GRAPH_HEIGHT/2, x2: GRAPH_WIDTH, y2: GRAPH_HEIGHT/2, stroke: "#94a3b8", strokeWidth: "1.5", strokeDasharray: "4" }),
+                                e("polyline", { points: getPolyline(uiState.history, 'pR', -P_MAX, P_MAX, miniMinT, miniMaxT, 0, GRAPH_WIDTH, 0, GRAPH_HEIGHT), fill: "none", stroke: "#ef4444", strokeWidth: "2" }),
+                                e("polyline", { points: getPolyline(uiState.history, 'pB', -P_MAX, P_MAX, miniMinT, miniMaxT, 0, GRAPH_WIDTH, 0, GRAPH_HEIGHT), fill: "none", stroke: "#3b82f6", strokeWidth: "2" }),
+                                e("polyline", { points: getPolyline(uiState.history, 'pT', -P_MAX, P_MAX, miniMinT, miniMaxT, 0, GRAPH_WIDTH, 0, GRAPH_HEIGHT), fill: "none", stroke: "#475569", strokeWidth: "2", strokeDasharray: "4" })
+                            )
+                        ),
+                        e("div", { className: "mt-2 flex gap-3 text-xs" },
+                            e("span", { className: "flex items-center gap-1 text-red-600" }, e("div", { className: "w-2 h-2 bg-red-500 rounded-full" }), t.redLegend),
+                            e("span", { className: "flex items-center gap-1 text-blue-600" }, e("div", { className: "w-2 h-2 bg-blue-500 rounded-full" }), t.blueLegend),
+                            e("span", { className: "flex items-center gap-1 text-gray-700" }, e("div", { className: "w-4 h-0 border-t-2 border-dashed border-gray-600" }), t.totalLegend)
+                        )
+                    ),
+                    // KT Mini
+                    e("div", { onClick: () => setExpandedGraph('kt'), className: "bg-white rounded-xl shadow-md border border-gray-100 p-4 flex flex-col items-center cursor-pointer transition-all hover:scale-105 hover:shadow-xl hover:border-blue-300 relative group" },
+                        e("div", { className: "absolute top-2 right-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" }, e(IconMaximize)),
+                        e("h3", { className: "text-sm font-bold text-gray-700 mb-2 border-b w-full text-center pb-2" }, e(MathText, { content: t.ktGraph })),
+                        e("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, className: "w-full h-auto bg-white border border-gray-100" },
+                            e("defs", null, e("clipPath", { id: "clipMini3" }, e("rect", { x: "0", y: "0", width: GRAPH_WIDTH, height: GRAPH_HEIGHT }))),
+                            e("g", { clipPath: "url(#clipMini3)" },
+                                e("line", { x1: "0", y1: GRAPH_HEIGHT - ((0 - (-50)) / (K_MAX - (-50))) * GRAPH_HEIGHT, x2: GRAPH_WIDTH, y2: GRAPH_HEIGHT - ((0 - (-50)) / (K_MAX - (-50))) * GRAPH_HEIGHT, stroke: "#94a3b8", strokeWidth: "1.5", strokeDasharray: "4" }),
+                                e("polyline", { points: getPolyline(uiState.history, 'kR', -50, K_MAX, miniMinT, miniMaxT, 0, GRAPH_WIDTH, 0, GRAPH_HEIGHT), fill: "none", stroke: "#ef4444", strokeWidth: "2" }),
+                                e("polyline", { points: getPolyline(uiState.history, 'kB', -50, K_MAX, miniMinT, miniMaxT, 0, GRAPH_WIDTH, 0, GRAPH_HEIGHT), fill: "none", stroke: "#3b82f6", strokeWidth: "2" }),
+                                e("polyline", { points: getPolyline(uiState.history, 'kT', -50, K_MAX, miniMinT, miniMaxT, 0, GRAPH_WIDTH, 0, GRAPH_HEIGHT), fill: "none", stroke: "#16a34a", strokeWidth: "2", strokeDasharray: "4" })
+                            )
+                        ),
+                        e("div", { className: "mt-2 flex gap-3 text-xs" },
+                            e("span", { className: "flex items-center gap-1 text-red-600" }, e("div", { className: "w-2 h-2 bg-red-500 rounded-full" }), t.redLegend),
+                            e("span", { className: "flex items-center gap-1 text-blue-600" }, e("div", { className: "w-2 h-2 bg-blue-500 rounded-full" }), t.blueLegend),
+                            e("span", { className: "flex items-center gap-1 text-green-700" }, e("div", { className: "w-4 h-0 border-t-2 border-dashed border-green-600" }), t.totalLegend)
+                        )
+                    )
+                ),
+
+                // Data Dashboard
+                e("div", { className: "w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12" },
+                    e("div", { className: "bg-red-50 p-5 rounded-xl border border-red-100 shadow-sm" },
+                        e("h3", { className: "text-red-800 font-bold mb-3 border-b border-red-200 pb-2 text-lg" }, t.redData),
+                        e("div", { className: "space-y-3 text-sm" },
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentV }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.vR.toFixed(2)} m/s`)),
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentP }), e("span", { className: "font-mono font-bold text-base" }, currentData.pR.toFixed(2))),
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentK }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.kR.toFixed(2)} J`))
+                        )
+                    ),
+                    e("div", { className: "bg-gray-800 text-white p-5 rounded-xl shadow-lg transform scale-105 z-10 flex flex-col justify-center" },
+                        e("h3", { className: "text-gray-200 font-bold mb-4 border-b border-gray-600 pb-2 text-center text-lg" }, t.totalData),
+                        e("div", { className: "space-y-4" },
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-300", content: t.totalP }), e("span", { className: "font-mono text-2xl text-yellow-400 font-bold" }, currentData.pT.toFixed(2))),
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-300", content: t.totalK }), e("span", { className: `font-mono text-2xl font-bold transition-colors duration-500 ${collisionType === 'inelastic' && isPlaying ? 'text-red-400' : 'text-green-400'}` }, currentData.kT.toFixed(2))),
+                            e("div", { className: "text-xs text-center text-gray-400 mt-4 bg-gray-900 rounded p-2" }, e(MathText, { content: collisionType === 'elastic' ? t.elasticMsg : t.inelasticMsg }))
+                        )
+                    ),
+                    e("div", { className: "bg-blue-50 p-5 rounded-xl border border-blue-100 shadow-sm" },
+                        e("h3", { className: "text-blue-800 font-bold mb-3 border-b border-blue-200 pb-2 text-lg" }, t.blueData),
+                        e("div", { className: "space-y-3 text-sm" },
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentV }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.vB.toFixed(2)} m/s`)),
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentP }), e("span", { className: "font-mono font-bold text-base" }, currentData.pB.toFixed(2))),
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentK }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.kB.toFixed(2)} J`))
+                        )
+                    )
+                ),
+
+                // Expanded Graph Modal
+                expandedGraph ? e("div", { className: "fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4", onClick: () => setExpandedGraph(null) },
+                    e("div", { className: "bg-white w-[95%] md:w-[85%] h-[85%] max-h-[800px] rounded-2xl shadow-2xl flex flex-col p-4 md:p-6 relative", onClick: (ev) => ev.stopPropagation() },
+                        e("button", { className: "absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors z-10", onClick: () => setExpandedGraph(null) }, e(IconClose)),
+                        e("h2", { className: "text-xl md:text-2xl font-bold mb-4 text-center text-gray-800 border-b pb-4" },
+                            e(MathText, { content: expandedGraph === 'vt' ? t.vtGraph : expandedGraph === 'pt' ? t.ptGraph : t.ktGraph })
+                        ),
+                        e("div", { className: "flex-1 w-full relative min-h-0 hide-scrollbar overflow-hidden" },
+                            renderExpandedGraph(expandedGraph)
+                        ),
+                        
+                        // Timeline Controls
+                        e("div", { className: "w-full bg-gray-50 p-4 border-t border-gray-200 rounded-b-xl mt-2 space-y-4" },
+                            e("div", { className: "flex items-center gap-4" },
+                                e("label", { className: "text-sm font-bold text-gray-700 w-28 whitespace-nowrap" }, lang === 'zh' ? '顯示範圍 (縮放)' : 'Time Window'),
+                                e("input", { type: "range", min: "1", max: Math.max(10, Math.ceil(maxTime)), step: "1", value: chartZoom, onChange: (ev) => {
+                                    setChartZoom(Number(ev.target.value));
+                                    if (chartScroll !== null && chartScroll > maxTime - Number(ev.target.value)) setChartScroll(null);
+                                }, className: "flex-1 accent-blue-600 h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer" }),
+                                e("span", { className: "text-sm font-mono w-12 text-right" }, `${chartZoom}s`)
+                            ),
+                            e("div", { className: "flex items-center gap-4" },
+                                e("label", { className: "text-sm font-bold text-gray-700 w-28 whitespace-nowrap" }, lang === 'zh' ? '歷史紀錄 (平移)' : 'History Scroll'),
+                                e("input", { type: "range", min: "0", max: Math.max(0, maxTime - chartZoom), step: "0.1", value: chartScroll !== null ? chartScroll : Math.max(0, maxTime - chartZoom), onChange: (ev) => {
+                                    const val = Number(ev.target.value);
+                                    if (val >= maxTime - chartZoom) setChartScroll(null);
+                                    else setChartScroll(val);
+                                }, className: "flex-1 accent-indigo-600 h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer disabled:opacity-50", disabled: maxTime <= chartZoom }),
+                                e("button", { onClick: () => setChartScroll(null), disabled: maxTime <= chartZoom, className: `text-xs px-3 py-1.5 rounded font-bold whitespace-nowrap transition-colors disabled:opacity-50 ${chartScroll === null ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}` },
+                                    lang === 'zh' ? '追蹤最新' : 'Auto-follow'
+                                )
+                            )
+                        )
+                    )
+                ) : null
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(e(App));
+    </script>
+</body>
+</html>

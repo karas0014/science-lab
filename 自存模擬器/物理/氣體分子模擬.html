@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kinetic Theory Simulator - DSE Physics</title>
+    <style>
+        /* Modern Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* --- Glassmorphism Control Panel --- */
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: 90vh; /* Prevent overflow on small screens */
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.85); /* Slightly more opaque for readability */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto; /* Allow scrolling inside panel if needed */
+            scrollbar-width: none; /* Hide scrollbar for aesthetics */
+        }
+        .controls::-webkit-scrollbar { display: none; }
+
+        /* Mobile Optimization */
+        @media (max-width: 600px) {
+            .controls {
+                top: 10px;
+                right: 10px;
+                width: calc(100% - 20px);
+                max-width: 400px;
+                padding: 16px;
+            }
+            
+            /* Larger Touch Targets */
+            input[type=range]::-webkit-slider-thumb {
+                width: 28px !important;
+                height: 28px !important;
+            }
+        }
+
+        /* Header & Toggles */
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0; /* Adjusted for collapsible logic */
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #38bdf8;
+            margin: 0;
+        }
+
+        /* Collapse Button */
+        .collapse-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+        .collapse-btn:hover { color: #fff; }
+        .controls.collapsed .collapse-btn { transform: rotate(-90deg); }
+        
+        /* Collapsible Content Wrapper */
+        .controls-content {
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, opacity 0.3s ease;
+            max-height: 800px; /* Arbitrary large number */
+            opacity: 1;
+            margin-top: 15px;
+        }
+        
+        .controls.collapsed .controls-content {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        /* Language Switch */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #475569;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #34c759; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Sliders */
+        .control-group { margin-bottom: 20px; }
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            color: #cbd5e1;
+        }
+        .value-display { font-family: 'Courier New', monospace; font-weight: bold; color: #ffffff; }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%; height: 6px;
+            background: #475569; border-radius: 5px; outline: none;
+            margin-top: 5px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px; height: 24px;
+            background: #38bdf8; border-radius: 50%;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active { transform: scale(1.1); }
+
+        /* --- LIVE K.E. CHART --- */
+        .chart-container {
+            margin-bottom: 20px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .chart-header {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        canvas#keChart {
+            width: 100%;
+            height: 60px;
+            display: block;
+        }
+
+        /* --- AVG K.E. PILL --- */
+        .pill-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .ke-pill {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 140px;
+            justify-content: center;
+        }
+        .ke-pill:hover { background: rgba(255, 255, 255, 0.15); }
+        .ke-pill.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+        #ke-value {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: none;
+        }
+        .ke-pill.active #ke-value { display: inline-block; }
+
+        /* Footer Notes */
+        .info-text { font-size: 0.8rem; color: #94a3b8; line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; }
+        .kelvin-display { color: #f43f5e; font-weight: bold; }
+
+        /* Beautiful Math CSS */
+        .math-font { font-family: "Times New Roman", Times, serif; font-size: 1.1em; line-height: 1; }
+        .math-var { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .math-sub { font-size: 0.65em; vertical-align: -0.2em; margin-left: 1px; color: #cbd5e1; font-style: normal; }
+        .sqrt-container { display: inline-flex; align-items: baseline; white-space: nowrap; }
+        .sqrt-tick { font-family: "Times New Roman", serif; font-size: 1.1em; margin-right: -1px; }
+        .sqrt-line { border-top: 1.2px solid currentColor; padding-top: 1px; margin-top: 0.2em; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <canvas id="simCanvas"></canvas>
+    </div>
+
+    <div class="controls" id="controlsPanel">
+        <!-- Header -->
+        <div class="header-row">
+            <div class="header-left">
+                <h2 id="ui-title">氣體分子模擬</h2>
+                <button class="collapse-btn" id="collapseBtn">
+                    <!-- Chevron Down SVG -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="switch-container">
+                <span id="lang-label">EN</span>
+                <label class="switch">
+                    <!-- Default Checked for Chinese -->
+                    <input type="checkbox" id="langToggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <span id="lang-label-zh" style="color: #fff; font-weight: bold; font-size: 0.85rem;">中</span>
+            </div>
+        </div>
+        
+        <!-- Collapsible Content -->
+        <div class="controls-content">
+            <!-- Temperature Slider -->
+            <div class="control-group">
+                <label for="tempSlider">
+                    <span id="ui-temp-label">攝氏溫度</span>
+                    <span id="tempValue" class="value-display">25°C</span>
+                </label>
+                <input type="range" id="tempSlider" min="-273" max="1000" value="25">
+                <div style="margin-top: 8px; font-size: 0.85rem; text-align: right;">
+                    <span id="ui-abs-label">絕對溫度：</span> <span id="kelvinValue" class="kelvin-display">298 K</span>
+                </div>
+            </div>
+
+            <!-- Live K.E. Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <span id="ui-chart-title">能量分佈</span>
+                    <span style="font-size: 0.7rem; opacity: 0.7;">f(v) vs v</span>
+                </div>
+                <canvas id="keChart"></canvas>
+            </div>
+
+            <!-- Avg K.E. Pill -->
+            <div class="pill-wrapper">
+                <div class="ke-pill" id="kePill">
+                    <span id="ui-avg-ke-btn">顯示平均動能</span>
+                    <span id="ke-value">0.00 J</span>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="info-text">
+                <p><strong id="ui-note-title">物理筆記：</strong></p>
+                <p id="ui-note-1"></p>
+                <p id="ui-note-2"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const chartCanvas = document.getElementById('keChart');
+        const chartCtx = chartCanvas.getContext('2d');
+
+        // High DPI Canvas Setup
+        function setupCanvas(c, context) {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = c.getBoundingClientRect();
+            c.width = rect.width * dpr;
+            c.height = rect.height * dpr;
+            context.scale(dpr, dpr);
+        }
+
+        const state = {
+            temperatureC: 25,
+            particles: [],
+            numParticles: 80, // Slightly increased for better statistical distribution graph
+            baseSpeedMultiplier: 0.5,
+            lang: 'zh', // Default to Chinese
+            showAvgKE: false,
+            avgKE: 0
+        };
+
+        // UI Elements
+        const tempSlider = document.getElementById('tempSlider');
+        const tempDisplay = document.getElementById('tempValue');
+        const kelvinDisplay = document.getElementById('kelvinValue');
+        const langToggle = document.getElementById('langToggle');
+        const kePill = document.getElementById('kePill');
+        const keValueDisplay = document.getElementById('ke-value');
+        const collapseBtn = document.getElementById('collapseBtn');
+        const controlsPanel = document.getElementById('controlsPanel');
+
+        // Beautiful Math Templates
+        const mathVrms = `<span class="math-font">(<span class="math-var">v</span><span class="math-sub">rms</span>)</span>`;
+        const mathSqrtT = `<span class="math-font sqrt-container"><span class="sqrt-tick">√</span><span class="sqrt-line"><span class="math-var">T</span></span></span>`;
+
+        const i18n = {
+            en: {
+                title: "Gas Simulation",
+                tempLabel: "Temperature",
+                absLabel: "Absolute:",
+                noteTitle: "Physics Note:",
+                note1: `Speed ${mathVrms} &propto; ${mathSqrtT}`,
+                note2: "At -273°C (0 K), kinetic energy becomes zero.",
+                chartTitle: "Energy Distribution",
+                avgKeBtn: "Avg K.E.",
+                langCode: "EN"
+            },
+            zh: {
+                title: "氣體分子模擬",
+                tempLabel: "攝氏溫度",
+                absLabel: "絕對溫度：",
+                noteTitle: "物理筆記：",
+                note1: `分子速率 ${mathVrms} 與 ${mathSqrtT} 成正比。`,
+                note2: "在 -273°C (0 K) 時，分子動能為零。",
+                chartTitle: "能量分佈",
+                avgKeBtn: "平均動能",
+                langCode: "中"
+            }
+        };
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = Math.random() * 6 + 8; // Slightly smaller for more particles
+                const angle = Math.random() * Math.PI * 2;
+                this.dx = Math.cos(angle);
+                this.dy = Math.sin(angle);
+                this.hueOffset = Math.floor(Math.random() * 20) - 10; 
+                this.currentSpeed = 0;
+            }
+
+            getSpeedFactor() {
+                const kelvin = state.temperatureC + 273;
+                return kelvin <= 0 ? 0 : Math.sqrt(kelvin) * state.baseSpeedMultiplier;
+            }
+
+            getColor() {
+                let targetHue = 240;
+                if (state.temperatureC < 0) {
+                    const ratio = (state.temperatureC + 273) / 273;
+                    targetHue = 240 - (ratio * 40);
+                } else {
+                    const ratio = state.temperatureC / 1000;
+                    targetHue = 200 - (ratio * 190); 
+                }
+                const h = targetHue + this.hueOffset;
+                return {
+                    fill: `hsla(${h}, 90%, 60%, 1)`,
+                    shadow: `hsla(${h}, 90%, 30%, 0.4)`
+                };
+            }
+
+            update(width, height) {
+                this.currentSpeed = this.getSpeedFactor();
+                
+                // Add tiny random fluctuation to simulate collision energy exchange visually
+                // This makes the avg KE flutter slightly instead of being perfectly static constant
+                const fluctuation = 1 + (Math.random() - 0.5) * 0.1; 
+                const speed = this.currentSpeed * fluctuation;
+
+                this.x += this.dx * speed;
+                this.y += this.dy * speed;
+
+                // Wall Collisions
+                if (this.x + this.radius > width) { this.x = width - this.radius; this.dx *= -1; }
+                if (this.x - this.radius < 0) { this.x = this.radius; this.dx *= -1; }
+                if (this.y + this.radius > height) { this.y = height - this.radius; this.dy *= -1; }
+                if (this.y - this.radius < 0) { this.y = this.radius; this.dy *= -1; }
+            }
+
+            draw(ctx) {
+                const colors = this.getColor();
+                // Shadow
+                ctx.beginPath();
+                ctx.arc(this.x + 4, this.y + 6, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fill();
+                // Body
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                const gradient = ctx.createRadialGradient(this.x - this.radius/3, this.y - this.radius/3, this.radius/5, this.x, this.y, this.radius);
+                gradient.addColorStop(0, '#ffffff'); 
+                gradient.addColorStop(0.3, colors.fill); 
+                gradient.addColorStop(1, colors.shadow); 
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            resizeCanvas();
+            state.particles = Array.from({length: state.numParticles}, () => new Particle(Math.random()*canvas.width, Math.random()*canvas.height));
+            setupCanvas(chartCanvas, chartCtx);
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Re-setup chart on resize to prevent blurriness
+            const rect = chartCanvas.getBoundingClientRect();
+            if(rect.width > 0) setupCanvas(chartCanvas, chartCtx);
+        }
+
+        // --- Stats & Chart Logic ---
+        function updateStatsAndChart() {
+            if (state.particles.length === 0) return;
+
+            // 1. Calculate Avg KE (Proportional to v^2)
+            // KE = 0.5 * m * v^2. Let m=1.
+            let totalKE = 0;
+            const speedData = [];
+            
+            // Speed scale: at 1000C, speed factor is approx sqrt(1273) ~ 35.6 * 0.5 ~ 17.8
+            // We need buckets for the histogram.
+            const maxTrackedSpeed = 25; 
+            const numBuckets = 20;
+            const buckets = new Array(numBuckets).fill(0);
+
+            state.particles.forEach(p => {
+                // Use the fluctuating speed for more realism in the graph
+                // (Recalculating effective speed roughly from update logic)
+                const v = p.getSpeedFactor(); // Use base speed factor for distribution center
+                // Add noise for distribution width simulation (Maxwell-Boltzmann is a distribution, not single value)
+                // In a real simulation, particles exchange energy. Here we simulate the *result* of that.
+                // We'll generate a spread based on T.
+                const spread = (state.temperatureC + 273) / 10000; 
+                const randomizedV = Math.abs(v + (Math.random() - 0.5) * v * 0.5); // Artificial spread
+                
+                const ke = 0.5 * randomizedV * randomizedV;
+                totalKE += ke;
+
+                // Histogram
+                let bucketIdx = Math.floor((randomizedV / maxTrackedSpeed) * numBuckets);
+                if (bucketIdx >= numBuckets) bucketIdx = numBuckets - 1;
+                buckets[bucketIdx]++;
+            });
+
+            // Update Text
+            state.avgKE = totalKE / state.particles.length;
+            if (state.showAvgKE) {
+                // Display arbitrary units scaled to look nice
+                keValueDisplay.textContent = (state.avgKE * 10).toFixed(2) + " J"; 
+            }
+
+            // Draw Chart
+            const w = chartCanvas.width / (window.devicePixelRatio || 1);
+            const h = chartCanvas.height / (window.devicePixelRatio || 1);
+            chartCtx.clearRect(0, 0, w, h);
+
+            const barWidth = w / numBuckets;
+            const maxCount = state.numParticles * 0.4; // Scale factor for height
+
+            chartCtx.fillStyle = 'rgba(244, 63, 94, 0.6)'; // Rose color #f43f5e
+            
+            buckets.forEach((count, i) => {
+                const barHeight = (count / maxCount) * h;
+                const x = i * barWidth;
+                const y = h - barHeight;
+                
+                // Rounded top bars
+                chartCtx.beginPath();
+                chartCtx.roundRect(x + 1, y, barWidth - 2, barHeight + 5, [2, 2, 0, 0]);
+                chartCtx.fill();
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            state.particles.forEach(p => { p.update(canvas.width, canvas.height); p.draw(ctx); });
+            
+            // Throttle chart updates slightly for performance if needed, but 60fps is fine for simple bars
+            updateStatsAndChart();
+            
+            requestAnimationFrame(animate);
+        }
+
+        function updateLanguage() {
+            const t = state.lang === 'en' ? i18n.en : i18n.zh;
+            document.getElementById('ui-title').textContent = t.title;
+            document.getElementById('ui-temp-label').textContent = t.tempLabel;
+            document.getElementById('ui-abs-label').textContent = t.absLabel;
+            document.getElementById('ui-note-title').textContent = t.noteTitle;
+            document.getElementById('ui-note-1').innerHTML = t.note1; 
+            document.getElementById('ui-note-2').textContent = t.note2;
+            document.getElementById('ui-chart-title').textContent = t.chartTitle;
+            
+            // Only update button text if not showing value (or just label part)
+            if (!state.showAvgKE) {
+                document.getElementById('ui-avg-ke-btn').textContent = t.avgKeBtn;
+            } else {
+                 // If active, we might want to keep the label 'Avg KE:' or just value.
+                 // Current design: Button text hides, Value shows? Or side by side?
+                 // Let's keep side by side.
+                 document.getElementById('ui-avg-ke-btn').textContent = t.avgKeBtn + ": ";
+            }
+        }
+
+        // Event Listeners
+        tempSlider.addEventListener('input', (e) => {
+            state.temperatureC = parseInt(e.target.value);
+            tempDisplay.innerText = `${state.temperatureC}°C`;
+            kelvinDisplay.innerText = `${state.temperatureC + 273} K`;
+        });
+
+        langToggle.addEventListener('change', (e) => {
+            state.lang = e.target.checked ? 'zh' : 'en';
+            updateLanguage();
+        });
+
+        kePill.addEventListener('click', () => {
+            state.showAvgKE = !state.showAvgKE;
+            kePill.classList.toggle('active');
+            updateLanguage(); // Refresh label text
+        });
+
+        collapseBtn.addEventListener('click', () => {
+            controlsPanel.classList.toggle('collapsed');
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+        
+        init();
+        animate();
+        updateLanguage(); // Initial render
+
+    </script>
+</body>
+</html>

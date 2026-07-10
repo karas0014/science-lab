@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSE 化學微觀世界：化學鍵</title>
+    
+    <!-- 僅保留 React 核心庫，移除 Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { 
+            background-color: #f8fafc; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow-x: hidden;
+        }
+        
+        /* Button Styles */
+        .btn-base { padding: 0.75rem 1.5rem; border-radius: 1rem; font-weight: 600; transition: all 0.3s ease; }
+        .btn-inactive { background-color: #e2e8f0; color: #475569; }
+        .btn-inactive:hover { background-color: #cbd5e1; }
+        
+        .btn-action { background-color: #3b82f6; color: white; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5); }
+        .btn-action:hover { background-color: #2563eb; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4); }
+        .btn-action:disabled { background-color: #94a3b8; transform: none; box-shadow: none; cursor: not-allowed; }
+        
+        .btn-reset { background-color: #ef4444; color: white; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.5); }
+        .btn-reset:hover { background-color: #dc2626; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3); }
+        
+        /* Toggle Switch */
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        .toggle-checkbox { right: 4px; z-index: 1; border-color: #e2e8f0; transition: all 0.3s; }
+        .toggle-label { transition: all 0.3s; }
+
+        /* Quiz specific styles */
+        .quiz-option { transition: all 0.2s; border: 2px solid #e2e8f0; cursor: pointer; }
+        .quiz-option:hover { border-color: #3b82f6; background-color: #eff6ff; }
+        .quiz-option.selected { border-color: #3b82f6; background-color: #dbeafe; font-weight: bold; }
+
+        /* Animation Styles */
+        .electron { transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bracket { opacity: 0; transition: opacity 1s ease 1.5s; }
+        .show-bracket { opacity: 1; }
+        
+        .atom-group { transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Static Equation Box */
+        .equation-box { 
+            background: linear-gradient(135deg, #fef08a, #facc15); 
+            padding: 1rem 2rem; 
+            border-radius: 1.5rem; 
+            box-shadow: 0 10px 25px rgba(234, 179, 8, 0.3); 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            color: #713f12; 
+            border: 4px solid #ca8a04;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        /* Utilities */
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/javascript">
+        // ============================================================================
+        const GOOGLE_SCRIPT_URL = "DISABLED";
+        function __noSend(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({status:'success'});},text:function(){return Promise.resolve('');}});} 
+        // ============================================================================
+
+        const { useState, useEffect } = React;
+        const e = React.createElement; // 使用原生 createElement 取代 JSX
+
+        // --- Dictionary for i18n ---
+        const i18n = {
+            zh: {
+                title: "🧪 DSE 化學微觀世界：化學鍵",
+                tabIonic: "離子鍵 (Ionic)",
+                tabCovalent: "共價鍵 (Covalent)",
+                tabChallenge: "🏆 挑戰區",
+                reactBtn: "⚡ 開始反應",
+                resetBtn: "🔄 重置",
+                showElectrons: "顯示內層電子",
+                langToggle: "EN",
+                instruction: "請選擇分子，然後點擊「開始反應」觀察電子變化。",
+                bpInfoTitle: "分子電子對數目 (最外層)",
+                bpLabel: "鍵合電子對 (BP):",
+                lpLabel: "孤對電子 (LP):",
+                ionicInfoTitle: "電子轉移數目",
+                metalLoseLabel: "每個金屬原子失去:",
+                nonMetalGainLabel: "每個非金屬原子接受:",
+                totalExchangeLabel: "總共交換電子數目:",
+                quizTitle: "鍵合知識終極挑戰 (10題)",
+                enterName: "請輸入你的名字以開始挑戰：",
+                startQuiz: "開始挑戰",
+                question: "問題",
+                nextBtn: "下一題",
+                finishBtn: "完成並計分",
+                scoreTitle: "挑戰結果",
+                passMsg: "🎉 恭喜！你成功掌握了化學鍵合知識！",
+                failMsg: "💪 需努力！請再複習一下概念然後重試。",
+                submitBtn: "上傳成績至 Google Sheet",
+                uploadingMsg: "上傳中...",
+                submitSuccessMsg: "成績已成功上傳至雲端！",
+                exportFallback: "或者下載 CSV 檔案",
+                scoreText: "你的分數："
+            },
+            en: {
+                title: "🧪 DSE Microscopic World: Chemical Bonds",
+                tabIonic: "Ionic Bonds",
+                tabCovalent: "Covalent Bonds",
+                tabChallenge: "🏆 Challenge",
+                reactBtn: "⚡ React!",
+                resetBtn: "🔄 Reset",
+                showElectrons: "Show Inner Shells",
+                langToggle: "中文",
+                instruction: "Select a molecule and click 'React!' to observe.",
+                bpInfoTitle: "Electron Pairs (Outermost Shell)",
+                bpLabel: "Bond Pairs (BP):",
+                lpLabel: "Lone Pairs (LP):",
+                ionicInfoTitle: "Electron Transfer",
+                metalLoseLabel: "Lost per metal atom:",
+                nonMetalGainLabel: "Gained per non-metal atom:",
+                totalExchangeLabel: "Total electrons exchanged:",
+                quizTitle: "Bonding Knowledge Challenge (10 Qs)",
+                enterName: "Enter your name to start:",
+                startQuiz: "Start",
+                question: "Question",
+                nextBtn: "Next",
+                finishBtn: "Finish & Score",
+                scoreTitle: "Result",
+                passMsg: "🎉 Congratulations! You passed!",
+                failMsg: "💪 Keep trying! Review the concepts and try again.",
+                submitBtn: "Upload Score to Google Sheet",
+                uploadingMsg: "Uploading...",
+                submitSuccessMsg: "Score successfully uploaded!",
+                exportFallback: "Or download CSV file",
+                scoreText: "Your Score:"
+            }
+        };
+
+        const equations = {
+            'NaCl': { pre: 'Na + Cl ➔ NaCl', post: 'Na + Cl ➔ Na⁺ + Cl⁻' },
+            'MgO':  { pre: 'Mg + O ➔ MgO', post: 'Mg + O ➔ Mg²⁺ + O²⁻' },
+            'CaCl2':{ pre: 'Ca + 2Cl ➔ CaCl₂', post: 'Ca + 2Cl ➔ Ca²⁺ + 2Cl⁻' },
+            'Al2O3':{ pre: '2Al + 3O ➔ Al₂O₃', post: '2Al + 3O ➔ 2Al³⁺ + 3O²⁻' },
+            'Cl2':  { pre: 'Cl + Cl ➔ Cl₂', post: 'Cl + Cl ➔ Cl₂ (單鍵 Single Bond)' },
+            'O2':   { pre: 'O + O ➔ O₂', post: 'O + O ➔ O₂ (雙鍵 Double Bond)' },
+            'N2':   { pre: 'N + N ➔ N₂', post: 'N + N ➔ N₂ (三鍵 Triple Bond)' },
+            'NH3':  { pre: 'N + 3H ➔ NH₃', post: 'N + 3H ➔ NH₃ (單鍵 Single Bonds)' }
+        };
+
+        const bpLpData = {
+            'Cl2': { bp: 1, lp: 6 },
+            'O2':  { bp: 2, lp: 4 },
+            'N2':  { bp: 3, lp: 2 },
+            'NH3': { bp: 3, lp: 1 } 
+        };
+
+        const ionicTransferData = {
+            'NaCl':  { metalLose: 1, nonMetalGain: 1, total: 1 },
+            'MgO':   { metalLose: 2, nonMetalGain: 2, total: 2 },
+            'CaCl2': { metalLose: 2, nonMetalGain: 1, total: 2 },
+            'Al2O3': { metalLose: 3, nonMetalGain: 2, total: 6 }
+        };
+
+        const quizQuestions = [
+            { q: "1. 哪種鍵合涉及電子的轉移？ (Which bond involves electron transfer?)", opts: ["離子鍵 (Ionic)", "共價鍵 (Covalent)", "金屬鍵 (Metallic)"], ans: 0 },
+            { q: "2. 哪種鍵合涉及電子的共用？ (Which bond involves electron sharing?)", opts: ["離子鍵 (Ionic)", "共價鍵 (Covalent)", "金屬鍵 (Metallic)"], ans: 1 },
+            { q: "3. 在 MgO (氧化鎂) 中，鎂原子(Mg)轉移了多少個電子？", opts: ["1個", "2個", "3個"], ans: 1 },
+            { q: "4. 氧氣(O₂)分子中含有什麼類型的共價鍵？", opts: ["單鍵 (Single)", "雙鍵 (Double)", "三鍵 (Triple)"], ans: 1 },
+            { q: "5. 氯化鈣(CaCl₂)中，鈣離子的電荷是多少？", opts: ["+1", "+2", "-1"], ans: 1 },
+            { q: "6. 氮氣(N₂)分子中，兩個氮原子共用了多少對電子？", opts: ["1對", "2對", "3對"], ans: 2 },
+            { q: "7. 氨氣(NH₃)分子中，中心氮原子有多少對孤對電子(Lone pair)？", opts: ["0對", "1對", "2對"], ans: 1 },
+            { q: "8. 氧化鋁的化學式是什麼？", opts: ["AlO", "Al₂O₃", "Al₃O₂"], ans: 1 },
+            { q: "9. 為什麼原子會進行化學鍵合？", opts: ["為了達到穩定的八隅體/電子偶電子排佈", "為了變成氣體狀態", "為了增加原子的質量"], ans: 0 },
+            { q: "10. 下列哪一個是共價分子？", opts: ["NaCl (氯化鈉)", "NH₃ (氨氣)", "MgO (氧化鎂)"], ans: 1 },
+        ];
+
+        const formatFormula = (mol) => mol.replace(/2/g, '₂').replace(/3/g, '₃');
+
+        const DynamicInnerShells = ({ show, config, color = "#3b82f6", useCross = false }) => {
+            const radii = [35, 55, 75];
+            return e('g', { className: `inner-shell ${show ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300` },
+                config.map((eCount, shellIndex) => {
+                    const r = radii[shellIndex];
+                    const elements = [];
+                    for(let i=0; i<eCount; i++) {
+                        const angle = (360/eCount) * i;
+                        const rad = (angle * Math.PI) / 180;
+                        const x = r * Math.cos(rad);
+                        const y = r * Math.sin(rad);
+                        elements.push(useCross ? 
+                            e('text', { key: i, x, y: y+5, fontSize: "14", textAnchor: "middle", fill: color, fontWeight: "bold" }, "×") :
+                            e('circle', { key: i, cx: x, cy: y, r: "3", fill: color })
+                        );
+                    }
+                    return e('g', { key: shellIndex },
+                        e('circle', { r, fill: "none", stroke: "#cbd5e1", strokeWidth: "2", strokeDasharray: "4,4" }),
+                        ...elements
+                    );
+                })
+            );
+        };
+
+        const ChallengeZone = ({ t }) => {
+            const [step, setStep] = useState('login');
+            const [name, setName] = useState('');
+            const [loginTime, setLoginTime] = useState('');
+            const [currentQ, setCurrentQ] = useState(0);
+            const [answers, setAnswers] = useState(Array(10).fill(null));
+            const [score, setScore] = useState(0);
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [submitSuccess, setSubmitSuccess] = useState(false);
+
+            const startQuiz = () => {
+                if(name.trim() === '') return alert("請輸入名字 / Please enter your name");
+                setLoginTime(new Date().toLocaleString('zh-HK'));
+                setStep('quiz');
+            };
+
+            const selectOption = (optIdx) => {
+                const newAns = [...answers];
+                newAns[currentQ] = optIdx;
+                setAnswers(newAns);
+            };
+
+            const nextQuestion = () => {
+                if (answers[currentQ] === null) return;
+                if (currentQ < quizQuestions.length - 1) {
+                    setCurrentQ(currentQ + 1);
+                } else {
+                    let finalScore = 0;
+                    answers.forEach((ans, idx) => {
+                        if (ans === quizQuestions[idx].ans) finalScore++;
+                    });
+                    setScore(finalScore);
+                    setStep('result');
+                }
+            };
+
+            const submitToGoogleSheet = async () => {
+                if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("在此輸入")) {
+                    alert("⚠️ 您尚未設定正確的 Google Apps Script 網址！\n目前將為您暫時切換至 CSV 下載。");
+                    exportCSV();
+                    return;
+                }
+                setIsSubmitting(true);
+                try {
+                    const response = await __noSend(0, {
+                        method: 'POST',
+                        body: JSON.stringify({ loginTime, name, score }),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    });
+                    const result = await response.json();
+                    if(result.status === "success") {
+                        setSubmitSuccess(true);
+                    } else {
+                        throw new Error(result.message || "Unknown error");
+                    }
+                } catch (error) {
+                    console.error("Submission failed:", error);
+                    alert("上傳失敗，請檢查網路連線或 Apps Script 部署設定。");
+                } finally {
+                    setIsSubmitting(false);
+                }
+            };
+
+            const exportCSV = () => {
+                const header = "\uFEFF登入時間,學生名字,分數,結果\n";
+                const resultText = score >= 8 ? "成功 (Pass)" : "需努力 (Fail)";
+                const row = `"${loginTime}","${name}",${score},"${resultText}"\n`;
+                const blob = new Blob([header + row], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `Chemistry_Quiz_${name}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            return e('div', { className: "w-full max-w-4xl mx-auto bg-white p-8 rounded-[2rem] shadow-lg border-4 border-slate-200 min-h-[400px] flex flex-col justify-center" },
+                e('h2', { className: "text-3xl font-bold text-center text-slate-800 mb-8" }, t.quizTitle),
+                
+                step === 'login' && e('div', { className: "flex flex-col items-center gap-6 animate-fade-in" },
+                    e('label', { className: "text-xl text-slate-600 font-medium" }, t.enterName),
+                    e('input', {
+                        type: "text", value: name, onChange: (evt) => setName(evt.target.value),
+                        className: "text-2xl p-4 rounded-xl border-2 border-slate-300 w-64 text-center focus:outline-none focus:border-blue-500",
+                        placeholder: "Your Name"
+                    }),
+                    e('button', { onClick: startQuiz, className: "btn-base bg-blue-600 hover:bg-blue-700 text-white font-bold w-48 shadow-lg" }, t.startQuiz)
+                ),
+                
+                step === 'quiz' && e('div', { className: "animate-fade-in w-full max-w-2xl mx-auto" },
+                    e('p', { className: "text-lg text-slate-500 mb-2" }, `${t.question} ${currentQ + 1} / 10`),
+                    e('p', { className: "text-2xl font-bold text-slate-800 mb-6" }, quizQuestions[currentQ].q),
+                    e('div', { className: "flex flex-col gap-4 mb-8" },
+                        quizQuestions[currentQ].opts.map((opt, idx) => 
+                            e('div', {
+                                key: idx, onClick: () => selectOption(idx),
+                                className: `quiz-option p-4 rounded-xl text-xl text-slate-700 ${answers[currentQ] === idx ? 'selected' : ''}`
+                            }, opt)
+                        )
+                    ),
+                    e('button', {
+                        onClick: nextQuestion, disabled: answers[currentQ] === null,
+                        className: "btn-base bg-emerald-500 hover:bg-emerald-600 text-white font-bold float-right shadow-md disabled:bg-slate-300"
+                    }, currentQ === 9 ? t.finishBtn : t.nextBtn)
+                ),
+                
+                step === 'result' && e('div', { className: "flex flex-col items-center gap-6 animate-fade-in text-center" },
+                    e('h3', { className: "text-4xl font-black text-slate-800" }, t.scoreTitle),
+                    e('div', { className: "text-6xl font-black my-4 flex items-baseline gap-2" },
+                        e('span', { className: score >= 8 ? 'text-emerald-500' : 'text-rose-500' }, score),
+                        e('span', { className: "text-3xl text-slate-400" }, "/ 10")
+                    ),
+                    e('p', { className: "text-2xl font-bold mb-6" },
+                        score >= 8 ? e('span', { className: "text-emerald-600" }, t.passMsg) : e('span', { className: "text-rose-600" }, t.failMsg)
+                    ),
+                    submitSuccess ? (
+                        e('div', { className: "p-4 bg-green-100 text-green-700 rounded-xl font-bold border-2 border-green-400 shadow-sm animate-fade-in" }, `✅ ${t.submitSuccessMsg}`)
+                    ) : (
+                        e('button', {
+                            onClick: submitToGoogleSheet, disabled: isSubmitting,
+                            className: `btn-base text-white font-bold shadow-lg w-64 ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`
+                        }, isSubmitting ? t.uploadingMsg : t.submitBtn)
+                    ),
+                    !submitSuccess && e('button', { onClick: exportCSV, className: "text-sm text-slate-400 underline hover:text-slate-600 transition" }, t.exportFallback)
+                )
+            );
+        };
+
+        const MolNaCl = ({ stage, showInner }) => {
+            const naX = stage === 0 ? 320 : 280;
+            const clX = stage === 0 ? 680 : 720;
+            return e('g', null,
+                e('g', { className: "atom-group", transform: `translate(${naX}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "Na"),
+                    e(DynamicInnerShells, { show: showInner, config: [2, 8], color: "#ef4444" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2", opacity: stage===0?1:0.2 }),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "-110", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "["),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "90", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "]"),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "110", y: "-70", fontSize: "40", fontWeight: "bold", fill: "#ef4444" }, "+")
+                ),
+                e('circle', { className: "electron", cx: stage===0 ? naX+90 : clX-90, cy: "250", r: "7", fill: "#ef4444", filter: "url(#glow)" }),
+                e('g', { className: "atom-group", transform: `translate(${clX}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "Cl"),
+                    e(DynamicInnerShells, { show: showInner, config: [2, 8], useCross: true, color: "#3b82f6" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    ...[45, 90, 135, 180, 225, 270, 315].map((a, i) => 
+                        e('text', { key: i, x: 90*Math.cos(a*Math.PI/180), y: 90*Math.sin(a*Math.PI/180)+8, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold" }, "×")
+                    ),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "-115", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "["),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "100", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "]"),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "120", y: "-70", fontSize: "40", fontWeight: "bold", fill: "#3b82f6" }, "-")
+                )
+            );
+        };
+
+        const MolMgO = ({ stage, showInner }) => {
+            const mgX = stage === 0 ? 320 : 260;
+            const oX = stage === 0 ? 680 : 740;
+            return e('g', null,
+                e('g', { className: "atom-group", transform: `translate(${mgX}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "Mg"),
+                    e(DynamicInnerShells, { show: showInner, config: [2, 8], color: "#ef4444" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2", opacity: stage===0?1:0.2 }),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "-110", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "["),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "90", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "]"),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "110", y: "-70", fontSize: "40", fontWeight: "bold", fill: "#ef4444" }, "2+")
+                ),
+                e('circle', { className: "electron", cx: stage===0 ? mgX+78 : oX-78, cy: "205", r: "7", fill: "#ef4444", filter: "url(#glow)" }),
+                e('circle', { className: "electron", cx: stage===0 ? mgX+78 : oX-78, cy: "295", r: "7", fill: "#ef4444", filter: "url(#glow)" }),
+                e('g', { className: "atom-group", transform: `translate(${oX}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "O"),
+                    e(DynamicInnerShells, { show: showInner, config: [2], useCross: true, color: "#3b82f6" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    ...[45, 90, 135, 225, 270, 315].map((a, i) => 
+                        e('text', { key: i, x: 90*Math.cos(a*Math.PI/180), y: 90*Math.sin(a*Math.PI/180)+8, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold" }, "×")
+                    ),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "-115", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "["),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "100", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "]"),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "120", y: "-70", fontSize: "40", fontWeight: "bold", fill: "#3b82f6" }, "2-")
+                )
+            );
+        };
+
+        const MolCaCl2 = ({ stage, showInner }) => {
+            const caX = 500, cl1X = stage === 0 ? 250 : 200, cl2X = stage === 0 ? 750 : 800;
+            return e('g', null,
+                e('g', { className: "atom-group", transform: `translate(${cl1X}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "Cl"),
+                    e(DynamicInnerShells, { show: showInner, config: [2, 8], useCross: true, color: "#3b82f6" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    ...[45, 90, 135, 180, 225, 270, 315].map((a, i) => 
+                        e('text', { key: i, x: 90*Math.cos(a*Math.PI/180), y: 90*Math.sin(a*Math.PI/180)+8, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold" }, "×")
+                    ),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "-115", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "["),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "100", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "]"),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "120", y: "-70", fontSize: "40", fontWeight: "bold", fill: "#3b82f6" }, "-")
+                ),
+                e('g', { className: "atom-group", transform: `translate(${caX}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "Ca"),
+                    e(DynamicInnerShells, { show: showInner, config: [2, 8, 8], color: "#ef4444" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2", opacity: stage===0?1:0.2 }),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "-110", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "["),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "90", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "]"),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "110", y: "-70", fontSize: "40", fontWeight: "bold", fill: "#ef4444" }, "2+")
+                ),
+                e('g', { className: "atom-group", transform: `translate(${cl2X}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "Cl"),
+                    e(DynamicInnerShells, { show: showInner, config: [2, 8], useCross: true, color: "#3b82f6" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    ...[45, 90, 135, 0, 225, 270, 315].map((a, i) => 
+                        e('text', { key: i, x: 90*Math.cos(a*Math.PI/180), y: 90*Math.sin(a*Math.PI/180)+8, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold" }, "×")
+                    ),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "-115", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "["),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "100", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "]"),
+                    e('text', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, x: "120", y: "-70", fontSize: "40", fontWeight: "bold", fill: "#3b82f6" }, "-")
+                ),
+                e('circle', { className: "electron", cx: stage===0 ? caX-90 : cl1X+90, cy: "250", r: "7", fill: "#ef4444", filter: "url(#glow)" }),
+                e('circle', { className: "electron", cx: stage===0 ? caX+90 : cl2X-90, cy: "250", r: "7", fill: "#ef4444", filter: "url(#glow)" })
+            );
+        };
+
+        const MolAl2O3 = ({ stage, showInner }) => {
+            const al1X = stage===0? 350 : 300, al2X = stage===0? 650 : 700;
+            const o1X = stage===0? 200 : 150, o2X = 500, o3X = stage===0? 800 : 850;
+            const alY = 150, oY = 360;
+
+            const drawBracket = (x, y, charge, isAl) => (
+                e('g', { className: `bracket ${stage===1 ? 'show-bracket' : ''}`, transform: `translate(${x}, ${y})` },
+                    e('text', { x: "-110", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "["),
+                    e('text', { x: "90", y: "30", fontSize: "100", fontWeight: "lighter", fill: "#334155" }, "]"),
+                    e('text', { x: "110", y: "-60", fontSize: "36", fontWeight: "bold", fill: isAl ? "#ef4444" : "#3b82f6" }, charge)
+                )
+            );
+
+            return e('g', { transform: "scale(0.8) translate(120, 50)" },
+                ...[o1X, o2X, o3X].map((x, idx) => (
+                    e('g', { key: `O${idx}` },
+                        e('g', { className: "atom-group", transform: `translate(${x}, ${oY})` },
+                            e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                            e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "O"),
+                            e(DynamicInnerShells, { show: showInner, config: [2], useCross: true, color: "#3b82f6" }),
+                            e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                            ...[90, 135, 180, 225, 270, 315].map((a, i) => 
+                                e('text', { key: i, x: 90*Math.cos(a*Math.PI/180), y: 90*Math.sin(a*Math.PI/180)+8, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold" }, "×")
+                            )
+                        ),
+                        drawBracket(x, oY, "2-", false)
+                    )
+                )),
+                ...[al1X, al2X].map((x, idx) => (
+                    e('g', { key: `Al${idx}` },
+                        e('g', { className: "atom-group", transform: `translate(${x}, ${alY})` },
+                            e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                            e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "Al"),
+                            e(DynamicInnerShells, { show: showInner, config: [2, 8], color: "#ef4444" }),
+                            e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2", opacity: stage===0?1:0.2 })
+                        ),
+                        drawBracket(x, alY, "3+", true)
+                    )
+                )),
+                e('circle', { className: "electron", cx: stage===0?al1X-70:o1X+40, cy: stage===0?alY+55:oY-80, r: "7", fill: "#ef4444", filter: "url(#glow)" }),
+                e('circle', { className: "electron", cx: stage===0?al1X-90:o1X+80, cy: stage===0?alY:oY-40, r: "7", fill: "#ef4444", filter: "url(#glow)" }),
+                e('circle', { className: "electron", cx: stage===0?al1X+70:o2X-40, cy: stage===0?alY+55:oY-80, r: "7", fill: "#ef4444", filter: "url(#glow)" }),
+                e('circle', { className: "electron", cx: stage===0?al2X-70:o2X+40, cy: stage===0?alY+55:oY-80, r: "7", fill: "#ef4444", filter: "url(#glow)" }),
+                e('circle', { className: "electron", cx: stage===0?al2X+70:o3X-40, cy: stage===0?alY+55:oY-80, r: "7", fill: "#ef4444", filter: "url(#glow)" }),
+                e('circle', { className: "electron", cx: stage===0?al2X+90:o3X-80, cy: stage===0?alY:oY-40, r: "7", fill: "#ef4444", filter: "url(#glow)" })
+            );
+        };
+
+        const MolCl2 = ({ stage, showInner }) => {
+            const cl1X = stage === 0 ? 320 : 420;
+            const cl2X = stage === 0 ? 680 : 580;
+            return e('g', null,
+                e('g', { className: "atom-group", transform: `translate(${cl1X}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "Cl"),
+                    e(DynamicInnerShells, { show: showInner, config: [2, 8], color: "#ef4444" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    ...[90, 135, 180, 225, 270, 315].map((a, i) => 
+                        e('circle', { key: i, cx: 90*Math.cos(a*Math.PI/180), cy: 90*Math.sin(a*Math.PI/180), r: "6", fill: "#ef4444" })
+                    ),
+                    e('circle', { className: "electron", cx: stage===0 ? 90 : 80, cy: stage===0 ? 0 : -15, r: "6", fill: "#ef4444", filter: "url(#glow)" })
+                ),
+                e('g', { className: "atom-group", transform: `translate(${cl2X}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "Cl"),
+                    e(DynamicInnerShells, { show: showInner, config: [2, 8], useCross: true, color: "#3b82f6" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    ...[270, 315, 0, 45, 90, 225].map((a, i) => 
+                        e('text', { key: i, x: 90*Math.cos(a*Math.PI/180), y: 90*Math.sin(a*Math.PI/180)+8, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold" }, "×")
+                    ),
+                    e('text', { className: "electron", x: stage===0 ? -90 : -80, y: stage===0 ? 8 : 23, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold", filter: "url(#glow)" }, "×")
+                )
+            );
+        };
+
+        const MolO2 = ({ stage, showInner }) => {
+            const o1X = stage === 0 ? 320 : 420;
+            const o2X = stage === 0 ? 680 : 580;
+            return e('g', null,
+                e('g', { className: "atom-group", transform: `translate(${o1X}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "O"),
+                    e(DynamicInnerShells, { show: showInner, config: [2], color: "#ef4444" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    ...[135, 180, 225, 270].map((a, i) => 
+                        e('circle', { key: i, cx: 90*Math.cos(a*Math.PI/180), cy: 90*Math.sin(a*Math.PI/180), r: "6", fill: "#ef4444" })
+                    ),
+                    e('circle', { className: "electron", cx: stage===0 ? 80 : 80, cy: stage===0 ? -30 : -20, r: "6", fill: "#ef4444", filter: "url(#glow)" }),
+                    e('circle', { className: "electron", cx: stage===0 ? 80 : 80, cy: stage===0 ? 30 : 20, r: "6", fill: "#ef4444", filter: "url(#glow)" })
+                ),
+                e('g', { className: "atom-group", transform: `translate(${o2X}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "O"),
+                    e(DynamicInnerShells, { show: showInner, config: [2], useCross: true, color: "#3b82f6" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    ...[315, 0, 45, 90].map((a, i) => 
+                        e('text', { key: i, x: 90*Math.cos(a*Math.PI/180), y: 90*Math.sin(a*Math.PI/180)+8, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold" }, "×")
+                    ),
+                    e('text', { className: "electron", x: stage===0 ? -80 : -80, y: stage===0 ? -15 : -5, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold", filter: "url(#glow)" }, "×"),
+                    e('text', { className: "electron", x: stage===0 ? -80 : -80, y: stage===0 ? 45 : 35, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold", filter: "url(#glow)" }, "×")
+                )
+            );
+        };
+
+        const MolN2 = ({ stage, showInner }) => {
+            const n1X = stage === 0 ? 320 : 420;
+            const n2X = stage === 0 ? 680 : 580;
+            return e('g', null,
+                e('g', { className: "atom-group", transform: `translate(${n1X}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "N"),
+                    e(DynamicInnerShells, { show: showInner, config: [2], color: "#ef4444" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    e('circle', { cx: -90, cy: 0, r: "6", fill: "#ef4444" }),
+                    e('circle', { cx: -65, cy: -65, r: "6", fill: "#ef4444" }),
+                    e('circle', { className: "electron", cx: stage===0 ? 80 : 80, cy: stage===0 ? -40 : -30, r: "6", fill: "#ef4444", filter: "url(#glow)" }),
+                    e('circle', { className: "electron", cx: stage===0 ? 90 : 80, cy: stage===0 ? 0 : 0, r: "6", fill: "#ef4444", filter: "url(#glow)" }),
+                    e('circle', { className: "electron", cx: stage===0 ? 80 : 80, cy: stage===0 ? 40 : 30, r: "6", fill: "#ef4444", filter: "url(#glow)" })
+                ),
+                e('g', { className: "atom-group", transform: `translate(${n2X}, 250)` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "N"),
+                    e(DynamicInnerShells, { show: showInner, config: [2], useCross: true, color: "#3b82f6" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    e('text', { x: 90, y: 8, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold" }, "×"),
+                    e('text', { x: 65, y: -55, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold" }, "×"),
+                    e('text', { className: "electron", x: stage===0 ? -80 : -80, y: stage===0 ? -25 : -15, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold", filter: "url(#glow)" }, "×"),
+                    e('text', { className: "electron", x: stage===0 ? -90 : -80, y: stage===0 ? 15 : 15, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold", filter: "url(#glow)" }, "×"),
+                    e('text', { className: "electron", x: stage===0 ? -80 : -80, y: stage===0 ? 55 : 45, fontSize: "24", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold", filter: "url(#glow)" }, "×")
+                )
+            );
+        };
+
+        const MolNH3 = ({ stage, showInner }) => {
+            const nX = 500, nY = 250;
+            const h1Y = stage===0? 50 : 120;
+            const h2X = stage===0? 300 : 387, h2Y = stage===0? 380 : 315;
+            const h3X = stage===0? 700 : 613, h3Y = stage===0? 380 : 315;
+
+            return e('g', null,
+                e('g', { className: "atom-group", transform: `translate(${nX}, ${h1Y})` },
+                    e('circle', { r: "15", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { x: "0", y: "5", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold", fontSize: "16" }, "H"),
+                    e('circle', { r: "40", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    e('text', { className: "electron", x: 0, y: stage===0 ? 45 : 35, fontSize: "20", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold", filter: "url(#glow)" }, "×")
+                ),
+                e('g', { className: "atom-group", transform: `translate(${h2X}, ${h2Y})` },
+                    e('circle', { r: "15", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { x: "0", y: "5", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold", fontSize: "16" }, "H"),
+                    e('circle', { r: "40", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    e('text', { className: "electron", x: stage===0 ? 30 : 25, y: stage===0 ? -20 : -20, fontSize: "20", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold", filter: "url(#glow)" }, "×")
+                ),
+                e('g', { className: "atom-group", transform: `translate(${h3X}, ${h3Y})` },
+                    e('circle', { r: "15", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { x: "0", y: "5", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold", fontSize: "16" }, "H"),
+                    e('circle', { r: "40", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    e('text', { className: "electron", x: stage===0 ? -30 : -25, y: stage===0 ? -20 : -20, fontSize: "20", textAnchor: "middle", fill: "#3b82f6", fontWeight: "bold", filter: "url(#glow)" }, "×")
+                ),
+                e('g', { className: "atom-group", transform: `translate(${nX}, ${nY})` },
+                    e('circle', { r: "25", fill: "url(#nucleusGrad)", stroke: "#475569", strokeWidth: "2" }),
+                    e('text', { className: "large-text", y: "8", textAnchor: "middle", fill: "#0f172a", fontWeight: "bold" }, "N"),
+                    e(DynamicInnerShells, { show: showInner, config: [2], color: "#ef4444" }),
+                    e('circle', { r: "90", fill: "none", stroke: "#94a3b8", strokeWidth: "2" }),
+                    e('circle', { cx: -15, cy: 80, r: "6", fill: "#ef4444" }),
+                    e('circle', { cx: 15, cy: 80, r: "6", fill: "#ef4444" }),
+                    e('circle', { className: "electron", cx: 0, cy: stage===0 ? -90 : -80, r: "6", fill: "#ef4444", filter: "url(#glow)" }),
+                    e('circle', { className: "electron", cx: stage===0 ? -78 : -70, cy: stage===0 ? 45 : 40, r: "6", fill: "#ef4444", filter: "url(#glow)" }),
+                    e('circle', { className: "electron", cx: stage===0 ? 78 : 70, cy: stage===0 ? 45 : 40, r: "6", fill: "#ef4444", filter: "url(#glow)" })
+                )
+            );
+        };
+
+        const App = () => {
+            const [lang, setLang] = useState('zh');
+            const [tab, setTab] = useState('ionic');
+            const [molecule, setMolecule] = useState('NaCl'); 
+            const [stage, setStage] = useState(0); 
+            const [showInner, setShowInner] = useState(true);
+
+            const t = i18n[lang];
+
+            const handleTabChange = (newTab) => {
+                setTab(newTab);
+                setStage(0);
+                if (newTab === 'ionic') setMolecule('NaCl');
+                if (newTab === 'covalent') setMolecule('Cl2');
+            };
+
+            const handleMolChange = (mol) => {
+                setMolecule(mol);
+                setStage(0);
+            };
+
+            const renderSimulation = () => {
+                const props = { stage, showInner };
+                switch(molecule) {
+                    case 'NaCl': return e(MolNaCl, props);
+                    case 'MgO': return e(MolMgO, props);
+                    case 'CaCl2': return e(MolCaCl2, props);
+                    case 'Al2O3': return e(MolAl2O3, props);
+                    case 'Cl2': return e(MolCl2, props);
+                    case 'O2': return e(MolO2, props);
+                    case 'N2': return e(MolN2, props);
+                    case 'NH3': return e(MolNH3, props);
+                    default: return null;
+                }
+            };
+
+            const currentEq = equations[molecule];
+            const eqText = stage === 0 ? currentEq?.pre : currentEq?.post;
+
+            return e('div', { className: "min-h-screen flex flex-col items-center py-6 px-4 md:px-8" },
+                // Header
+                e('div', { className: "w-full max-w-6xl flex justify-between items-center mb-6 border-b-4 border-slate-300 pb-4" },
+                    e('h1', { className: "text-2xl md:text-4xl font-black text-slate-800 tracking-tight drop-shadow-sm" }, t.title),
+                    e('button', { onClick: () => setLang(lang==='zh'?'en':'zh'), className: "btn-base btn-inactive font-bold hover:bg-slate-300" }, t.langToggle)
+                ),
+                // Tabs
+                e('div', { className: "w-full max-w-6xl flex gap-4 mb-6 justify-center" },
+                    e('button', { className: `btn-base flex-1 md:flex-none ${tab==='ionic'?'bg-indigo-600 text-white shadow-lg':'btn-inactive'}`, onClick: () => handleTabChange('ionic') }, t.tabIonic),
+                    e('button', { className: `btn-base flex-1 md:flex-none ${tab==='covalent'?'bg-indigo-600 text-white shadow-lg':'btn-inactive'}`, onClick: () => handleTabChange('covalent') }, t.tabCovalent),
+                    e('button', { className: `btn-base flex-1 md:flex-none ${tab==='challenge'?'bg-amber-500 text-white shadow-lg':'btn-inactive'}`, onClick: () => handleTabChange('challenge') }, t.tabChallenge)
+                ),
+                
+                tab !== 'challenge' && e(React.Fragment, null,
+                    // Controls Panel
+                    e('div', { className: "w-full max-w-6xl bg-white p-4 md:p-6 rounded-2xl shadow-md flex flex-col md:flex-row flex-wrap gap-6 justify-center items-center mb-6 border border-slate-200" },
+                        // Molecule Selector
+                        e('div', { className: "flex gap-2 flex-wrap justify-center" },
+                            tab === 'ionic' && ['NaCl', 'MgO', 'CaCl2', 'Al2O3'].map(mol => 
+                                e('button', { 
+                                    key: mol, 
+                                    className: `px-4 py-2 rounded-lg font-bold text-lg transition ${molecule===mol ? 'bg-indigo-100 border-2 border-indigo-500 text-indigo-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-2 border-transparent'}`, 
+                                    onClick: () => handleMolChange(mol) 
+                                }, formatFormula(mol))
+                            ),
+                            tab === 'covalent' && ['Cl2', 'O2', 'N2', 'NH3'].map(mol => 
+                                e('button', { 
+                                    key: mol, 
+                                    className: `px-4 py-2 rounded-lg font-bold text-lg transition ${molecule===mol ? 'bg-indigo-100 border-2 border-indigo-500 text-indigo-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-2 border-transparent'}`, 
+                                    onClick: () => handleMolChange(mol) 
+                                }, formatFormula(mol))
+                            )
+                        ),
+                        
+                        e('div', { className: "h-12 w-1 bg-slate-200 mx-2 hidden md:block rounded-full" }),
+                        
+                        // Inner Shell Toggle
+                        e('div', { className: "flex items-center gap-3" },
+                            e('span', { className: "large-text font-medium text-slate-700" }, t.showElectrons),
+                            e('div', { className: "relative inline-block w-14 h-8 align-middle select-none transition duration-200 ease-in" },
+                                e('input', { type: "checkbox", id: "toggleInner", checked: showInner, onChange: () => setShowInner(!showInner), className: "toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 appearance-none cursor-pointer" }),
+                                e('label', { htmlFor: "toggleInner", className: "toggle-label block overflow-hidden h-8 rounded-full bg-slate-300 cursor-pointer" })
+                            )
+                        ),
+                        
+                        e('div', { className: "h-12 w-1 bg-slate-200 mx-2 hidden md:block rounded-full" }),
+                        
+                        // Actions
+                        e('div', { className: "flex gap-4" },
+                            e('button', { className: "btn-base btn-action", onClick: () => setStage(1), disabled: stage===1 }, t.reactBtn),
+                            e('button', { className: "btn-base btn-reset", onClick: () => setStage(0) }, t.resetBtn)
+                        )
+                    ),
+                    
+                    // Simulation Canvas Area
+                    e('div', { className: "w-full max-w-5xl aspect-video bg-white border-4 border-slate-200 rounded-[2rem] relative overflow-hidden flex justify-center items-center shadow-lg" },
+                        
+                        tab === 'covalent' && stage === 1 && e('div', { className: "absolute top-4 left-4 md:top-6 md:left-6 bg-white/95 p-4 rounded-xl shadow-lg border-2 border-indigo-200 z-10 animate-fade-in pointer-events-none" },
+                            e('h4', { className: "font-bold text-slate-800 mb-3 border-b-2 border-indigo-100 pb-1 text-sm md:text-base" }, t.bpInfoTitle),
+                            e('div', { className: "flex flex-col gap-2 text-sm md:text-base font-medium" },
+                                e('div', { className: "flex items-center gap-2" },
+                                    e('span', { className: "w-3 h-3 rounded-full bg-rose-500 shadow-sm" }),
+                                    e('span', { className: "text-slate-700" }, t.bpLabel, e('span', { className: "text-rose-600 font-black text-xl ml-1" }, bpLpData[molecule].bp))
+                                ),
+                                e('div', { className: "flex items-center gap-2" },
+                                    e('span', { className: "w-3 h-3 rounded-full bg-blue-500 shadow-sm" }),
+                                    e('span', { className: "text-slate-700" }, t.lpLabel, e('span', { className: "text-blue-600 font-black text-xl ml-1" }, bpLpData[molecule].lp))
+                                )
+                            )
+                        ),
+                        
+                        tab === 'ionic' && stage === 1 && e('div', { className: "absolute top-4 left-4 md:top-6 md:left-6 bg-white/95 p-4 rounded-xl shadow-lg border-2 border-indigo-200 z-10 animate-fade-in pointer-events-none" },
+                            e('h4', { className: "font-bold text-slate-800 mb-3 border-b-2 border-indigo-100 pb-1 text-sm md:text-base" }, t.ionicInfoTitle),
+                            e('div', { className: "flex flex-col gap-2 text-sm md:text-base font-medium" },
+                                e('div', { className: "flex items-center gap-2" },
+                                    e('span', { className: "text-slate-700" }, t.metalLoseLabel, e('span', { className: "text-rose-600 font-black text-xl ml-1" }, `${ionicTransferData[molecule].metalLose}e⁻`))
+                                ),
+                                e('div', { className: "flex items-center gap-2" },
+                                    e('span', { className: "text-slate-700" }, t.nonMetalGainLabel, e('span', { className: "text-blue-600 font-black text-xl ml-1" }, `${ionicTransferData[molecule].nonMetalGain}e⁻`))
+                                ),
+                                e('div', { className: "flex items-center gap-2 border-t-2 border-slate-100 mt-1 pt-2" },
+                                    e('span', { className: "text-slate-700" }, t.totalExchangeLabel, e('span', { className: "text-purple-600 font-black text-xl ml-1" }, `${ionicTransferData[molecule].total}e⁻`))
+                                )
+                            )
+                        ),
+                        
+                        e('svg', { viewBox: "0 0 1000 500", className: "w-full h-full" },
+                            e('defs', null,
+                                e('radialGradient', { id: "nucleusGrad", cx: "30%", cy: "30%", r: "70%" },
+                                    e('stop', { offset: "0%", stopColor: "#f8fafc" }),
+                                    e('stop', { offset: "100%", stopColor: "#e2e8f0" })
+                                ),
+                                e('filter', { id: "glow", x: "-20%", y: "-20%", width: "140%", height: "140%" },
+                                    e('feGaussianBlur', { stdDeviation: "3", result: "blur" }),
+                                    e('feComposite', { in: "SourceGraphic", in2: "blur", operator: "over" })
+                                )
+                            ),
+                            renderSimulation()
+                        )
+                    ),
+                    
+                    // Equation Box
+                    e('div', { key: stage + molecule, className: "equation-box animate-fade-in" }, eqText)
+                ),
+                
+                tab === 'challenge' && e(ChallengeZone, { t })
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(e(App));
+    </script>
+</body>
+</html>

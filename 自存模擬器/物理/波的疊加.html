@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DSE Physics: Wave Superposition Simulator</title>
+
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden; 
+            touch-action: pan-x pan-y;
+        }
+
+        .physics-text {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-weight: normal;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        input[type=range] {
+            accent-color: #38bdf8;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        canvas {
+            touch-action: none;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen h-[100dvh]">
+
+    <!-- Header -->
+    <header class="p-3 glass-panel flex justify-between items-center z-10 shrink-0 border-b border-white/10">
+        <div class="flex-1 min-w-0 mr-4">
+            <h1 id="title" class="text-lg md:text-xl font-bold text-sky-400 truncate">波的疊加模擬器 | Wave Superposition</h1>
+            <p id="subtitle" class="text-[10px] md:text-xs text-slate-400 truncate">DSE Physics: Principle of Superposition</p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <div class="flex items-center bg-slate-800 rounded-full p-1 border border-white/10 cursor-pointer select-none" onclick="toggleLang()">
+                <div id="btnEn" class="px-3 py-1.5 rounded-full text-xs font-semibold text-slate-400 transition-all duration-300">EN</div>
+                <div id="btnZh" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-600 text-white shadow-lg transition-all duration-300">中</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow relative overflow-hidden flex flex-col md:flex-row">
+        
+        <!-- Control Sidebar -->
+        <aside class="
+            order-2 md:order-1 
+            w-full md:w-80 
+            flex-1 md:flex-none 
+            glass-panel 
+            p-5 
+            overflow-y-auto 
+            min-h-0 
+            border-t md:border-t-0 md:border-r border-white/10 
+            flex flex-col gap-4 
+            z-20 
+            bg-slate-900/90 md:bg-slate-900/80
+            overscroll-contain
+        ">
+            
+            <!-- Playback Control -->
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Simulation Control</span>
+                <button id="pauseBtn" onclick="togglePause()" class="flex items-center gap-2 px-4 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-full text-white text-xs font-bold transition-all shadow-lg border border-white/10 active:scale-95">
+                    <span id="btnPauseText">Pause</span>
+                    <svg id="iconPause" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    <svg id="iconPlay" class="hidden" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                </button>
+            </div>
+
+            <!-- Wave P Controls -->
+            <section class="p-3 rounded-lg bg-rose-900/10 border border-rose-500/20">
+                <label class="block text-sm font-semibold mb-2 flex justify-between text-rose-100">
+                    <span id="lblAmp1">Wave P Amp (<span class="physics-text">A<sub>P</sub></span>)</span>
+                    <span id="valAmp1" class="text-rose-400 font-mono">50</span>
+                </label>
+                <input type="range" id="inputAmp1" min="0" max="100" value="50" class="w-full accent-rose-500">
+            </section>
+
+            <!-- Wave Q Controls -->
+            <section class="p-3 rounded-lg bg-emerald-900/10 border border-emerald-500/20">
+                <label class="block text-sm font-semibold mb-2 flex justify-between text-emerald-100">
+                    <span id="lblAmp2">Wave Q Amp (<span class="physics-text">A<sub>Q</sub></span>)</span>
+                    <span id="valAmp2" class="text-emerald-400 font-mono">50</span>
+                </label>
+                <input type="range" id="inputAmp2" min="0" max="100" value="50" class="w-full accent-emerald-500">
+            </section>
+
+            <!-- Global Parameters -->
+            <div class="h-px bg-white/10 my-1"></div>
+
+            <section>
+                <label class="block text-sm font-semibold mb-2 flex justify-between">
+                    <span id="lblPhase">Phase Difference (<span class="physics-text">φ</span>)</span>
+                    <span id="valPhase" class="text-sky-400 font-mono">0°</span>
+                </label>
+                <input type="range" id="inputPhase" min="0" max="360" value="0" class="w-full accent-sky-400">
+                <div class="flex justify-between text-[10px] text-slate-500 mt-1 px-1">
+                    <span>0°</span>
+                    <span>180°</span>
+                    <span>360°</span>
+                </div>
+            </section>
+
+            <section>
+                <label class="block text-sm font-semibold mb-2 flex justify-between">
+                    <span id="lblLambda">Wavelength (<span class="physics-text">λ</span>)</span>
+                    <span id="valLambda" class="text-purple-400 font-mono">200 px</span>
+                </label>
+                <input type="range" id="inputLambda" min="80" max="600" value="200" class="w-full accent-purple-400">
+            </section>
+
+            <section>
+                <label class="block text-sm font-semibold mb-2 flex justify-between">
+                    <span id="lblFreq">Frequency (<span class="physics-text">f</span>)</span>
+                    <span id="valFreq" class="text-slate-300 font-mono">1.0 Hz</span>
+                </label>
+                <input type="range" id="inputFreq" min="0.1" max="3.0" step="0.1" value="1.0" class="w-full accent-slate-400">
+            </section>
+
+            <!-- Real-time Displacement Dashboard -->
+            <section class="mt-2 p-3 rounded-lg bg-slate-800/50 border border-slate-700">
+                <h3 id="dashTitle" class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Displacement at Ref. Line</h3>
+                <div class="space-y-1.5 font-mono text-sm">
+                    <div class="flex justify-between items-center">
+                        <span class="text-rose-300">Wave P (<span class="physics-text">y<sub>P</sub></span>)</span>
+                        <span id="valDispP" class="text-rose-400">0.0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-emerald-300">Wave Q (<span class="physics-text">y<sub>Q</sub></span>)</span>
+                        <span id="valDispQ" class="text-emerald-400">0.0</span>
+                    </div>
+                    <div class="h-px bg-slate-600 my-1"></div>
+                    <div class="flex justify-between items-center font-bold">
+                        <span class="text-amber-300">Resultant (<span class="physics-text">y<sub>tot</sub></span>)</span>
+                        <span id="valDispTot" class="text-amber-400">0.0</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom Hint -->
+            <div class="mt-auto pt-4 border-t border-white/5 text-[11px] text-slate-500 italic pb-2">
+                <p id="hint">Tip: Observe how <span class="physics-text">y<sub>P</sub> + y<sub>Q</sub></span> creates the bottom wave at the vertical line.</p>
+            </div>
+        </aside>
+
+        <!-- Visualization Area -->
+        <div class="
+            order-1 md:order-2 
+            w-full 
+            h-[45vh] md:h-full md:flex-grow 
+            flex flex-col 
+            relative 
+            shrink-0 
+            z-0
+        ">
+            
+            <!-- Component Waves (Top Window) - Flex 2/5 (40%) -->
+            <div class="flex-[2] relative border-b border-white/10 bg-slate-900/50 min-h-0">
+                <canvas id="canvasTop" class="w-full h-full block"></canvas>
+                <div id="lblCompWaves" class="absolute top-2 left-3 text-xs md:text-sm font-bold text-slate-300 bg-slate-800/80 px-2 py-1 rounded backdrop-blur border border-white/5 pointer-events-none">
+                    Component Waves
+                </div>
+                <div class="absolute top-2 right-3 flex gap-3 text-xs bg-slate-800/80 px-2 py-1 rounded backdrop-blur border border-white/5 pointer-events-none">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.6)]"></span>
+                        <span id="legendP" class="text-rose-200">Wave P (<span class="physics-text">y<sub>P</sub></span>)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]"></span>
+                        <span id="legendQ" class="text-emerald-200">Wave Q (<span class="physics-text">y<sub>Q</sub></span>)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultant Wave (Bottom Window) - Flex 3/5 (60%) -->
+            <div class="flex-[3] relative bg-slate-900/50 min-h-0">
+                <canvas id="canvasBottom" class="w-full h-full block"></canvas>
+                <div id="lblResWave" class="absolute top-2 left-3 text-xs md:text-sm font-bold text-amber-300 bg-slate-800/80 px-2 py-1 rounded backdrop-blur border border-white/5 pointer-events-none">
+                    Resultant Wave
+                </div>
+                <div class="absolute top-2 right-3 flex gap-3 text-xs bg-slate-800/80 px-2 py-1 rounded backdrop-blur border border-white/5 pointer-events-none">
+                     <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)]"></span>
+                        <span id="legendR" class="text-amber-200">Resultant (<span class="physics-text">y<sub>tot</sub></span>)</span>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <script>
+        const canvasTop = document.getElementById('canvasTop');
+        const ctxTop = canvasTop.getContext('2d');
+        const canvasBottom = document.getElementById('canvasBottom');
+        const ctxBottom = canvasBottom.getContext('2d');
+        
+        let width, heightTop, heightBottom;
+        let time = 0;
+        let lang = 'zh';
+        let isPaused = false;
+
+        const params = {
+            amp1: 50,
+            amp2: 50,
+            phase: 0,
+            freq: 1.0,
+            lambda: 200
+        };
+
+        const translations = {
+            zh: {
+                title: "DSE 物理模擬器：波的疊加",
+                subtitle: "原理：在相遇點，合位移等於各分位移的矢量和。",
+                lblAmp1: "波 P 振幅 (A_P)",
+                lblAmp2: "波 Q 振幅 (A_Q)",
+                lblPhase: "相位差 (φ)",
+                lblLambda: "波長 (λ)",
+                lblFreq: "頻率 (f)",
+                dashTitle: "參考線實時位移",
+                lblCompWaves: "分波 (Component Waves)",
+                lblResWave: "合成波 (Resultant Wave)",
+                legendP: "波 P (y_P)",
+                legendQ: "波 Q (y_Q)",
+                legendR: "合成波 (y_tot)",
+                hint: "提示：觀察垂直線上的矢量相加：<span class='physics-text'>y_P + y_Q = y_tot</span>",
+                pause: "暫停",
+                play: "播放"
+            },
+            en: {
+                title: "DSE Physics: Wave Superposition",
+                subtitle: "Principle: Resultant displacement is the vector sum of individual displacements.",
+                lblAmp1: "Wave P Amplitude (A_P)",
+                lblAmp2: "Wave Q Amplitude (A_Q)",
+                lblPhase: "Phase Difference (φ)",
+                lblLambda: "Wavelength (λ)",
+                lblFreq: "Frequency (f)",
+                dashTitle: "DISPLACEMENT AT REF. LINE",
+                lblCompWaves: "Component Waves",
+                lblResWave: "Resultant Wave",
+                legendP: "Wave P (y_P)",
+                legendQ: "Wave Q (y_Q)",
+                legendR: "Resultant (y_tot)",
+                hint: "Tip: Observe vector addition on the vertical line: <span class='physics-text'>y_P + y_Q = y_tot</span>",
+                pause: "Pause",
+                play: "Play"
+            }
+        };
+
+        function init() {
+            window.addEventListener('resize', resize);
+            resize();
+            setupInputs();
+            animate();
+            updateLangUI();
+        }
+
+        function resize() {
+            const containerTop = canvasTop.parentElement;
+            const containerBottom = canvasBottom.parentElement;
+
+            width = containerTop.clientWidth;
+            heightTop = containerTop.clientHeight;
+            heightBottom = containerBottom.clientHeight;
+
+            canvasTop.width = width * window.devicePixelRatio;
+            canvasTop.height = heightTop * window.devicePixelRatio;
+            ctxTop.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            canvasBottom.width = width * window.devicePixelRatio;
+            canvasBottom.height = heightBottom * window.devicePixelRatio;
+            ctxBottom.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+
+        function setupInputs() {
+            const inputs = ['Amp1', 'Amp2', 'Phase', 'Lambda', 'Freq'];
+            inputs.forEach(id => {
+                const el = document.getElementById('input' + id);
+                el.addEventListener('input', (e) => {
+                    let val = parseFloat(e.target.value);
+                    params[id.toLowerCase()] = val;
+                    updateUIValues();
+                });
+            });
+            updateUIValues();
+        }
+
+        function updateUIValues() {
+            document.getElementById('valAmp1').innerText = params.amp1;
+            document.getElementById('valAmp2').innerText = params.amp2;
+            document.getElementById('valPhase').innerText = params.phase + '°';
+            document.getElementById('valLambda').innerText = Math.round(params.lambda) + ' px';
+            document.getElementById('valFreq').innerText = params.freq.toFixed(1) + ' Hz';
+        }
+
+        function toggleLang() {
+            lang = lang === 'zh' ? 'en' : 'zh';
+            updateLangUI();
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            updateLangUI();
+        }
+
+        function updateLangUI() {
+            const t = translations[lang];
+            
+            document.getElementById('title').innerText = t.title;
+            document.getElementById('subtitle').innerText = t.subtitle;
+            document.getElementById('dashTitle').innerText = t.dashTitle;
+            document.getElementById('lblCompWaves').innerText = t.lblCompWaves;
+            document.getElementById('lblResWave').innerText = t.lblResWave;
+            
+            document.getElementById('lblAmp1').innerHTML = t.lblAmp1.replace('A_P', '<span class="physics-text">A<sub>P</sub></span>');
+            document.getElementById('lblAmp2').innerHTML = t.lblAmp2.replace('A_Q', '<span class="physics-text">A<sub>Q</sub></span>');
+            document.getElementById('lblPhase').innerHTML = t.lblPhase.replace('φ', '<span class="physics-text">φ</span>');
+            document.getElementById('lblLambda').innerHTML = t.lblLambda.replace('λ', '<span class="physics-text">λ</span>');
+            document.getElementById('lblFreq').innerHTML = t.lblFreq.replace('f', '<span class="physics-text">f</span>');
+            
+            document.getElementById('legendP').innerHTML = t.legendP.replace('y_P', '<span class="physics-text">y<sub>P</sub></span>');
+            document.getElementById('legendQ').innerHTML = t.legendQ.replace('y_Q', '<span class="physics-text">y<sub>Q</sub></span>');
+            document.getElementById('legendR').innerHTML = t.legendR.replace('y_tot', '<span class="physics-text">y<sub>tot</sub></span>');
+            
+            document.getElementById('hint').innerHTML = t.hint.replace('y_P', 'y<sub>P</sub>').replace('y_Q', 'y<sub>Q</sub>').replace('y_tot', 'y<sub>tot</sub>');
+
+            const btnPauseText = document.getElementById('btnPauseText');
+            const iconPause = document.getElementById('iconPause');
+            const iconPlay = document.getElementById('iconPlay');
+            
+            if (isPaused) {
+                btnPauseText.innerText = t.play;
+                iconPause.classList.add('hidden');
+                iconPlay.classList.remove('hidden');
+            } else {
+                btnPauseText.innerText = t.pause;
+                iconPause.classList.remove('hidden');
+                iconPlay.classList.add('hidden');
+            }
+
+            const btnEn = document.getElementById('btnEn');
+            const btnZh = document.getElementById('btnZh');
+            
+            if (lang === 'zh') {
+                btnZh.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-600 text-white shadow-lg transition-all duration-300";
+                btnEn.className = "px-3 py-1.5 rounded-full text-xs font-semibold text-slate-400 transition-all duration-300";
+            } else {
+                btnEn.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-600 text-white shadow-lg transition-all duration-300";
+                btnZh.className = "px-3 py-1.5 rounded-full text-xs font-semibold text-slate-400 transition-all duration-300";
+            }
+        }
+
+        function drawGrid(ctx, w, h) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 1;
+            const centerY = h / 2;
+            for(let i=0; i<w; i+=50) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.moveTo(0, centerY); ctx.lineTo(w, centerY); ctx.stroke();
+        }
+
+        function drawArrow(ctx, x, y, length, color, label) {
+            if (Math.abs(length) < 2) return;
+            const headlen = 8;
+            const endY = y - length;
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2.5;
+            const rodEndY = length > 0 ? endY + headlen : endY - headlen;
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, rodEndY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.moveTo(x, endY);
+            if (length > 0) {
+                ctx.lineTo(x - 5, endY + headlen);
+                ctx.lineTo(x + 5, endY + headlen);
+            } else {
+                ctx.lineTo(x - 5, endY - headlen);
+                ctx.lineTo(x + 5, endY - headlen);
+            }
+            ctx.fill();
+            
+            if (label) {
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 4;
+                ctx.fillStyle = color;
+
+                const parts = label.split('_');
+                const mainText = parts[0];
+                const subText = parts[1];
+
+                const textX = x + 12;
+                const textY = endY + (length > 0 ? 5 : -5);
+
+                ctx.font = 'italic bold 16px Times New Roman';
+                ctx.fillText(mainText, textX, textY);
+
+                if (subText) {
+                    const mainWidth = ctx.measureText(mainText).width;
+                    ctx.font = 'italic bold 11px Times New Roman';
+                    ctx.fillText(subText, textX + mainWidth, textY + 4); 
+                }
+                
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function updateDashboard(y1, y2, yTot) {
+            const d1 = parseFloat(y1.toFixed(1));
+            const d2 = parseFloat(y2.toFixed(1));
+            const dTot = d1 + d2;
+
+            document.getElementById('valDispP').innerText = d1.toFixed(1);
+            document.getElementById('valDispQ').innerText = d2.toFixed(1);
+            document.getElementById('valDispTot').innerText = dTot.toFixed(1);
+        }
+
+        function animate() {
+            ctxTop.clearRect(0, 0, width, heightTop);
+            ctxBottom.clearRect(0, 0, width, heightBottom);
+            
+            if (!isPaused) {
+                time += 0.02 * params.freq;
+            }
+            
+            const k = (2 * Math.PI) / params.lambda;
+            const omega = 2 * Math.PI;
+            const phaseRad = (params.phase * Math.PI) / 180;
+            const centerYTop = heightTop / 2;
+            const centerYBottom = heightBottom / 2;
+
+            drawGrid(ctxTop, width, heightTop);
+            drawGrid(ctxBottom, width, heightBottom);
+
+            // Auto-scaling calculation to prevent clipping
+            // Max amplitude P = 100, Q = 100. Total max = 200.
+            const maxAmpTop = 100;
+            const maxAmpBottom = 200;
+            const padding = 20;
+
+            let scaleTop = 1;
+            let scaleBottom = 1;
+
+            // If half-height is less than max amplitude + padding, scale down
+            if (heightTop / 2 < maxAmpTop + padding) {
+                scaleTop = (heightTop / 2 - padding) / maxAmpTop;
+            }
+            if (heightBottom / 2 < maxAmpBottom + padding) {
+                scaleBottom = (heightBottom / 2 - padding) / maxAmpBottom;
+            }
+
+            const points = 300;
+            const step = width / points;
+            
+            const wave1Points = [];
+            const wave2Points = [];
+            const combinedPoints = [];
+
+            for (let i = 0; i <= points; i++) {
+                const x = i * step;
+                // Physical values (0-100 range)
+                const y1 = params.amp1 * Math.sin(k * x - omega * time);
+                const y2 = params.amp2 * Math.sin(k * x - omega * time + phaseRad);
+                const yTot = y1 + y2;
+                
+                // Visual values (Scaled to fit canvas)
+                const y1_draw = y1 * scaleTop;
+                const y2_draw = y2 * scaleTop;
+                const yTot_draw = yTot * scaleBottom;
+
+                wave1Points.push({x, y: centerYTop - y1_draw, val: y1});
+                wave2Points.push({x, y: centerYTop - y2_draw, val: y2});
+                combinedPoints.push({x, y: centerYBottom - yTot_draw, val: yTot});
+            }
+
+            ctxTop.beginPath();
+            ctxTop.strokeStyle = '#f43f5e';
+            ctxTop.lineWidth = 2;
+            wave1Points.forEach((p, i) => i === 0 ? ctxTop.moveTo(p.x, p.y) : ctxTop.lineTo(p.x, p.y));
+            ctxTop.stroke();
+
+            ctxTop.beginPath();
+            ctxTop.strokeStyle = '#10b981';
+            ctxTop.lineWidth = 2;
+            wave2Points.forEach((p, i) => i === 0 ? ctxTop.moveTo(p.x, p.y) : ctxTop.lineTo(p.x, p.y));
+            ctxTop.stroke();
+
+            ctxBottom.beginPath();
+            ctxBottom.strokeStyle = '#fbbf24';
+            ctxBottom.lineWidth = 4;
+            ctxBottom.shadowBlur = 10;
+            ctxBottom.shadowColor = 'rgba(251, 191, 36, 0.4)';
+            combinedPoints.forEach((p, i) => i === 0 ? ctxBottom.moveTo(p.x, p.y) : ctxBottom.lineTo(p.x, p.y));
+            ctxBottom.stroke();
+            ctxBottom.shadowBlur = 0;
+
+            const demoIdx = Math.floor(points * 0.4);
+            const xPos = wave1Points[demoIdx].x;
+            // Get values for vectors
+            // Note: Vectors should also scale visually to match the waves!
+            const val1_draw = wave1Points[demoIdx].val * scaleTop;
+            const val2_draw = wave2Points[demoIdx].val * scaleTop;
+            const valTot_draw = combinedPoints[demoIdx].val * scaleBottom;
+
+            // Physical values for labels/dashboard
+            const val1_phys = wave1Points[demoIdx].val;
+            const val2_phys = wave2Points[demoIdx].val;
+            const valTot_phys = combinedPoints[demoIdx].val;
+
+            updateDashboard(val1_phys, val2_phys, valTot_phys);
+
+            ctxTop.beginPath();
+            ctxTop.setLineDash([4, 4]);
+            ctxTop.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxTop.moveTo(xPos, 0); ctxTop.lineTo(xPos, heightTop);
+            ctxTop.stroke();
+            ctxTop.setLineDash([]);
+
+            ctxBottom.beginPath();
+            ctxBottom.setLineDash([4, 4]);
+            ctxBottom.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctxBottom.moveTo(xPos, 0); ctxBottom.lineTo(xPos, heightBottom);
+            ctxBottom.stroke();
+            ctxBottom.setLineDash([]);
+
+            // Draw Arrows with visual length, but use physical logic for labeling/direction
+            drawArrow(ctxTop, xPos, centerYTop, val1_draw, '#f43f5e', 'y_P');
+            drawArrow(ctxTop, xPos + 5, centerYTop, val2_draw, '#10b981', 'y_Q');
+            drawArrow(ctxBottom, xPos, centerYBottom, valTot_draw, '#fbbf24', 'y_tot');
+
+            requestAnimationFrame(animate);
+        }
+        init();
+    </script>
+</body>
+</html>

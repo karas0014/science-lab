@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紅菜頭細胞膜透性模擬實驗 - 專業流程版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        /* 儀器橫移容器 */
+        .stage-viewport {
+            height: 520px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            background: white;
+            border-radius: 1.5rem;
+        }
+
+        #stage-wrapper {
+            display: flex;
+            width: 300%; 
+            height: 100%;
+            transition: transform 1000ms cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .stage-item {
+            width: 33.333%;
+            height: 100%;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 3.5rem;
+            position: relative;
+        }
+
+        .beetroot-transition {
+            transition: all 1200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .liquid-color-transition {
+            transition: background-color 2000ms ease-in-out;
+        }
+
+        .dropper-transition {
+            transition: all 800ms ease-in-out;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #b91c1c;
+            cursor: pointer;
+        }
+
+        .hidden-el { display: none !important; }
+        
+        .lab-label {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            white-space: nowrap;
+        }
+
+        .answer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .quiz-card:hover .answer-content {
+            max-height: 200px;
+        }
+
+        .workbench-bg {
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* 語言切換按鈕新樣式 */
+        .lang-switch-btn {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .lang-switch-btn:hover {
+            border-color: #b91c1c;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(185, 28, 28, 0.1);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <header class="bg-white rounded-2xl shadow-sm p-6 mb-8 border-l-8 border-red-700 flex justify-between items-center">
+        <div>
+            <h1 id="ui-main-title" class="text-3xl font-bold text-slate-800 flex items-center gap-3 italic">
+                <i data-lucide="beaker" class="text-red-700 w-8 h-8"></i>
+                紅菜頭細胞膜透性模擬實驗
+            </h1>
+            <p id="ui-main-subtitle" class="text-slate-500 mt-1 font-medium italic"></p>
+        </div>
+        
+        <!-- 更新後的語言切換 UI -->
+        <button onclick="toggleLang()" class="lang-switch-btn flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm text-slate-600 hover:text-red-700">
+            <div class="p-1 bg-red-50 rounded-full text-red-600">
+                <i data-lucide="globe" class="w-4 h-4"></i>
+            </div>
+            <span id="btn-lang-label">切換至 English</span>
+        </button>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        
+        <!-- Controls -->
+        <div class="lg:col-span-1 space-y-6">
+            <section class="bg-white rounded-[2rem] shadow-sm p-6 border border-slate-200">
+                <h2 id="ui-control-title" class="text-lg font-black mb-6 text-slate-700 flex items-center gap-2 border-b pb-4">
+                    <i data-lucide="settings-2" class="text-red-600 w-5 h-5"></i> 實驗控制設定
+                </h2>
+                
+                <div class="space-y-6">
+                    <label class="block">
+                        <span id="ui-var-title" class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Independent Variable</span>
+                        <select id="exp-type" onchange="handleTypeChange()" class="w-full rounded-2xl border-slate-200 shadow-sm p-4 text-sm border bg-slate-50 font-bold outline-none cursor-pointer focus:ring-2 focus:ring-red-500 transition-all">
+                        </select>
+                    </label>
+
+                    <label id="slider-container" class="block">
+                        <div class="flex justify-between mb-2">
+                            <span id="slider-label" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">VALUE</span>
+                            <span id="slider-value" class="text-red-700 font-black text-lg">20 °C</span>
+                        </div>
+                        <input id="val-slider" type="range" min="0" max="100" step="5" value="20" oninput="updateSliderDisplay(this.value)" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-700">
+                    </label>
+
+                    <div id="chloroform-note" class="hidden-el p-4 bg-red-50 border border-red-100 rounded-2xl text-[11px] text-red-700 leading-relaxed font-bold">
+                    </div>
+
+                    <button id="run-btn" onclick="runExperiment()" class="w-full py-5 rounded-[1.5rem] font-black text-white shadow-xl transition-all flex items-center justify-center gap-3 bg-red-700 hover:bg-red-800 active:scale-95 text-base uppercase tracking-widest">
+                        <i data-lucide="play" class="w-5 h-5 fill-current"></i> <span id="ui-btn-run">RUN SIMULATION</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="bg-blue-50 rounded-[2rem] p-6 border border-blue-100 shadow-inner">
+                <h3 id="ui-focus-title" class="text-blue-800 font-bold mb-3 flex items-center gap-2 text-sm">
+                    <i data-lucide="info" class="w-4 h-4"></i> 實驗說明
+                </h3>
+                <p id="ui-focus-desc" class="text-[11px] text-blue-700 leading-loose"></p>
+            </section>
+        </div>
+
+        <!-- Workbench Viewport -->
+        <div class="lg:col-span-3 space-y-8">
+            <div class="stage-viewport shadow-inner border border-slate-200 workbench-bg relative">
+                <div id="ui-bench-label" class="absolute top-4 left-8 text-slate-300 text-[11px] font-black uppercase tracking-[0.5em] z-10">LABORATORY STATION</div>
+                
+                <!-- Progress Dots -->
+                <div class="absolute top-4 right-8 flex gap-3 z-10">
+                    <div id="step-dot-1" class="w-4 h-1.5 rounded-full bg-red-500 transition-all duration-500"></div>
+                    <div id="step-dot-2" class="w-4 h-1.5 rounded-full bg-slate-200 transition-all duration-500"></div>
+                    <div id="step-dot-3" class="w-4 h-1.5 rounded-full bg-slate-200 transition-all duration-500"></div>
+                </div>
+
+                <!-- 滴管 -->
+                <div id="dropper" class="absolute z-50 dropper-transition hidden-el" style="left: 50%; top: -180px; transform: translateX(-50%);">
+                    <div class="relative w-10 h-48 flex flex-col items-center">
+                        <div class="w-10 h-12 bg-red-400 rounded-full border-2 border-red-500 shadow-md"></div>
+                        <div class="w-3 h-32 bg-white/40 border-x-2 border-slate-300 mx-auto -mt-1 relative overflow-hidden">
+                           <div id="dropper-liquid" class="absolute bottom-0 w-full bg-red-900/60 transition-all duration-500" style="height: 0%"></div>
+                        </div>
+                        <div class="w-1.5 h-12 bg-slate-300/80 rounded-b-full shadow-sm"></div>
+                        <div id="dropper-drop" class="w-2.5 h-2.5 bg-red-800 rounded-full animate-bounce mt-1 hidden-el"></div>
+                    </div>
+                </div>
+
+                <div id="stage-wrapper">
+                    <!-- Stage 1: Beaker -->
+                    <div class="stage-item">
+                        <div class="text-slate-400 text-[10px] mb-6 font-black uppercase tracking-widest opacity-60">1. TREATMENT PHASE</div>
+                        <div class="w-48 h-64 border-x-[6px] border-b-[6px] border-slate-300 rounded-b-[3.5rem] relative bg-blue-50/20 shadow-sm flex flex-col items-center">
+                            <div class="absolute bottom-0 left-0 right-0 bg-blue-200/30" style="height: 82%"></div>
+                            <div id="tag-step1" class="lab-label absolute top-8 left-1/2 -translate-x-1/2 text-red-700 z-10 min-w-[90px]"></div>
+                            
+                            <!-- 紅菜頭步驟一 (向上移出) -->
+                            <div id="beetroot-beaker" class="beetroot-transition absolute left-1/2 -translate-x-1/2 w-8 h-24 bg-red-900 rounded-sm shadow-2xl opacity-0" style="bottom: 180px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 2: Tube -->
+                    <div class="stage-item">
+                        <div class="text-slate-400 text-[10px] mb-6 font-black uppercase tracking-widest opacity-60">2. EXTRACTION PHASE</div>
+                        <div class="w-28 h-80 border-x-[6px] border-b-[6px] border-slate-300 rounded-b-full relative bg-slate-50 shadow-inner">
+                            <div id="ui-distilled-label" class="lab-label absolute top-10 left-1/2 -translate-x-1/2 text-blue-500 z-10">RT WATER</div>
+                            <div id="liquid-tube" class="absolute bottom-0 left-0 right-0 rounded-b-full liquid-color-transition" style="height: 92%; background-color: rgba(255,255,255,0.1);"></div>
+                            <div id="beetroot-tube" class="beetroot-transition absolute left-1/2 -translate-x-1/2 w-7 h-24 bg-red-950 rounded-sm opacity-0" style="bottom: 10px; transform: translateX(-50%) translateY(-600px);"></div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 3: Colorimeter -->
+                    <div class="stage-item">
+                        <div class="text-slate-400 text-[10px] mb-6 font-black uppercase tracking-widest opacity-60">3. ANALYSIS PHASE</div>
+                        <div class="w-full max-w-md bg-slate-100 rounded-[3.5rem] border-4 border-slate-200 shadow-2xl flex flex-col p-8 relative overflow-visible">
+                            
+                            <!-- 1. Reading Area (Top) -->
+                            <div class="bg-slate-800 rounded-3xl p-6 flex flex-col items-center justify-center h-28 shadow-2xl border-b-4 border-slate-900 mb-8">
+                                <div id="ui-abs-title" class="text-[10px] text-red-500 font-black uppercase tracking-[0.3em] mb-2">ABSORBANCE (540nm)</div>
+                                <div id="abs-display" class="text-5xl font-mono text-red-600 font-black tracking-tighter drop-shadow-[0_0_8px_rgba(220,38,38,0.5)]">0.000</div>
+                            </div>
+
+                            <!-- 2. Cuvette Area (Middle) -->
+                            <div class="flex justify-center relative">
+                                <div class="bg-white/40 rounded-3xl p-4 flex items-center justify-center border-2 border-slate-200 shadow-inner h-48 w-32 overflow-hidden">
+                                    <div class="w-14 h-full border-x-4 border-slate-300 bg-white relative overflow-hidden rounded-md shadow-sm">
+                                        <div id="cuvette-liquid" class="absolute bottom-0 left-0 right-0 transition-all duration-1000" style="height: 0%; background-color: transparent;">
+                                            <div class="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-16 bg-slate-300 rounded-full opacity-30"></div>
+                                <div class="absolute -right-4 top-1/2 -translate-y-1/2 w-2 h-16 bg-slate-300 rounded-full opacity-30"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lower Data Area -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-[2rem] shadow-sm p-8 border border-slate-200">
+                    <h3 id="ui-chart-main-title" class="font-black text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-widest text-sm text-red-700">
+                        <i data-lucide="bar-chart-3" class="w-6 h-6"></i> 即時趨勢圖 (ABS)
+                    </h3>
+                    <div id="chart-container" class="h-44 flex items-end gap-2 border-b-4 border-l-4 border-slate-50 p-4 relative overflow-hidden"></div>
+                    <div class="flex justify-between text-[10px] text-slate-400 mt-3 font-black uppercase tracking-tighter">
+                        <span id="ui-min-tag">Min</span>
+                        <span id="ui-increase-tag">Intensity &rarr;</span>
+                        <span id="ui-max-tag">Max</span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[2rem] p-8 border-t-[10px] border-red-700 shadow-sm overflow-y-auto max-h-[320px]">
+                    <h3 id="ui-report-main-title" class="font-black text-slate-900 flex items-center gap-3 mb-5 text-lg italic">
+                        <i data-lucide="file-text" class="text-red-700 w-6 h-6"></i> 科學報告摘要
+                    </h3>
+                    <div id="report-content" class="text-xs text-slate-600 leading-loose space-y-4 font-bold"></div>
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h3 id="ui-table-main-title" class="text-sm font-black text-slate-800 uppercase tracking-widest">數據記錄彙整</h3>
+                    <button onclick="clearData()" class="text-[10px] font-black text-slate-400 hover:text-red-600 transition-all uppercase tracking-widest flex items-center gap-2">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> <span id="ui-clear-btn">Clear Records</span>
+                    </button>
+                </div>
+                <div class="max-h-56 overflow-y-auto">
+                    <table class="w-full text-sm font-bold text-left">
+                        <thead class="bg-slate-100 text-slate-500 uppercase tracking-tighter sticky top-0 z-10 border-b">
+                            <tr>
+                                <th id="ui-th-cond" class="p-4">實驗條件</th>
+                                <th id="ui-th-abs" class="p-4 text-center">吸光值 (Abs)</th>
+                                <th id="ui-th-res" class="p-4 text-right">顏色結果</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quiz Section -->
+            <div class="bg-slate-900 rounded-[2.5rem] shadow-2xl p-10 border border-slate-800">
+                <h3 id="ui-quiz-title" class="text-2xl font-black text-white flex items-center gap-4 mb-8 italic">
+                    <i data-lucide="help-circle" class="text-amber-400 w-8 h-8"></i> 重點知識檢測
+                </h3>
+                <div id="quiz-container" class="space-y-6"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let results = [];
+    let isProcessing = false;
+    let currentExpType = 'temperature';
+    let currentVal = 20;
+    let currentLang = 'zh';
+
+    const translations = {
+        zh: {
+            mainSubtitle: "標準實驗流程：1. 預處理 -> 2. 擴散提取 -> 3. 比色定量分析",
+            controlTitle: "實驗控制設定",
+            varTitle: "獨立變項 (Independent Variable)",
+            sliderTemp: "處理溫度",
+            sliderAlcohol: "酒精濃度",
+            chlNote: "三氯甲烷為極強脂溶性溶劑，模擬其對膜結構的全面溶解與破壞。",
+            btnRun: "執行自動化程序",
+            btnRunning: "程序進行中...",
+            focusTitle: "操作指引",
+            focusDesc: "按下 Run Simulation 後，系統將自動進行。紅菜頭在步驟一處理後會向上取出，隨後移至步驟二。最後由滴管吸取樣本並注入比色計。",
+            benchLabel: "PROCEDURAL LABORATORY STATION",
+            distilled: "室溫蒸餾水",
+            absTitle: "ABSORBANCE (540nm)",
+            chartTitle: "色素釋放趨勢圖 (ABS)",
+            minTag: "最小處理",
+            increaseTag: "強度遞增 &rarr;",
+            maxTag: "最大處理",
+            reportTitle: "實驗科學分析報告",
+            reportInitial: "尚未執行程序。請點擊上方按鈕啟動模擬流程。",
+            tableTitle: "歷史數據記錄彙整",
+            clearBtn: "清除所有數據",
+            thCond: "實驗條件",
+            thAbs: "吸光值 (Abs)",
+            thRes: "目測顯色",
+            quizTitle: "核心概念檢測",
+            quizAns: "顯示專家解答",
+            tagWater: "水浴",
+            tagAlcohol: "酒精溶液",
+            tagChl: "飽和<br>三氯甲烷",
+            btnLang: "切換至 English",
+            optTemp: "環境溫度 (°C)",
+            optAlc: "酒精濃度 (%)",
+            optChl: "三氯甲烷 (哥羅芳)",
+            questions: [
+                { q: "1. 為什麼在處理前需要用蒸餾水清洗紅菜頭圓條？", a: "為了洗掉切割時受損細胞釋出的色素，確保實驗觀測到的滲出完全是由於實驗處理（溫度或溶劑）造成的。" },
+                { q: "2. 使用比色計（Colorimeter）獲取定量數據的好處是什麼？", a: "比色計能提供精確且客觀的數據，這比肉眼的定性觀察更精確，能有效減少人為判斷誤差。" },
+                { q: "3. 為什麼要在分析前先將紅菜頭組織從提取液中移走？", a: "為了終止色素的擴散，確保每一組實驗的提取時間精確維持在固定的 10 分鐘。" },
+                { q: "4. 高溫處理組中吸光值劇增的原因是什麼？", a: "高溫使細胞膜上的蛋白質變性，並增加磷脂雙層流動性，破壞了其差異透性。" },
+                { q: "5. 三氯甲烷為何能導致極大量的花青素滲出？", a: "三氯甲烷是強有機溶劑，能溶解細胞膜中的磷脂成分，讓膜結構徹底瓦解。" }
+            ]
+        },
+        en: {
+            mainSubtitle: "Standardized Procedure: 1. Pre-treatment -> 2. Extraction -> 3. Colorimetry",
+            controlTitle: "Lab Control Panel",
+            varTitle: "Independent Variable",
+            sliderTemp: "Temp.",
+            sliderAlcohol: "Alcohol Conc.",
+            chlNote: "Chloroform is a potent lipid solvent. Simulating total disintegration of membrane structures.",
+            btnRun: "Run Simulation",
+            btnRunning: "Processing...",
+            focusTitle: "User Guide",
+            focusDesc: "Beetroot tissue is removed upwards after Stage 1, then moved to Stage 2. The dropper samples from the tube and injects into the cuvette.",
+            benchLabel: "PROCEDURAL LABORATORY STATION",
+            distilled: "RT WATER",
+            absTitle: "ABSORBANCE (540nm)",
+            chartTitle: "Pigment Release Plot (ABS)",
+            minTag: "Min",
+            increaseTag: "Intensity &rarr;",
+            maxTag: "Max",
+            reportTitle: "Scientific Analysis",
+            reportInitial: "Not started. Click to launch simulation.",
+            tableTitle: "Data Records Summary",
+            clearBtn: "Clear Records",
+            thCond: "Condition",
+            thAbs: "Absorbance",
+            thRes: "Visual Color",
+            quizTitle: "Concept Check",
+            quizAns: "Show Explanation",
+            tagWater: "Water Bath",
+            tagAlcohol: "Alcohol Sol.",
+            tagChl: "Saturated<br>Chloroform",
+            btnLang: "Switch to 中文",
+            optTemp: "Incubation Temp (°C)",
+            optAlc: "Alcohol Conc (%)",
+            optChl: "Chloroform (Trichloromethane)",
+            questions: [
+                { q: "1. Why must beetroot be washed before treatment?", a: "To remove surface pigment from cells damaged during cutting, ensuring results reflect only experimental treatments." },
+                { q: "2. What is the benefit of using a colorimeter?", a: "It provides objective quantitative data, reducing human error from visual estimation." },
+                { q: "3. Why remove the beetroot tissue before sampling?", a: "To stop further leakage, ensuring extraction time is consistently 10 minutes for all groups." },
+                { q: "4. How does high temperature increase absorbance?", a: "Heat denatures membrane proteins and increases phospholipid fluidity, destroying differential permeability." },
+                { q: "5. Why does Chloroform cause massive leakage?", a: "It dissolves membrane phospholipids, completely disintegrating the cell barrier instantly." }
+            ]
+        }
+    };
+
+    function switchStage(step) {
+        const wrapper = document.getElementById('stage-wrapper');
+        if(wrapper) wrapper.style.transform = `translateX(-${(step - 1) * 33.333}%)`;
+        [1,2,3].forEach(i => {
+            const dot = document.getElementById(`step-dot-${i}`);
+            if(dot) dot.className = (i === step) ? "w-8 h-1.5 rounded-full bg-red-500 transition-all duration-500" : "w-4 h-1.5 rounded-full bg-slate-200 transition-all duration-500";
+        });
+    }
+
+    function calculateAbs(type, v) {
+        if (type === 'temperature') {
+            if (v < 40) return 0.05 + (v / 100) * 0.1;
+            if (v > 75) return 0.95 - (100 - v) * 0.001; 
+            return 0.15 + Math.pow((v - 35) / 40, 2.5) * 0.8;
+        } else if (type === 'solvent') {
+            return 0.05 + Math.pow(v / 100, 1.2) * 0.93;
+        } else return 0.994;
+    }
+
+    function handleTypeChange() {
+        if (isProcessing) return;
+        currentExpType = document.getElementById('exp-type').value;
+        const sliderContainer = document.getElementById('slider-container');
+        const chloroformNote = document.getElementById('chloroform-note');
+        
+        if (currentExpType === 'chloroform') {
+            if(sliderContainer) sliderContainer.classList.add('hidden-el');
+            if(chloroformNote) chloroformNote.classList.remove('hidden-el');
+        } else {
+            if(sliderContainer) sliderContainer.classList.remove('hidden-el');
+            if(chloroformNote) chloroformNote.classList.add('hidden-el');
+            currentVal = currentExpType === 'temperature' ? 20 : 0;
+            const slider = document.getElementById('val-slider');
+            if(slider) slider.value = currentVal;
+        }
+        updateSliderDisplay(currentVal);
+    }
+
+    function updateSliderDisplay(v) {
+        currentVal = parseInt(v);
+        const t = translations[currentLang];
+        const unit = currentExpType === 'temperature' ? '°C' : '%';
+        const sliderLabel = document.getElementById('slider-label');
+        const sliderValue = document.getElementById('slider-value');
+        if(sliderLabel) sliderLabel.textContent = currentExpType === 'temperature' ? t.sliderTemp : t.sliderAlcohol;
+        if(sliderValue) sliderValue.textContent = `${v}${unit}`;
+        
+        const tag = document.getElementById('tag-step1');
+        if (tag) {
+            if (currentExpType === 'temperature') tag.innerHTML = `${v}°C<br>${t.tagWater}`;
+            else if (currentExpType === 'solvent') tag.innerHTML = `${v}%<br>${t.tagAlcohol}`;
+            else tag.innerHTML = t.tagChl;
+        }
+
+        if (!isProcessing) {
+            switchStage(1);
+            if(document.getElementById('abs-display')) document.getElementById('abs-display').textContent = "0.000";
+            if(document.getElementById('cuvette-liquid')) document.getElementById('cuvette-liquid').style.height = "0%";
+            const bBeaker = document.getElementById('beetroot-beaker');
+            if(bBeaker) {
+                bBeaker.style.opacity = "0";
+                bBeaker.style.bottom = "180px";
+                bBeaker.style.transform = "translate(-50%, 0)";
+            }
+        }
+    }
+
+    function runExperiment() {
+        if (isProcessing) return;
+        isProcessing = true;
+        updateUI();
+
+        const abs = calculateAbs(currentExpType, currentVal);
+        const color = `rgba(139, 0, 0, ${Math.min(abs, 1)})`;
+
+        // 1. Step 1: Treatment
+        switchStage(1);
+        const bBeaker = document.getElementById('beetroot-beaker');
+        const dropper = document.getElementById('dropper');
+        const drLiquid = document.getElementById('dropper-liquid');
+        const drDrop = document.getElementById('dropper-drop');
+
+        setTimeout(() => {
+            // 放入
+            bBeaker.style.opacity = "1";
+            bBeaker.style.bottom = "12px";
+
+            setTimeout(() => {
+                // 新增：步驟一最後向上取出
+                bBeaker.style.bottom = "180px";
+                bBeaker.style.opacity = "0";
+
+                // 2. Step 2: Extraction
+                setTimeout(() => {
+                    switchStage(2);
+                    setTimeout(() => {
+                        const bTube = document.getElementById('beetroot-tube');
+                        const liqTube = document.getElementById('liquid-tube');
+                        bTube.style.opacity = "1";
+                        bTube.style.transform = "translateX(-50%) translateY(0)";
+
+                        setTimeout(() => {
+                            liqTube.style.backgroundColor = color;
+                            setTimeout(() => {
+                                // 向上取出
+                                bTube.style.transform = "translateX(-50%) translateY(-650px)";
+                                bTube.style.opacity = "0";
+
+                                // 2.5 Sampling in Stage 2
+                                setTimeout(() => {
+                                    dropper.classList.remove('hidden-el');
+                                    dropper.style.top = "10px";
+                                    
+                                    setTimeout(() => {
+                                        dropper.style.top = "180px"; // Dip
+                                        setTimeout(() => {
+                                            drLiquid.style.height = "60%"; // Sucking
+                                            setTimeout(() => {
+                                                dropper.style.top = "10px"; // Pull out
+                                                
+                                                // 3. Stage 3: Analysis
+                                                setTimeout(() => {
+                                                    switchStage(3);
+                                                    setTimeout(() => {
+                                                        dropper.style.top = "180px"; // Put into Cuvette
+                                                        
+                                                        setTimeout(() => {
+                                                            drDrop.classList.remove('hidden-el');
+                                                            drLiquid.style.height = "5%"; // Injecting
+                                                            
+                                                            setTimeout(() => {
+                                                                drDrop.classList.add('hidden-el');
+                                                                document.getElementById('cuvette-liquid').style.height = "85%";
+                                                                document.getElementById('cuvette-liquid').style.backgroundColor = color;
+                                                                
+                                                                setTimeout(() => {
+                                                                    document.getElementById('abs-display').textContent = abs.toFixed(3);
+                                                                    const unit = currentExpType === 'temperature' ? '°C' : (currentExpType === 'solvent' ? '%' : '');
+                                                                    const condLabel = currentExpType === 'chloroform' ? 
+                                                                        (currentLang === 'zh' ? '飽和 (三氯甲烷)' : 'Saturated (Chloroform)') : 
+                                                                        `${currentVal}${unit} (${currentLang === 'zh' ? (currentExpType === 'temperature' ? '溫度' : '酒精') : (currentExpType === 'temperature' ? 'Temp' : 'Alcohol')})`;
+
+                                                                    results.push({ id: Date.now(), type: currentExpType, val: currentVal, condLabel: condLabel, abs: parseFloat(abs.toFixed(3)), color: color });
+                                                                    isProcessing = false;
+                                                                    
+                                                                    setTimeout(() => {
+                                                                        dropper.classList.add('hidden-el');
+                                                                        dropper.style.top = "-180px";
+                                                                        updateUI();
+                                                                    }, 1500);
+                                                                }, 600);
+                                                            }, 1000);
+                                                        }, 800);
+                                                    }, 1200);
+                                                }, 1000);
+                                            }, 1000);
+                                        }, 800);
+                                    }, 800);
+                                }, 1200);
+                            }, 2500);
+                        }, 1000);
+                    }, 800);
+                }, 1500);
+            }, 2000);
+        }, 500);
+    }
+
+    function clearData() {
+        results = [];
+        updateUI();
+    }
+
+    function toggleLang() {
+        currentLang = currentLang === 'zh' ? 'en' : 'zh';
+        updateUI();
+        updateSliderDisplay(currentVal);
+    }
+
+    function updateUI() {
+        const t = translations[currentLang];
+        const textElements = [
+            ['ui-main-subtitle', t.mainSubtitle],
+            ['btn-lang-label', t.btnLang],
+            ['ui-control-title', t.controlTitle],
+            ['ui-var-title', t.varTitle],
+            ['ui-btn-run', isProcessing ? t.btnRunning : t.btnRun],
+            ['ui-focus-title', t.focusTitle],
+            ['ui-focus-desc', t.focusDesc],
+            ['ui-bench-label', t.benchLabel],
+            ['ui-distilled-label', t.distilled],
+            ['ui-abs-title', t.absTitle],
+            ['ui-chart-main-title', t.chartTitle],
+            ['ui-min-tag', t.minTag],
+            ['ui-increase-tag', t.increaseTag],
+            ['ui-max-tag', t.maxTag],
+            ['ui-report-main-title', t.reportTitle],
+            ['ui-table-main-title', t.tableTitle],
+            ['ui-clear-btn', t.clearBtn],
+            ['ui-th-cond', t.thCond],
+            ['ui-th-abs', t.thAbs],
+            ['ui-th-res', t.thRes],
+            ['ui-quiz-title', t.quizTitle],
+            ['chloroform-note', t.chlNote]
+        ];
+        textElements.forEach(([id, val]) => { if(document.getElementById(id)) document.getElementById(id).innerHTML = val; });
+
+        const select = document.getElementById('exp-type');
+        if(select) {
+            const oldVal = select.value || currentExpType;
+            select.innerHTML = `<option value="temperature" ${oldVal === 'temperature' ? 'selected' : ''}>${t.optTemp}</option>
+                                <option value="solvent" ${oldVal === 'solvent' ? 'selected' : ''}>${t.optAlc}</option>
+                                <option value="chloroform" ${oldVal === 'chloroform' ? 'selected' : ''}>${t.optChl}</option>`;
+        }
+
+        const tableBody = document.getElementById('data-table-body');
+        if(tableBody) {
+            tableBody.innerHTML = results.slice().reverse().map(r => `
+                <tr class="hover:bg-slate-50 border-b border-slate-50 font-bold">
+                    <td class="p-4 text-slate-700">${r.condLabel}</td>
+                    <td class="p-4 text-center text-red-700 font-mono text-xl">${r.abs.toFixed(3)}</td>
+                    <td class="p-4 text-right"><div class="inline-block w-14 h-6 rounded shadow-inner border border-slate-200" style="background-color: ${r.color}"></div></td>
+                </tr>`).join('');
+        }
+
+        const quizContainer = document.getElementById('quiz-container');
+        if(quizContainer) {
+            quizContainer.innerHTML = t.questions.map(q => `
+                <div class="quiz-card bg-slate-800/50 hover:bg-slate-800 p-6 rounded-[1.5rem] border border-slate-700 transition-all cursor-default group">
+                    <p class="text-slate-100 font-bold mb-3 flex items-start gap-4"><span class="text-amber-400 font-black">Q.</span> ${q.q}</p>
+                    <div class="flex items-center gap-2 text-[11px] text-amber-400 font-black uppercase tracking-widest group-hover:opacity-0 transition-opacity">
+                        <i data-lucide="chevron-down" class="w-3 h-3"></i> ${t.quizAns}
+                    </div>
+                    <div class="answer-content"><div class="pt-4 border-t border-slate-700 text-slate-400 text-sm leading-relaxed">
+                        <span class="text-emerald-400 font-bold uppercase">Answer:</span> ${q.a}</div></div>
+                </div>`).join('');
+        }
+
+        const chartCont = document.getElementById('chart-container');
+        if(chartCont) {
+            const filtered = results.filter(r => r.type === currentExpType).sort((a, b) => a.val - b.val);
+            if (filtered.length === 0) chartCont.innerHTML = `<div class="absolute inset-0 flex items-center justify-center text-slate-300 text-[10px] italic font-bold">Waiting for data...</div>`;
+            else chartCont.innerHTML = filtered.map(d => `
+                <div class="flex-1 bg-red-700/80 rounded-t transition-all relative group hover:bg-red-800 cursor-help" style="height: ${d.abs * 100}%; min-width: 16px;">
+                    <div class="hidden group-hover:block absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] py-1.5 px-3 rounded-lg z-50 font-bold shadow-2xl">${d.val}: ${d.abs.toFixed(3)}</div>
+                </div>`).join('');
+        }
+
+        const reportArea = document.getElementById('report-content');
+        if(reportArea) {
+            const reportFiltered = results.filter(r => r.type === currentExpType);
+            if (reportFiltered.length === 0) reportArea.innerHTML = `<p class="italic text-slate-400 font-normal">${t.reportInitial}</p>`;
+            else {
+                const rpt = {
+                    temperature: currentLang === 'zh' ? 
+                        `<p>1. 高溫導致細胞膜<strong>蛋白質變性</strong>，磷脂雙層流動性增加，破壞了其作為屏障的差異透性。</p><p>2. 原本被禁錮在液泡中的花青素藉擴散進入水中，導致吸光值隨溫度上升呈現 S 形增長。</p>` : 
+                        `<p>1. High temperatures cause <strong>protein denaturation</strong> and increase phospholipid fluidity, destroying the differential permeability.</p><p>2. Anthocyanin pigments diffuse out, with absorbance rising in an S-shaped curve as temperature increases.</p>`,
+                    solvent: currentLang === 'zh' ? 
+                        `<p>1. 酒精作為有機溶劑，能<strong>溶解細胞膜中的磷脂</strong>，導致膜結構受損。</p><p>2. 隨酒精濃度增加，透性遞增，反映了化學溶劑對生物膜的損傷。</p>` : 
+                        `<p>1. Alcohol acts as an organic solvent that <strong>dissolves phospholipids</strong>, damaging structural integrity.</p><p>2. Higher concentrations lead to increased permeability and pigment leakage.</p>`,
+                    chloroform: currentLang === 'zh' ? 
+                        `<p>1. 三氯甲烷是極強的脂溶性溶劑，能瞬間溶解磷脂雙層，造成膜結構徹底瓦解。</p><p>2. <strong>大量花青素在極短時間內擴散流失</strong>，導致吸光值趨近於最大極限。</p>` : 
+                        `<p>1. Chloroform is a potent lipid-soluble solvent that instantly dissolves the phospholipid bilayer, causing total collapse.</p><p>2. <strong>Massive leakage of anthocyanin</strong> occurs almost instantly, resulting in near-maximum absorbance.</p>`
+                };
+                reportArea.innerHTML = `<p class="font-bold text-red-800 underline uppercase tracking-wider mb-2">Analysis Mechanism:</p>` + rpt[currentExpType];
+            }
+        }
+        lucide.createIcons();
+    }
+
+    window.onload = () => { 
+        switchStage(1);
+        updateUI(); 
+        updateSliderDisplay(20); 
+    };
+</script>
+
+</body>
+</html>

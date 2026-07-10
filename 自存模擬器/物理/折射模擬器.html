@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>折射與全內反射模擬器</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light gray-blue bg */
+            color: #1f2937;
+            /* Prevent bounce scrolling on mobile */
+            overscroll-behavior-y: none;
+        }
+
+        /* Canvas Grid Background */
+        .canvas-container {
+            background-color: #ffffff;
+            background-image: linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                              linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* Custom Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px; /* Larger touch target for mobile */
+            width: 24px;
+            border-radius: 50%;
+            background: #2563eb; /* Blue-600 */
+            cursor: pointer;
+            margin-top: -10px; 
+            box-shadow: 0 0 0 3px #bfdbfe;
+            transition: transform 0.1s;
+        }
+
+        input[type=range]:active::-webkit-slider-thumb {
+            transform: scale(1.1);
+            background: #1d4ed8;
+        }
+        
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px; /* Slightly thicker track */
+            cursor: pointer;
+            background: #e5e7eb;
+            border-radius: 3px;
+        }
+
+        /* Hide scrollbar for clean UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col items-center overflow-hidden bg-[#f0f4f8]">
+
+    <!-- Header (Compact on mobile) -->
+    <header class="w-full flex-none max-w-7xl flex justify-between items-center py-3 px-4 lg:py-5 lg:px-6 z-20 bg-[#f0f4f8]">
+        <div>
+            <h1 class="text-xl lg:text-3xl font-bold text-gray-800 tracking-tight leading-tight" id="app-title">折射模擬器</h1>
+            <p class="text-gray-500 text-xs lg:text-sm hidden sm:block">Refraction & Total Internal Reflection</p>
+        </div>
+        
+        <!-- Language Toggle -->
+        <div class="flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+            <button id="btn-zh" class="px-3 py-1 text-xs lg:text-sm font-medium rounded-md bg-blue-100 text-blue-700 transition-colors" onclick="setLang('zh')">中文</button>
+            <button id="btn-en" class="px-3 py-1 text-xs lg:text-sm font-medium rounded-md text-gray-500 hover:bg-gray-50 transition-colors" onclick="setLang('en')">EN</button>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <div class="flex-1 w-full max-w-7xl flex flex-col lg:flex-row overflow-hidden pb-2 lg:pb-6 px-2 lg:px-6 gap-2 lg:gap-6">
+        
+        <!-- Section 1: Canvas (Order 1 on Mobile for visibility) -->
+        <div class="order-1 lg:order-2 w-full lg:w-2/3 h-[40vh] lg:h-auto min-h-[250px] relative bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden flex-shrink-0 lg:flex-shrink">
+             <!-- Canvas Layer -->
+            <div class="canvas-container w-full h-full relative">
+                <canvas id="simCanvas" class="block w-full h-full touch-none"></canvas>
+                <!-- Watermark -->
+                <div class="absolute bottom-2 right-3 text-[10px] lg:text-xs text-gray-400 select-none pointer-events-none">
+                    Interactive Physics Lab
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Controls (Order 2 on Mobile) -->
+        <div class="order-2 lg:order-1 w-full lg:w-1/3 bg-white rounded-2xl shadow-lg border border-gray-200 flex flex-col overflow-hidden h-full">
+            
+            <!-- Scrollable Controls Area -->
+            <div class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 lg:space-y-6">
+                
+                <!-- Shape Selection -->
+                <div class="bg-gray-50 p-3 lg:p-4 rounded-xl border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-2 text-sm lg:text-base flex items-center">
+                        <span class="w-1 h-4 bg-indigo-500 rounded mr-2"></span>
+                        <span data-i18n="shape">形狀</span>
+                    </h3>
+                    <select id="shape-select" class="w-full p-2 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-100 outline-none">
+                        <option value="rect" data-i18n="rect">長方體 (Rectangular)</option>
+                        <option value="circle" data-i18n="circle">圓形 (Circle)</option>
+                        <option value="semicircle" data-i18n="semicircle">半圓形 (Semicircle)</option>
+                        <option value="prism" data-i18n="prism">三角稜鏡 (Prism)</option>
+                        <option value="diamond" data-i18n="diamond_shape">鑽石形 (Diamond)</option>
+                    </select>
+                </div>
+
+                <!-- Material Selection -->
+                <div class="bg-gray-50 p-3 lg:p-4 rounded-xl border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-2 text-sm lg:text-base flex items-center">
+                        <span class="w-1 h-4 bg-blue-500 rounded mr-2"></span>
+                        <span data-i18n="material">物料</span>
+                    </h3>
+                    <div class="space-y-2">
+                        <select id="material-select" class="w-full p-2 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-100 outline-none">
+                            <option value="1.50" data-i18n="glass">玻璃 (Glass, n=1.50)</option>
+                            <option value="1.33" data-i18n="water">水 (Water, n=1.33)</option>
+                            <option value="1.49" data-i18n="perspex">有機玻璃 (Perspex, n=1.49)</option>
+                            <option value="1.47" data-i18n="oil">油 (Oil, n=1.47)</option>
+                            <option value="2.42" data-i18n="diamond">鑽石 (Diamond, n=2.42)</option>
+                        </select>
+                        <div class="flex justify-between items-center text-xs text-gray-500 pt-1">
+                            <span data-i18n="n1">環境 (n₁)</span>
+                            <span class="font-mono">Air (n ≈ 1.00)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Angle Control (Primary Interaction) -->
+                <div class="bg-yellow-50 p-4 lg:p-5 rounded-xl border border-yellow-100 ring-1 ring-yellow-200/50">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-gray-800 text-sm lg:text-base flex items-center">
+                            <span class="w-1 h-4 bg-yellow-500 rounded mr-2"></span>
+                            <span data-i18n="incident_control">入射角</span>
+                        </h3>
+                        <span class="text-2xl lg:text-3xl font-mono font-bold text-blue-600 tabular-nums" id="angle-display">30.0°</span>
+                    </div>
+
+                    <div class="relative w-full h-8 flex items-center">
+                        <input type="range" id="angle-slider" min="-90" max="90" step="0.1" value="30" class="w-full z-10 relative">
+                    </div>
+                    
+                    <div class="flex justify-between text-[10px] text-gray-400 font-mono mt-1">
+                        <span>左 (L)</span>
+                        <span>0°</span>
+                        <span>右 (R)</span>
+                    </div>
+                </div>
+
+                <!-- Stats Box -->
+                <div class="bg-gray-50 p-3 lg:p-4 rounded-xl border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-2 text-sm lg:text-base flex items-center">
+                        <span class="w-1 h-4 bg-green-500 rounded mr-2"></span>
+                        <span data-i18n="data">數據</span>
+                    </h3>
+                    <div class="grid grid-cols-3 gap-2 text-xs lg:text-sm">
+                        <div class="bg-white p-2 rounded border border-gray-100 text-center">
+                            <div class="text-gray-500 mb-1" data-i18n="angle_i">i</div>
+                            <div class="font-mono font-bold text-gray-800" id="val-i">30.0°</div>
+                        </div>
+                        <div class="bg-white p-2 rounded border border-gray-100 text-center">
+                            <div class="text-gray-500 mb-1" data-i18n="angle_r">r</div>
+                            <div class="font-mono font-bold text-gray-800" id="val-r">19.5°</div>
+                        </div>
+                        <div class="bg-white p-2 rounded border border-gray-100 text-center">
+                            <div class="text-gray-500 mb-1" data-i18n="refractive_index">n</div>
+                            <div class="font-mono font-bold text-gray-800" id="val-n2">1.50</div>
+                        </div>
+                    </div>
+                    
+                    <!-- TIR Alert -->
+                    <div id="tir-alert" class="hidden mt-3 p-2 bg-red-100 border border-red-200 rounded text-red-700 text-center font-bold text-xs lg:text-sm animate-pulse flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <span data-i18n="tir_warning">全內反射 (TIR)</span>
+                    </div>
+                </div>
+
+                <!-- Size Control -->
+                <div class="bg-indigo-50 p-4 lg:p-5 rounded-xl border border-indigo-100 ring-1 ring-indigo-200/50">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-gray-800 text-sm lg:text-base flex items-center">
+                            <span class="w-1 h-4 bg-indigo-500 rounded mr-2"></span>
+                            <span data-i18n="size_control">圖形大小</span>
+                        </h3>
+                        <span class="text-2xl lg:text-3xl font-mono font-bold text-blue-600 tabular-nums" id="size-display">1.0x</span>
+                    </div>
+
+                    <div class="relative w-full h-8 flex items-center">
+                        <input type="range" id="size-slider" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full z-10 relative">
+                    </div>
+                    
+                    <div class="flex justify-between text-[10px] text-gray-400 font-mono mt-1">
+                        <span data-i18n="size_small">小 (0.5x)</span>
+                        <span data-i18n="size_large">大 (2.0x)</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+<script>
+/**
+ * EdTech Physics Simulator (Extended Version - 5 Interactions)
+ * Features: Multi-bounce Ray Tracing (up to 5 bounces), 300px final rays, Vector Math
+ */
+
+// --- Localization ---
+const i18n = {
+    zh: {
+        title: "折射模擬器",
+        shape: "形狀",
+        rect: "長方體 (16:9)",
+        circle: "圓形 (半徑:6格)",
+        semicircle: "半圓形",
+        prism: "三角稜鏡",
+        diamond_shape: "鑽石形",
+        material: "物料",
+        n1: "環境 (n₁)",
+        n2: "材料 (n₂)",
+        glass: "玻璃 (n=1.50)",
+        water: "水 (n=1.33)",
+        perspex: "有機玻璃 (n=1.49)",
+        oil: "油 (n=1.47)",
+        diamond: "鑽石 (n=2.42)",
+        incident_control: "角度控制 (-左 / +右)",
+        data: "數據",
+        angle_i: "入射角 (i)",
+        angle_r: "折射角 (r)",
+        refractive_index: "折射率 (n)",
+        normal: "法線",
+        tir_warning: "全內反射發作",
+        tir_label: "全內反射",
+        size_control: "圖形大小",
+        size_small: "小 (0.5x)",
+        size_large: "大 (2.0x)"
+    },
+    en: {
+        title: "Refraction Lab",
+        shape: "Shape",
+        rect: "Rectangular (16:9)",
+        circle: "Circle (r=6 grids)",
+        semicircle: "Semicircle",
+        prism: "Prism",
+        diamond_shape: "Diamond",
+        material: "Material",
+        n1: "Env (n₁)",
+        n2: "Mat (n₂)",
+        glass: "Glass (n=1.50)",
+        water: "Water (n=1.33)",
+        perspex: "Perspex (n=1.49)",
+        oil: "Oil (n=1.47)",
+        diamond: "Diamond (n=2.42)",
+        incident_control: "Angle (-L / +R)",
+        data: "Data",
+        angle_i: "Incidence (i)",
+        angle_r: "Refraction (r)",
+        refractive_index: "Index (n)",
+        normal: "Normal",
+        tir_warning: "Total Internal Reflection",
+        tir_label: "TIR",
+        size_control: "Shape Size",
+        size_small: "Small (0.5x)",
+        size_large: "Large (2.0x)"
+    }
+};
+
+// --- State ---
+const state = {
+    lang: 'zh',
+    n1: 1.00,
+    n2: 1.50,
+    shape: 'rect',
+    incidentAngle: 30,
+    sizeScale: 1.0
+};
+
+// --- Vector Library ---
+const Vec2 = {
+    create: (x, y) => ({x, y}),
+    add: (v1, v2) => ({x: v1.x + v2.x, y: v1.y + v2.y}),
+    sub: (v1, v2) => ({x: v1.x - v2.x, y: v1.y - v2.y}),
+    mul: (v, s) => ({x: v.x * s, y: v.y * s}),
+    dot: (v1, v2) => v1.x * v2.x + v1.y * v2.y,
+    normalize: (v) => {
+        const m = Math.sqrt(v.x * v.x + v.y * v.y);
+        return m === 0 ? {x:0, y:0} : {x: v.x/m, y: v.y/m};
+    },
+    rotate: (v, rad) => ({
+        x: v.x * Math.cos(rad) - v.y * Math.sin(rad),
+        y: v.x * Math.sin(rad) + v.y * Math.cos(rad)
+    }),
+    angle: (v) => Math.atan2(v.y, v.x),
+    dist: (v1, v2) => Math.sqrt(Math.pow(v2.x-v1.x, 2) + Math.pow(v2.y-v1.y, 2))
+};
+
+const PI = Math.PI;
+const toRad = (deg) => deg * PI / 180;
+const toDeg = (rad) => rad * 180 / PI;
+
+// --- Elements ---
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const elSlider = document.getElementById('angle-slider');
+const elDisplay = document.getElementById('angle-display');
+const elMatSelect = document.getElementById('material-select');
+const elShapeSelect = document.getElementById('shape-select');
+const elValN2 = document.getElementById('val-n2');
+const elValI = document.getElementById('val-i');
+const elValR = document.getElementById('val-r');
+const elTirAlert = document.getElementById('tir-alert');
+const elSizeSlider = document.getElementById('size-slider');
+const elSizeDisplay = document.getElementById('size-display');
+
+// --- Physics Core ---
+function refractVector(incidentDir, normal, n1, n2) {
+    let N = normal;
+    let cosI = -Vec2.dot(incidentDir, N);
+    
+    // If ray comes from inside or opposite side, normal needs to point towards incident ray side
+    if (cosI < 0) {
+        cosI = -cosI;
+        N = Vec2.mul(N, -1);
+    }
+
+    const eta = n1 / n2;
+    const k = 1 - eta * eta * (1 - cosI * cosI);
+    
+    if (k < 0) {
+        // TIR: Reflect
+        const reflected = Vec2.add(incidentDir, Vec2.mul(N, 2 * cosI));
+        return { ray: Vec2.normalize(reflected), tir: true };
+    } else {
+        // Refract
+        const term2 = eta * cosI - Math.sqrt(k);
+        const refracted = Vec2.add(Vec2.mul(incidentDir, eta), Vec2.mul(N, term2));
+        return { ray: Vec2.normalize(refracted), tir: false };
+    }
+}
+
+// --- Drawing Helpers (Responsive) ---
+
+function drawLabel(text, x, y, align = 'center', color = '#6b7280') {
+    ctx.fillStyle = color;
+    const isSmall = canvas.width < 400; 
+    ctx.font = isSmall ? '500 10px "Inter"' : '500 12px "Inter"'; 
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    
+    // Add white halo to prevent overlapping issues
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.strokeText(text, x, y);
+    
+    ctx.fillText(text, x, y);
+}
+
+function drawLine(p1, p2, color, width=2, dashed=false) {
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    if (dashed) ctx.setLineDash([6, 4]);
+    else ctx.setLineDash([]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function drawRay(p1, p2, color='#dc2626') { 
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3; 
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    const dir = Vec2.normalize(Vec2.sub(p2, p1));
+    const len = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+    
+    // Calculate base position (Midpoint)
+    let arrowBase = Vec2.mul(Vec2.add(p1, p2), 0.5);
+    
+    // Shift arrow 3 squares (60px) BACKWARDS along the ray direction
+    // (Corrected from previous forward shift)
+    if (len > 120) {
+        arrowBase = Vec2.sub(arrowBase, Vec2.mul(dir, 60));
+    }
+
+    const angle = Vec2.angle(dir);
+    const headLen = 10;
+    
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    // Draw arrow head at the new shifted position
+    ctx.moveTo(arrowBase.x + headLen * Math.cos(angle), arrowBase.y + headLen * Math.sin(angle)); 
+    ctx.lineTo(arrowBase.x + headLen * Math.cos(angle - 2.5), arrowBase.y + headLen * Math.sin(angle - 2.5));
+    ctx.lineTo(arrowBase.x + headLen * Math.cos(angle + 2.5), arrowBase.y + headLen * Math.sin(angle + 2.5));
+    ctx.fill();
+}
+
+// Modified: Accept scale 's' to resize arc dynamically
+function drawAngleArc(c, vNormal, vRay, label, s = 1) {
+    const r = 30 * s; // Radius scales with view
+    const a1 = Vec2.angle(vNormal);
+    const a2 = Vec2.angle(vRay);
+    
+    let start = a1;
+    let end = a2;
+    let diff = end - start;
+    
+    while (diff <= -PI) diff += 2*PI;
+    while (diff > PI) diff -= 2*PI;
+    
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, r, start, start + diff, diff < 0);
+    ctx.strokeStyle = '#374151'; 
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([]);
+    ctx.stroke();
+    
+    // Label position slightly outside the arc
+    const labelOffset = r + 15 * s;
+    const midAngle = start + diff / 2;
+    const lx = c.x + labelOffset * Math.cos(midAngle);
+    const ly = c.y + labelOffset * Math.sin(midAngle);
+    
+    ctx.fillStyle = '#111827'; 
+    
+    const isSmall = canvas.width < 400;
+    ctx.font = isSmall ? 'bold 10px Inter' : 'bold 12px Inter';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Add halo to angle text too
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.strokeText(label, lx, ly);
+    
+    ctx.fillText(label, lx, ly);
+}
+
+// --- Helper: Line Intersection ---
+function intersectSegment(p1, p2, rayOrigin, rayDir) {
+    const v1 = rayOrigin;
+    const v2 = Vec2.add(rayOrigin, rayDir);
+    const v3 = p1;
+    const v4 = p2;
+    
+    const den = (v1.x - v2.x) * (v3.y - v4.y) - (v1.y - v2.y) * (v3.x - v4.x);
+    if (Math.abs(den) < 1e-9) return null; // Parallel lines
+    
+    const t = ((v1.x - v3.x) * (v3.y - v4.y) - (v1.y - v3.y) * (v3.x - v4.x)) / den;
+    const u = -((v1.x - v2.x) * (v1.y - v3.y) - (v1.y - v2.y) * (v1.x - v3.x)) / den;
+    
+    // t > epsilon to avoid self-intersection with start point
+    if (t > 0.01 && u >= 0 && u <= 1) {
+        return {
+            t: t,
+            point: {
+                x: v1.x + t * (v2.x - v1.x),
+                y: v1.y + t * (v2.y - v1.y)
+            }
+        };
+    }
+    return null;
+}
+
+// --- Main Render ---
+
+function resizeCanvas() {
+    const parent = canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = parent.getBoundingClientRect();
+    
+    if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+    }
+    
+    draw();
+}
+
+function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.width / dpr;
+    const h = canvas.height / dpr;
+    ctx.clearRect(0, 0, w, h);
+    
+    const cx = w/2;
+    const cy = h < 400 ? h/2 - 20 : h/2;
+    
+    let s = Math.min(w / 600, h / 500);
+    s = Math.max(0.6, Math.min(s, 1.2)); 
+    
+    // Scale shape geometry based on user slider, keeping UI elements unaffected
+    const shapeScale = s * state.sizeScale;
+    
+    // Config: Final Ray Length (15 grids * 20px = 300px)
+    const FINAL_RAY_LEN = 300 * s;
+
+    // Style
+    const shapeFill = 'rgba(239, 246, 255, 0.9)'; 
+    const shapeStroke = '#60a5fa'; 
+    ctx.fillStyle = shapeFill;
+    ctx.strokeStyle = shapeStroke;
+    ctx.lineWidth = 2;
+    
+    let boundarySegments = []; 
+    let isTIRGlobal = false;
+    let displayedR = 0;
+    let incidentPt, normalVec, rayInDir;
+    let rayLen = 250 * s;
+    const iRad = toRad(state.incidentAngle);
+
+    // --- Shape Drawing & Definition ---
+
+    if (state.shape === 'rect') {
+        const bw = 320 * shapeScale; 
+        const bh = 180 * shapeScale; 
+        
+        ctx.strokeRect(cx - bw/2, cy, bw, bh); 
+        ctx.fillRect(cx - bw/2, cy, bw, bh);
+        drawLine({x:0, y:cy}, {x:w, y:cy}, '#9ca3af', 2); 
+
+        // Define boundary segments for recursive tracing
+        boundarySegments = [
+            {p1: {x: cx-bw/2, y: cy}, p2: {x: cx+bw/2, y: cy}}, // Top
+            {p1: {x: cx+bw/2, y: cy}, p2: {x: cx+bw/2, y: cy+bh}}, // Right
+            {p1: {x: cx+bw/2, y: cy+bh}, p2: {x: cx-bw/2, y: cy+bh}}, // Bottom
+            {p1: {x: cx-bw/2, y: cy+bh}, p2: {x: cx-bw/2, y: cy}} // Left
+        ];
+
+        incidentPt = {x: cx, y: cy};
+        normalVec = {x: 0, y: -1}; // Up
+        rayInDir = { x: Math.sin(-iRad), y: Math.cos(-iRad) };
+
+    } else if (state.shape === 'semicircle') {
+        const r = 180 * shapeScale;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, PI, false);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        drawLine({x:0, y:cy}, {x:w, y:cy}, '#9ca3af', 2);
+
+        incidentPt = {x: cx, y: cy};
+        normalVec = {x: 0, y: -1}; 
+        rayInDir = { x: Math.sin(-iRad), y: Math.cos(-iRad) };
+
+    } else if (state.shape === 'circle') {
+        const r = 120 * shapeScale;
+        const circleCy = cy + r; 
+        
+        ctx.beginPath();
+        ctx.arc(cx, circleCy, r, 0, 2*PI);
+        ctx.fill();
+        ctx.stroke();
+        
+        incidentPt = {x: cx, y: circleCy - r}; 
+        normalVec = {x: 0, y: -1}; 
+        rayInDir = { x: Math.sin(-iRad), y: Math.cos(-iRad) };
+        
+        drawLine({x:cx-100*s, y:incidentPt.y}, {x:cx+100*s, y:incidentPt.y}, '#9ca3af', 2, true);
+
+    } else if (state.shape === 'prism') {
+        const base = 300 * shapeScale;
+        const height = base / 2;
+        const v1 = {x: cx, y: cy - height/2}; 
+        const v2 = {x: cx - base/2, y: cy + height/2};
+        const v3 = {x: cx + base/2, y: cy + height/2};
+        
+        ctx.beginPath();
+        ctx.moveTo(v1.x, v1.y);
+        ctx.lineTo(v2.x, v2.y);
+        ctx.lineTo(v3.x, v3.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        boundarySegments = [
+            {p1: v1, p2: v2}, 
+            {p1: v2, p2: v3}, 
+            {p1: v3, p2: v1}
+        ];
+
+        // Ray Setup: Incident on Left Face usually
+        const vTop = v1;
+        const vBL = v2;
+        incidentPt = Vec2.mul(Vec2.add(vTop, vBL), 0.5);
+        const faceVec = Vec2.sub(vTop, vBL);
+        normalVec = Vec2.normalize({x: faceVec.y, y: -faceVec.x}); 
+        const antiNormal = Vec2.mul(normalVec, -1);
+        rayInDir = Vec2.rotate(antiNormal, -iRad);
+
+    } else if (state.shape === 'diamond') {
+        const tableW = 140 * shapeScale;
+        const totalW = 280 * shapeScale;
+        const crownH = 50 * shapeScale;
+        const pavH = 150 * shapeScale;
+        
+        const topY = cy;
+        const girdleY = cy + crownH;
+        const botY = cy + crownH + pavH;
+        
+        const v0 = {x: cx - tableW/2, y: topY};
+        const v1 = {x: cx + tableW/2, y: topY};
+        const v2 = {x: cx + totalW/2, y: girdleY};
+        const v3 = {x: cx, y: botY};
+        const v4 = {x: cx - totalW/2, y: girdleY};
+        
+        ctx.beginPath();
+        ctx.moveTo(v0.x, v0.y);
+        ctx.lineTo(v1.x, v1.y);
+        ctx.lineTo(v2.x, v2.y);
+        ctx.lineTo(v3.x, v3.y);
+        ctx.lineTo(v4.x, v4.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        boundarySegments = [
+            {p1: v1, p2: v2}, 
+            {p1: v2, p2: v3}, 
+            {p1: v3, p2: v4}, 
+            {p1: v4, p2: v0}, 
+            {p1: v0, p2: v1} 
+        ];
+
+        incidentPt = {x: cx, y: topY};
+        normalVec = {x: 0, y: -1}; 
+        rayInDir = { x: Math.sin(-iRad), y: Math.cos(-iRad) };
+        
+        drawLine({x:cx-150*s, y:topY}, {x:cx+150*s, y:topY}, '#9ca3af', 2);
+    }
+
+    // --- Ray Tracing Helper Function ---
+    function traceNextHit(rayOrigin, rayDirection) {
+        let hit = null;
+        let normal = null;
+        let minT = Infinity;
+
+        if (state.shape === 'semicircle') {
+            // Check arc intersection
+            // O = origin-center. t^2 + 2t(D.O) + |O|^2 - r^2 = 0
+            const r = 180 * shapeScale;
+            const O = Vec2.sub(rayOrigin, {x:cx, y:cy});
+            const b = 2 * Vec2.dot(rayDirection, O);
+            const cVal = Vec2.dot(O, O) - r*r;
+            const delta = b*b - 4*cVal;
+            
+            if (delta >= 0) {
+                const t1 = (-b + Math.sqrt(delta))/2;
+                const t2 = (-b - Math.sqrt(delta))/2;
+                const t = (t1 > 0.1) ? t1 : ((t2 > 0.1) ? t2 : null);
+                
+                if (t && t < minT) {
+                    minT = t;
+                    hit = Vec2.add(rayOrigin, Vec2.mul(rayDirection, t));
+                    // Check if hit is on the curved part (y > cy)
+                    if (hit.y >= cy - 0.1) {
+                        normal = Vec2.normalize(Vec2.sub(hit, {x:cx, y:cy}));
+                    }
+                }
+            }
+            
+            // Check flat top intersection
+            // y = cy.
+            const tFlat = (cy - rayOrigin.y) / rayDirection.y;
+            if (tFlat > 0.1 && tFlat < minT) {
+                const pt = Vec2.add(rayOrigin, Vec2.mul(rayDirection, tFlat));
+                if (Math.abs(pt.x - cx) <= r) {
+                    minT = tFlat;
+                    hit = pt;
+                    normal = {x:0, y:-1}; // Points UP (out)
+                }
+            }
+
+        } else if (state.shape === 'circle') {
+            const r = 120 * shapeScale;
+            const center = {x: cx, y: cy+r};
+            const O = Vec2.sub(rayOrigin, center);
+            const b = 2 * Vec2.dot(rayDirection, O);
+            const cVal = Vec2.dot(O, O) - r*r;
+            const delta = b*b - 4*cVal;
+            
+            if (delta >= 0) {
+                const t1 = (-b + Math.sqrt(delta))/2;
+                const t2 = (-b - Math.sqrt(delta))/2;
+                const t = (t1 > 0.1) ? t1 : ((t2 > 0.1) ? t2 : null);
+                if (t) {
+                    hit = Vec2.add(rayOrigin, Vec2.mul(rayDirection, t));
+                    normal = Vec2.normalize(Vec2.sub(hit, center));
+                }
+            }
+        } else {
+            // Polygons (Rect, Prism, Diamond)
+            for (let seg of boundarySegments) {
+                const intersect = intersectSegment(seg.p1, seg.p2, rayOrigin, rayDirection);
+                if (intersect) {
+                    if (intersect.t < minT) {
+                        minT = intersect.t;
+                        hit = intersect.point;
+                        const segVec = Vec2.sub(seg.p2, seg.p1);
+                        let n = Vec2.normalize({x: -segVec.y, y: segVec.x});
+                        // Ensure normal points OUT
+                        if (Vec2.dot(rayDirection, n) < 0) n = Vec2.mul(n, -1); // Correct inward pointing
+                        hit = intersect.point;
+                        normal = n; // Pass raw normal
+                    }
+                }
+            }
+        }
+        return { hit, normal };
+    }
+
+    // --- Ray Tracing Execution ---
+
+    // 1. Draw Incident Ray
+    const rayStart = Vec2.sub(incidentPt, Vec2.mul(rayInDir, rayLen));
+    drawRay(rayStart, incidentPt);
+    
+    // Draw Normal 1
+    const nLineStart = Vec2.add(incidentPt, Vec2.mul(normalVec, 50*s));
+    const nLineEnd = Vec2.sub(incidentPt, Vec2.mul(normalVec, 50*s));
+    drawLine(nLineStart, nLineEnd, '#6b7280', 1.5, true); 
+    drawLabel(i18n[state.lang].normal, nLineStart.x, nLineStart.y - 15);
+
+    let labelI = "i";
+    if (['rect','prism','diamond'].includes(state.shape)) labelI = "i₁";
+    drawAngleArc(incidentPt, normalVec, Vec2.mul(rayInDir, -1), labelI, s);
+
+    // 2. First Refraction (Air -> Medium)
+    const res1 = refractVector(rayInDir, normalVec, state.n1, state.n2);
+    
+    if (!res1.tir) {
+        const rayInsideDir = res1.ray;
+        const normalIn = Vec2.mul(normalVec, -1);
+        const r1AngleRad = Math.acos(Vec2.dot(normalIn, rayInsideDir));
+        displayedR = toDeg(r1AngleRad);
+        
+        let labelR = "r";
+        if (['rect','prism','diamond'].includes(state.shape)) labelR = "r₁";
+        drawAngleArc(incidentPt, normalIn, rayInsideDir, labelR, s);
+
+        // 3. Find Next Intersection (Interaction 2)
+        let trace2 = traceNextHit(incidentPt, rayInsideDir);
+        
+        if (trace2.hit) {
+            let hitPt2 = trace2.hit;
+            let normal2 = trace2.normal;
+            
+            drawRay(incidentPt, hitPt2);
+            
+            // Draw Normal at Hit 2 (Lengthened to 50*s to avoid overlap with angle arc of 30*s)
+            const n2Start = Vec2.add(hitPt2, Vec2.mul(normal2, 50*s));
+            const n2End = Vec2.sub(hitPt2, Vec2.mul(normal2, 50*s));
+            drawLine(n2Start, n2End, '#6b7280', 1.5, true);
+            
+            if (state.shape !== 'circle') {
+                // Adjust label position further out
+                drawLabel(i18n[state.lang].normal, n2Start.x + normal2.x * 10, n2Start.y + normal2.y * 10);
+            }
+
+            // Draw Incident Angle 2
+            let i2Label = (['rect','prism','diamond'].includes(state.shape)) ? "i₂" : "i";
+            if (state.shape === 'semicircle' && hitPt2.y > cy) i2Label = ""; 
+            if (state.shape !== 'semicircle' || (state.shape==='semicircle' && hitPt2.y <= cy)) {
+                 drawAngleArc(hitPt2, Vec2.mul(normal2, -1), Vec2.mul(rayInsideDir, -1), i2Label, s);
+            }
+
+            // 4. Second Interaction (Refract out or Reflect inside)
+            const res2 = refractVector(rayInsideDir, normal2, state.n2, state.n1);
+            
+            if (res2.tir) {
+                isTIRGlobal = true;
+                const rayReflected = res2.ray;
+                
+                drawLabel(i18n[state.lang].tir_label, hitPt2.x + 20*s, hitPt2.y - 20*s, 'center', '#dc2626');
+                
+                let r2Label = (['rect','prism','diamond'].includes(state.shape)) ? "r₂" : "r";
+                drawAngleArc(hitPt2, Vec2.mul(normal2, -1), rayReflected, r2Label, s);
+
+                // --- 3rd Ray Interaction ---
+                let trace3 = traceNextHit(hitPt2, rayReflected);
+                
+                if (trace3.hit) {
+                    let hitPt3 = trace3.hit;
+                    let normal3 = trace3.normal;
+                    
+                    drawRay(hitPt2, hitPt3); 
+                    
+                    // Normal at 3rd hit (Lengthened)
+                    const n3Start = Vec2.add(hitPt3, Vec2.mul(normal3, 50*s));
+                    const n3End = Vec2.sub(hitPt3, Vec2.mul(normal3, 50*s));
+                    drawLine(n3Start, n3End, '#6b7280', 1.5, true);
+                    
+                    // Label Normal
+                    drawLabel(i18n[state.lang].normal, n3Start.x + normal3.x * 10, n3Start.y + normal3.y * 10);
+                    
+                    // Angle i3
+                    drawAngleArc(hitPt3, Vec2.mul(normal3, -1), Vec2.mul(rayReflected, -1), "i₃", s);
+
+                    // Calculate 3rd Interaction
+                    const res3 = refractVector(rayReflected, normal3, state.n2, state.n1);
+                    
+                    if (res3.tir) {
+                        const rayReflected2 = res3.ray;
+                        drawLabel(i18n[state.lang].tir_label, hitPt3.x, hitPt3.y - 15, 'center', '#dc2626');
+                        drawAngleArc(hitPt3, Vec2.mul(normal3, -1), rayReflected2, "r₃", s);
+                        
+                        // --- 4th Interaction ---
+                        let trace4 = traceNextHit(hitPt3, rayReflected2);
+                        if (trace4.hit) {
+                            let hitPt4 = trace4.hit;
+                            let normal4 = trace4.normal;
+                            
+                            drawRay(hitPt3, hitPt4); 
+                            
+                            // Normal at Hit 4 (Lengthened)
+                            const n4Start = Vec2.add(hitPt4, Vec2.mul(normal4, 50*s));
+                            const n4End = Vec2.sub(hitPt4, Vec2.mul(normal4, 50*s));
+                            drawLine(n4Start, n4End, '#6b7280', 1.5, true);
+                            
+                            drawLabel(i18n[state.lang].normal, n4Start.x + normal4.x * 10, n4Start.y + normal4.y * 10);
+                            
+                            drawAngleArc(hitPt4, Vec2.mul(normal4, -1), Vec2.mul(rayReflected2, -1), "i₄", s);
+                            
+                            // Interaction 4
+                            const res4 = refractVector(rayReflected2, normal4, state.n2, state.n1);
+                            
+                            if (res4.tir) {
+                                const rayReflected3 = res4.ray;
+                                drawLabel(i18n[state.lang].tir_label, hitPt4.x, hitPt4.y - 15, 'center', '#dc2626');
+                                drawAngleArc(hitPt4, Vec2.mul(normal4, -1), rayReflected3, "r₄", s);
+                                
+                                // --- 5th Interaction ---
+                                let trace5 = traceNextHit(hitPt4, rayReflected3);
+                                if (trace5.hit) {
+                                    let hitPt5 = trace5.hit;
+                                    let normal5 = trace5.normal;
+                                    
+                                    drawRay(hitPt4, hitPt5); 
+                                    
+                                    // Normal at Hit 5 (Lengthened)
+                                    const n5Start = Vec2.add(hitPt5, Vec2.mul(normal5, 50*s));
+                                    const n5End = Vec2.sub(hitPt5, Vec2.mul(normal5, 50*s));
+                                    drawLine(n5Start, n5End, '#6b7280', 1.5, true);
+                                    
+                                    drawLabel(i18n[state.lang].normal, n5Start.x + normal5.x * 10, n5Start.y + normal5.y * 10);
+                                    
+                                    drawAngleArc(hitPt5, Vec2.mul(normal5, -1), Vec2.mul(rayReflected3, -1), "i₅", s);
+                                    
+                                    // Interaction 5
+                                    const res5 = refractVector(rayReflected3, normal5, state.n2, state.n1);
+                                    
+                                    // Ray 6 Length
+                                    const len6 = FINAL_RAY_LEN - 60 * s;
+
+                                    if (res5.tir) {
+                                        const rayReflected4 = res5.ray;
+                                        const endReflect4 = Vec2.add(hitPt5, Vec2.mul(rayReflected4, len6));
+                                        drawRay(hitPt5, endReflect4);
+                                        drawLabel(i18n[state.lang].tir_label, hitPt5.x, hitPt5.y - 15, 'center', '#dc2626');
+                                        drawAngleArc(hitPt5, Vec2.mul(normal5, -1), rayReflected4, "r₅", s);
+                                    } else {
+                                        const rayOutFinal3 = res5.ray;
+                                        const endOutFinal3 = Vec2.add(hitPt5, Vec2.mul(rayOutFinal3, len6));
+                                        drawRay(hitPt5, endOutFinal3);
+                                        drawAngleArc(hitPt5, normal5, rayOutFinal3, "r₅", s);
+                                    }
+                                }
+
+                            } else {
+                                // Refract Out (Final Ray 5 from Hit 4)
+                                const rayOutFinal2 = res4.ray;
+                                const endOutFinal2 = Vec2.add(hitPt4, Vec2.mul(rayOutFinal2, FINAL_RAY_LEN));
+                                drawRay(hitPt4, endOutFinal2);
+                                drawAngleArc(hitPt4, normal4, rayOutFinal2, "r₄", s);
+                            }
+                        }
+
+                    } else {
+                        // Refract Out finally (Ray 4)
+                        const rayOutFinal = res3.ray;
+                        const endOutFinal = Vec2.add(hitPt3, Vec2.mul(rayOutFinal, FINAL_RAY_LEN));
+                        drawRay(hitPt3, endOutFinal);
+                        drawAngleArc(hitPt3, normal3, rayOutFinal, "r₃", s);
+                    }
+                }
+
+            } else {
+                // Refraction Out (Standard Exit)
+                const rayOut = res2.ray;
+                const endOut = Vec2.add(hitPt2, Vec2.mul(rayOut, FINAL_RAY_LEN));
+                drawRay(hitPt2, endOut);
+                
+                let eLabel = (['rect','prism','diamond'].includes(state.shape)) ? "r₂" : "r";
+                drawAngleArc(hitPt2, normal2, rayOut, eLabel, s);
+            }
+        }
+    }
+
+    // Update UI Stats
+    elValR.textContent = displayedR.toFixed(1) + "°";
+    if (isTIRGlobal) {
+        elTirAlert.classList.remove('hidden');
+        elTirAlert.classList.add('flex');
+    } else {
+        elTirAlert.classList.add('hidden');
+        elTirAlert.classList.remove('flex');
+    }
+}
+
+// --- App Logic ---
+function updateState() {
+    state.incidentAngle = parseFloat(elSlider.value);
+    state.n2 = parseFloat(elMatSelect.value);
+    state.shape = elShapeSelect.value;
+    state.sizeScale = parseFloat(elSizeSlider.value);
+    
+    // Display absolute value for clarity
+    elDisplay.textContent = Math.abs(state.incidentAngle).toFixed(1) + "°";
+    elSizeDisplay.textContent = state.sizeScale.toFixed(1) + "x";
+    elValI.textContent = Math.abs(state.incidentAngle).toFixed(1) + "°";
+    elValN2.textContent = state.n2.toFixed(2);
+    
+    let rLabel = i18n[state.lang].angle_r;
+    if (['rect','prism','diamond'].includes(state.shape)) rLabel = (state.lang === 'zh' ? '折射角 (r₁)' : 'Refraction (r₁)');
+    
+    document.querySelectorAll('[data-i18n="angle_r"]').forEach(el => el.textContent = rLabel);
+
+    draw();
+}
+
+function setLang(lang) {
+    state.lang = lang;
+    
+    const btnZh = document.getElementById('btn-zh');
+    const btnEn = document.getElementById('btn-en');
+    const activeClass = ['bg-blue-100', 'text-blue-700'];
+    const inactiveClass = ['text-gray-500', 'hover:bg-gray-50'];
+    
+    if (lang === 'zh') {
+        btnZh.classList.add(...activeClass);
+        btnZh.classList.remove(...inactiveClass);
+        btnEn.classList.remove(...activeClass);
+        btnEn.classList.add(...inactiveClass);
+    } else {
+        btnEn.classList.add(...activeClass);
+        btnEn.classList.remove(...inactiveClass);
+        btnZh.classList.remove(...activeClass);
+        btnZh.classList.add(...inactiveClass);
+    }
+
+    const dict = i18n[lang];
+    document.getElementById('app-title').textContent = dict.title;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) el.textContent = dict[key];
+    });
+    
+    updateState();
+}
+
+// Listeners
+elSlider.addEventListener('input', updateState);
+elSizeSlider.addEventListener('input', updateState);
+elMatSelect.addEventListener('change', updateState);
+elShapeSelect.addEventListener('change', updateState);
+window.addEventListener('resize', resizeCanvas);
+
+// Init
+setTimeout(() => {
+    resizeCanvas();
+    updateState();
+}, 50);
+
+</script>
+</body>
+</html>

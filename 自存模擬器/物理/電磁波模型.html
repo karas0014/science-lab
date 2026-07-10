@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Electromagnetic Wave Simulator | DSE Physics 物理模擬器</title>
+    
+    <!-- 資源預先載入以提升速度 (Resource Preconnects) -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <!-- Tailwind CSS (Defer loading to not block UI) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax for Physics Equations -->
+    <!-- Removed deprecated polyfill.io to improve speed & security -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Three.js & OrbitControls (Defer loading) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        /* iPhone style slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            border: 1px solid #e5e7eb;
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.1);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d5db;
+            border-radius: 9999px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        
+        /* Apple style Toggle */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+        .toggle-checkbox {
+            right: 0;
+            z-index: 1;
+            border-color: #e5e7eb;
+            transition: all 0.3s;
+        }
+        .toggle-label {
+            background-color: #e5e7eb;
+            transition: all 0.3s;
+        }
+
+        /* Physics Variables Font */
+        .var {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+
+        body {
+            overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+        }
+        
+        #canvas-container {
+            cursor: grab;
+        }
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 h-screen w-screen overflow-hidden flex flex-col md:flex-row font-sans">
+
+    <!-- 3D Canvas Area -->
+    <div id="canvas-container" class="flex-1 relative h-[50vh] md:h-screen w-full">
+        <!-- Floating Labels -->
+        <div class="absolute top-4 left-4 bg-white/80 backdrop-blur-md px-4 py-2 rounded-xl shadow-sm border border-gray-100 z-10">
+            <h1 class="text-lg font-bold text-gray-800" id="title-text">3D 電磁波模擬器</h1>
+            <p class="text-sm text-gray-500" id="subtitle-text">拖曳旋轉視角 | 滾動縮放</p>
+        </div>
+        
+        <div class="absolute bottom-4 left-4 flex gap-3 z-10">
+            <div class="flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-lg shadow-sm">
+                <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span class="text-sm font-medium" id="label-e">電場 (<span class="var">E</span>)</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-lg shadow-sm">
+                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                <span class="text-sm font-medium" id="label-b">磁場 (<span class="var">B</span>)</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-lg shadow-sm">
+                <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                <span class="text-sm font-medium" id="label-c">移動方向 (<span class="var">c</span>)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="w-full md:w-80 lg:w-96 bg-white shadow-[0_0_20px_rgba(0,0,0,0.05)] flex flex-col h-[50vh] md:h-screen z-20">
+        
+        <!-- Header & Language Toggle -->
+        <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-30">
+            <h2 class="text-xl font-bold text-gray-800" id="panel-title">控制面板</h2>
+            
+            <div class="relative inline-block w-14 mr-2 align-middle select-none transition duration-200 ease-in">
+                <input type="checkbox" name="toggle" id="lang-toggle" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                <label for="lang-toggle" class="toggle-label block overflow-hidden h-7 rounded-full bg-gray-300 cursor-pointer text-xs font-bold flex items-center justify-between px-1.5 text-white">
+                    <span>EN</span><span class="text-gray-400">中</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Scrollable Controls -->
+        <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
+            
+            <!-- Controls Section -->
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-inner">
+                
+                <!-- Wavelength Slider -->
+                <div class="mb-5">
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="text-sm font-semibold text-gray-700" id="label-wl">波長 Wavelength (<span class="var">&lambda;</span>)</label>
+                        <span class="text-xs font-mono bg-white px-2 py-1 rounded shadow-sm text-blue-600 font-bold" id="val-wl">4.0 m</span>
+                    </div>
+                    <input type="range" id="slider-wl" min="2" max="10" step="0.1" value="4.0">
+                </div>
+
+                <!-- Amplitude Slider -->
+                <div class="mb-5">
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="text-sm font-semibold text-gray-700" id="label-amp">振幅 Amplitude (<span class="var">A</span>)</label>
+                        <span class="text-xs font-mono bg-white px-2 py-1 rounded shadow-sm text-blue-600 font-bold" id="val-amp">2.0</span>
+                    </div>
+                    <input type="range" id="slider-amp" min="0.5" max="4" step="0.1" value="2.0">
+                </div>
+
+                <!-- Speed Slider -->
+                <div class="mb-2">
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="text-sm font-semibold text-gray-700" id="label-speed">播放速度 Anim Speed</label>
+                        <span class="text-xs font-mono bg-white px-2 py-1 rounded shadow-sm text-blue-600 font-bold" id="val-speed">1.0x</span>
+                    </div>
+                    <input type="range" id="slider-speed" min="0" max="3" step="0.1" value="1.0">
+                </div>
+
+                <!-- Show Planes Toggle -->
+                <div class="mb-2 mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
+                    <label class="text-sm font-semibold text-gray-700 cursor-pointer" for="toggle-planes" id="label-planes">顯示振動平面</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="toggle-planes" class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Physics Explanation Card -->
+            <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+                <h3 class="font-bold text-blue-800 mb-2 flex items-center gap-2" id="concept-title">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    DSE 物理重點
+                </h3>
+                <ul class="text-sm text-gray-700 space-y-2 list-disc pl-4" id="concept-text">
+                    <li>由<b>加速運動的帶電粒子</b>（如振盪電荷）產生。</li>
+                    <li><b>變化的電場</b>與<b>變化的磁場</b>交互產生，以波動形式向前推進。</li>
+                    <li>在真空中以<b>光速</b>傳播 (\( c = 3 \times 10^8 \text{ m/s} \))。</li>
+                    <li>電場 (<span class="var">E</span>) 與磁場 (<span class="var">B</span>) 互相<b>垂直</b>，並與傳播方向垂直。</li>
+                    <li>兩者<b>同相 (in-phase)</b>：同時達到最大值，同時變為零！</li>
+                    <li>公式：\( c = f \lambda \)</li>
+                </ul>
+            </div>
+
+            <!-- Play/Pause Button -->
+            <button id="btn-toggle-anim" class="w-full py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 active:transform active:scale-95 transition-all shadow-md mt-auto">
+                暫停動畫 Pause
+            </button>
+            
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // --- 1. 語言與翻譯設定 (i18n) ---
+        const dict = {
+            zh: {
+                titleText: "3D 電磁波模擬器",
+                subTitleText: "拖曳旋轉視角 | 滾動縮放",
+                labelE: "電場 (<span class=\"var\">E</span>)",
+                labelB: "磁場 (<span class=\"var\">B</span>)",
+                labelC: "移動方向 (<span class=\"var\">c</span>)",
+                panelTitle: "控制面板",
+                labelWl: "波長 (<span class=\"var\">&lambda;</span>)",
+                labelAmp: "振幅 (<span class=\"var\">A</span>)",
+                labelSpeed: "播放速度 Anim Speed",
+                labelPlanes: "顯示振動平面",
+                conceptTitle: "<svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> DSE 物理重點",
+                conceptText: `
+                    <li>由<b>加速運動的帶電粒子</b>（如振盪電荷）產生。</li>
+                    <li><b>變化的電場</b>與<b>變化的磁場</b>交互產生，以波動形式向前推進。</li>
+                    <li>在真空中以<b>光速</b>傳播 (\\( c = 3 \\times 10^8 \\text{ m/s} \\))。</li>
+                    <li>電場 (<span class="var">E</span>) 與磁場 (<span class="var">B</span>) 互相<b>垂直</b>，並與傳播方向垂直。</li>
+                    <li>兩者<b>同相 (in-phase)</b>：同時達到最大值，同時變為零！</li>
+                    <li>公式：\\( c = f \\lambda \\)</li>
+                `,
+                btnPause: "暫停動畫 Pause",
+                btnPlay: "播放動畫 Play"
+            },
+            en: {
+                titleText: "3D EM Wave Simulator",
+                subTitleText: "Drag to Rotate | Scroll to Zoom",
+                labelE: "Electric Field (<span class=\"var\">E</span>)",
+                labelB: "Magnetic Field (<span class=\"var\">B</span>)",
+                labelC: "Propagation (<span class=\"var\">c</span>)",
+                panelTitle: "Control Panel",
+                labelWl: "Wavelength (<span class=\"var\">&lambda;</span>)",
+                labelAmp: "Amplitude (<span class=\"var\">A</span>)",
+                labelSpeed: "Anim Speed",
+                labelPlanes: "Show Wave Planes",
+                conceptTitle: "<svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> Physics Concepts",
+                conceptText: `
+                    <li>Generated by <b>accelerating charged particles</b> (e.g., oscillating charges).</li>
+                    <li>Changing electric and magnetic fields <b>induce each other</b>, propagating outwards as a wave.</li>
+                    <li>Travels at the <b>speed of light</b> in a vacuum (\\( c = 3 \\times 10^8 \\text{ m/s} \\)).</li>
+                    <li>Electric (<span class="var">E</span>) & Magnetic (<span class="var">B</span>) fields are <b>mutually perpendicular</b> and perpendicular to the propagation direction.</li>
+                    <li>They are <b>in-phase</b>: reaching max and zero simultaneously.</li>
+                    <li>Equation: \\( c = f \\lambda \\)</li>
+                `,
+                btnPause: "Pause Animation",
+                btnPlay: "Play Animation"
+            }
+        };
+
+        let currentLang = 'zh';
+        let isPlaying = true;
+
+        function updateLanguage() {
+            const isChecked = document.getElementById('lang-toggle').checked;
+            currentLang = isChecked ? 'en' : 'zh';
+            const t = dict[currentLang];
+
+            document.getElementById('title-text').innerHTML = t.titleText;
+            document.getElementById('subtitle-text').innerHTML = t.subTitleText;
+            document.getElementById('label-e').innerHTML = t.labelE;
+            document.getElementById('label-b').innerHTML = t.labelB;
+            document.getElementById('label-c').innerHTML = t.labelC;
+            document.getElementById('panel-title').innerHTML = t.panelTitle;
+            document.getElementById('label-wl').innerHTML = t.labelWl;
+            document.getElementById('label-amp').innerHTML = t.labelAmp;
+            document.getElementById('label-speed').innerHTML = t.labelSpeed;
+            document.getElementById('label-planes').innerHTML = t.labelPlanes;
+            document.getElementById('concept-title').innerHTML = t.conceptTitle;
+            document.getElementById('concept-text').innerHTML = t.conceptText;
+            
+            updatePlayBtnText();
+
+            // Re-render MathJax if loaded
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        function updatePlayBtnText() {
+            const btn = document.getElementById('btn-toggle-anim');
+            btn.innerHTML = isPlaying ? dict[currentLang].btnPause : dict[currentLang].btnPlay;
+            if(isPlaying) {
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            } else {
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+            }
+        }
+
+        document.getElementById('lang-toggle').addEventListener('change', updateLanguage);
+        document.getElementById('btn-toggle-anim').addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            updatePlayBtnText();
+        });
+
+        // --- 2. 物理參數與 UI 綁定 ---
+        let physParams = {
+            wavelength: 4.0,
+            amplitude: 2.0,
+            animSpeed: 1.0,
+            phase: 0
+        };
+        let waveFrontX = 0; // Starts at 0, propagates forward
+        let sourceMesh; // The oscillating source particle
+        let planesGroup; // Group for the E and B planes
+
+        const sliderWl = document.getElementById('slider-wl');
+        const sliderAmp = document.getElementById('slider-amp');
+        const sliderSpeed = document.getElementById('slider-speed');
+        
+        const valWl = document.getElementById('val-wl');
+        const valAmp = document.getElementById('val-amp');
+        const valSpeed = document.getElementById('val-speed');
+
+        function updateUIValues() {
+            valWl.innerText = parseFloat(sliderWl.value).toFixed(1) + ' m';
+            valAmp.innerText = parseFloat(sliderAmp.value).toFixed(1);
+            valSpeed.innerText = parseFloat(sliderSpeed.value).toFixed(1) + 'x';
+        }
+
+        sliderWl.addEventListener('input', (e) => { physParams.wavelength = parseFloat(e.target.value); updateUIValues(); });
+        sliderAmp.addEventListener('input', (e) => { physParams.amplitude = parseFloat(e.target.value); updateUIValues(); });
+        sliderSpeed.addEventListener('input', (e) => { physParams.animSpeed = parseFloat(e.target.value); updateUIValues(); });
+
+        document.getElementById('toggle-planes').addEventListener('change', (e) => {
+            if (planesGroup) {
+                planesGroup.visible = e.target.checked;
+            }
+        });
+
+        // --- 3. Three.js 核心邏輯 ---
+        const container = document.getElementById('canvas-container');
+        let scene, camera, renderer, controls;
+        
+        // 陣列儲存箭頭與連接線，方便每幀更新
+        const eArrows = [];
+        const bArrows = [];
+        let eLine, bLine, dirArrow;
+        const numPoints = 80; // 波的取樣點數量
+        const waveLengthX = 20; // X軸顯示總長度
+
+        // 顏色設定 (根據要求：藍色電場，紅色磁場)
+        const COLOR_E = 0x3b82f6; // Tailwind blue-500
+        const COLOR_B = 0xef4444; // Tailwind red-500
+        const COLOR_C = 0x10b981; // Tailwind emerald-500
+
+        // 自定義粗箭頭類別 (解決 WebGL 原生線條太幼的問題)
+        class ThickArrow extends THREE.Group {
+            constructor(dir, origin, length, color, headLength = 0.35, headWidth = 0.18, shaftThickness = 0.05) {
+                super();
+                this.material = new THREE.MeshPhongMaterial({ color: color, shininess: 50 });
+                this.shaftGeo = new THREE.CylinderGeometry(shaftThickness, shaftThickness, 1, 8);
+                this.headGeo = new THREE.ConeGeometry(headWidth, headLength, 12);
+                
+                this.shaft = new THREE.Mesh(this.shaftGeo, this.material);
+                this.head = new THREE.Mesh(this.headGeo, this.material);
+                this.add(this.shaft);
+                this.add(this.head);
+                
+                this.setDirection(dir);
+                this.setLength(length, headLength);
+                this.position.copy(origin);
+            }
+            setDirection(dir) {
+                this.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+            }
+            setLength(length, headLength = 0.35) {
+                // 如果長度短於箭頭頭部，則隱藏以防止變形
+                if (length < headLength) {
+                    this.visible = false;
+                    return;
+                }
+                this.visible = true;
+                const shaftLen = length - headLength;
+                this.shaft.scale.set(1, shaftLen, 1);
+                this.shaft.position.set(0, shaftLen / 2, 0);
+                this.head.scale.set(1, 1, 1);
+                this.head.position.set(0, shaftLen + headLength / 2, 0);
+            }
+        }
+
+        function initThree() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf9fafb); // Tailwind gray-50
+
+            // 加入光照，讓粗化後的 3D 箭頭與線管擁有立體感
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(-10, 10, 15);
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(waveLengthX/2, 0, 0);
+
+            // Axes Helper (Custom styled)
+            const axesHelper = new THREE.AxesHelper( waveLengthX + 2 );
+            scene.add( axesHelper );
+
+            // Add an oscillating source particle at the origin
+            const sourceGeom = new THREE.SphereGeometry(0.2, 16, 16);
+            const sourceMat = new THREE.MeshBasicMaterial({ color: 0xeab308 }); // Yellow/Gold
+            sourceMesh = new THREE.Mesh(sourceGeom, sourceMat);
+            scene.add(sourceMesh);
+
+            // Create E and B Planes (Grid background)
+            planesGroup = new THREE.Group();
+            
+            // E-Plane (XY Plane) - Blueish grid
+            const eGrid = new THREE.GridHelper(waveLengthX, 20, 0x3b82f6, 0xbfdbfe);
+            eGrid.rotation.x = Math.PI / 2;
+            eGrid.position.set(waveLengthX / 2, 0, 0);
+            planesGroup.add(eGrid);
+
+            // B-Plane (XZ Plane) - Reddish grid
+            const bGrid = new THREE.GridHelper(waveLengthX, 20, 0xef4444, 0xfecaca);
+            bGrid.position.set(waveLengthX / 2, 0, 0);
+            planesGroup.add(bGrid);
+
+            planesGroup.visible = false; // Hidden by default
+            scene.add(planesGroup);
+
+            // Build Wave Geometries
+            buildWaves();
+
+            // Handle Resize
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // Start Loop
+            animate();
+        }
+
+        function buildWaves() {
+            // 使用 Phong 材質讓粗管線條有 3D 光澤
+            const eMaterial = new THREE.MeshPhongMaterial({ color: COLOR_E, shininess: 50 });
+            const bMaterial = new THREE.MeshPhongMaterial({ color: COLOR_B, shininess: 50 });
+            
+            eLine = new THREE.Mesh(new THREE.BufferGeometry(), eMaterial);
+            bLine = new THREE.Mesh(new THREE.BufferGeometry(), bMaterial);
+            scene.add(eLine);
+            scene.add(bLine);
+
+            // Create Arrows
+            const dirYPos = new THREE.Vector3(0, 1, 0);
+            const dirYNeg = new THREE.Vector3(0, -1, 0);
+            const dirZPos = new THREE.Vector3(0, 0, 1);
+            const dirZNeg = new THREE.Vector3(0, 0, -1);
+
+            // 傳播方向巨型粗箭頭
+            dirArrow = new ThickArrow(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 3, COLOR_C, 0.6, 0.3, 0.1);
+            scene.add(dirArrow);
+
+            for (let i = 0; i < numPoints; i++) {
+                // Electric Field Thick Arrow
+                const arrowE = new ThickArrow(dirYPos, new THREE.Vector3(0,0,0), 1, COLOR_E);
+                scene.add(arrowE);
+                eArrows.push(arrowE);
+
+                // Magnetic Field Thick Arrow
+                const arrowB = new ThickArrow(dirZPos, new THREE.Vector3(0,0,0), 1, COLOR_B);
+                scene.add(arrowB);
+                bArrows.push(arrowB);
+            }
+        }
+
+        function updateWaves() {
+            const k = (2 * Math.PI) / physParams.wavelength;
+            
+            // 收集波峰點陣列以建立粗管 (TubeGeometry)
+            const ePoints = [];
+            const bPoints = [];
+
+            // Update source particle position (oscillating on Y axis)
+            if (sourceMesh) {
+                sourceMesh.position.y = physParams.amplitude * Math.sin(-physParams.phase);
+            }
+
+            // Update Propagation Direction Arrow position (Follows the wavefront)
+            if (dirArrow) {
+                const arrowPosX = Math.min(waveFrontX, waveLengthX + 2);
+                dirArrow.position.set(arrowPosX, 0, 0);
+                dirArrow.visible = waveFrontX > 0;
+            }
+
+            for (let i = 0; i < numPoints; i++) {
+                // x goes from 0 to waveLengthX
+                const x = (i / (numPoints - 1)) * waveLengthX;
+                const arrowE = eArrows[i];
+                const arrowB = bArrows[i];
+                
+                // 如果尚未推進到該位置，隱藏箭頭
+                if (x > waveFrontX) {
+                    arrowE.visible = false;
+                    arrowB.visible = false;
+                    continue;
+                }
+                
+                // Calculate wave equation
+                const y = physParams.amplitude * Math.sin(k * x - physParams.phase);
+                
+                // 記錄波形座標以建立線管
+                ePoints.push(new THREE.Vector3(x, y, 0));
+                bPoints.push(new THREE.Vector3(x, 0, y));
+                
+                const len = Math.abs(y);
+                
+                // --- Update Electric Field Thick Arrow ---
+                arrowE.position.set(x, 0, 0);
+                if (len > 0.35) { // 大於箭頭頂部尺寸才顯示
+                    arrowE.visible = true;
+                    arrowE.setDirection(y > 0 ? new THREE.Vector3(0,1,0) : new THREE.Vector3(0,-1,0));
+                    arrowE.setLength(len);
+                } else {
+                    arrowE.visible = false;
+                }
+
+                // --- Update Magnetic Field Thick Arrow ---
+                arrowB.position.set(x, 0, 0);
+                if (len > 0.35) {
+                    arrowB.visible = true;
+                    arrowB.setDirection(y > 0 ? new THREE.Vector3(0,0,1) : new THREE.Vector3(0,0,-1));
+                    arrowB.setLength(len);
+                } else {
+                    arrowB.visible = false;
+                }
+            }
+
+            // 動態更新粗管立體線條
+            if (ePoints.length > 1) {
+                eLine.visible = true;
+                bLine.visible = true;
+                
+                if (eLine.geometry) eLine.geometry.dispose();
+                if (bLine.geometry) bLine.geometry.dispose();
+
+                // 建立平滑管狀幾何體
+                const eCurve = new THREE.CatmullRomCurve3(ePoints);
+                const bCurve = new THREE.CatmullRomCurve3(bPoints);
+
+                eLine.geometry = new THREE.TubeGeometry(eCurve, ePoints.length, 0.04, 8, false);
+                bLine.geometry = new THREE.TubeGeometry(bCurve, bPoints.length, 0.04, 8, false);
+            } else {
+                eLine.visible = false;
+                bLine.visible = false;
+            }
+        }
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+
+            if (isPlaying) {
+                // Using animSpeed as a multiplier for the visual propagation speed.
+                // Actual physical c is constant, but we adjust visual w for animation.
+                const visualVelocity = physParams.animSpeed * 4.0; // scale factor for visual speed
+                const w = (2 * Math.PI) * (visualVelocity / physParams.wavelength);
+                
+                // Phase increases by w * delta
+                physParams.phase += w * delta;
+
+                // Advance the wavefront forward
+                if (waveFrontX < waveLengthX + 5) {
+                    waveFrontX += visualVelocity * delta;
+                }
+            }
+
+            updateWaves();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            if(!camera || !renderer) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Initialize application
+        window.onload = function() {
+            initThree();
+            updateLanguage(); // Set initial text
+            updateUIValues();
+        };
+
+    </script>
+</body>
+</html>

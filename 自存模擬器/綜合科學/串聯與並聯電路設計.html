@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>初中科學：串聯與並聯電路模擬器 | Series & Parallel Circuit Simulator</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1976D2',
+                        secondary: '#424242',
+                        accent: '#FFC107',
+                        bgLight: '#F5F7FA',
+                        wire: '#374151',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- React & ReactDOM (原生 JS 運行，不需 Babel) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- MathJax -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' },
+            startup: { typeset: false } // Triggered manually in React
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+    <style>
+        /* Prevent scrollbars and bouncing on mobile */
+        body { margin: 0; padding: 0; background-color: #F5F7FA; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        
+        /* iPhone style toggle switch */
+        .toggle-checkbox:checked { right: 0; border-color: #34D399; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #34D399; }
+        .toggle-checkbox { right: 0; z-index: 1; border-color: #E5E7EB; transition: all 0.3s ease; }
+        .toggle-label { transition: all 0.3s ease; }
+        
+        /* Current Flow Animation */
+        .current-flow {
+            stroke-dasharray: 8 16;
+            animation: flow linear infinite;
+        }
+        @keyframes flow {
+            from { stroke-dashoffset: 24; }
+            to { stroke-dashoffset: 0; }
+        }
+        
+        /* Bulb Glow */
+        .bulb-glow {
+            transition: all 0.3s ease;
+        }
+        
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent; padding: 10px 0;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%;
+            background: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: pointer; margin-top: -10px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 8px; cursor: pointer;
+            background: #CBD5E1; border-radius: 4px;
+        }
+        input[type=range]:focus { outline: none; }
+        
+        /* Physics Variables Italic Font */
+        .phy-var { font-family: "Times New Roman", Times, serif; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/javascript">
+        // 改用原生 JavaScript 編寫 React，完全移除對 JSX/Babel 的依賴
+        const { useState, useEffect, useRef, createElement: e, Fragment } = React;
+
+        // --- Translations Dictionary ---
+        const i18n = {
+            zh: {
+                title: "電路模擬器 (串聯與並聯)",
+                mode: "電路模式",
+                series: "串聯 (Series)",
+                parallel: "並聯 (Parallel)",
+                voltage: "電池電壓",
+                bulbs: "燈泡數量",
+                bulbStatus: "燈泡狀態 (點擊可斷開)",
+                normal: "燈泡",
+                broken: "燒毀",
+                ammeter: "總電流 (A)",
+                voltmeter: "電壓 (V)",
+                theory: "原理解釋",
+                theorySeries: "在串聯電路中，只有一條路徑。如果一個燈泡燒毀，整個電路就會斷路，所有燈泡都會熄滅。總電阻等於各燈泡電阻之和。",
+                theoryParallel: "在並聯電路中，電流有多條路徑。一個燈泡燒毀不影響其他分支。各分支的電壓相同，這也是家居照明的接駁方式！",
+                resistanceNote: "（假設每個燈泡電阻 R = 10 Ω）"
+            },
+            en: {
+                title: "Circuit Simulator (Series & Parallel)",
+                mode: "Circuit Mode",
+                series: "Series",
+                parallel: "Parallel",
+                voltage: "Battery Voltage",
+                bulbs: "Number of Bulbs",
+                bulbStatus: "Bulb Status (Click to break)",
+                normal: "Bulb",
+                broken: "Blown",
+                ammeter: "Total Current (A)",
+                voltmeter: "Voltage (V)",
+                theory: "Theory & Explanation",
+                theorySeries: "In a series circuit, there is only one path. If one bulb blows, the circuit breaks and all bulbs go out. Total resistance is the sum of all resistors.",
+                theoryParallel: "In a parallel circuit, there are multiple paths. A blown bulb doesn't affect other branches. Voltage is the same across all branches (used in home lighting!).",
+                resistanceNote: "(Assume each bulb resistance R = 10 Ω)"
+            }
+        };
+
+        const App = () => {
+            // --- State Management ---
+            const [lang, setLang] = useState('zh');
+            const [mode, setMode] = useState('series'); 
+            const [voltage, setVoltage] = useState(12); 
+            const [numBulbs, setNumBulbs] = useState(2); 
+            const [bulbStates, setBulbStates] = useState([true, true, true]); 
+            
+            const R_BULB = 10; 
+            const mathJaxRef = useRef(null);
+
+            // --- Physics Calculations ---
+            const calcPhysics = () => {
+                let totalI = 0;
+                let bulbData = [];
+
+                if (mode === 'series') {
+                    const activeBulbs = numBulbs;
+                    let brokenCount = 0;
+                    for(let i=0; i<numBulbs; i++) {
+                        if(!bulbStates[i]) brokenCount++;
+                    }
+                    const isBroken = brokenCount > 0;
+
+                    const Req = isBroken ? Infinity : R_BULB * activeBulbs;
+                    totalI = isBroken ? 0 : voltage / Req;
+
+                    for(let i=0; i<3; i++) {
+                        if(i < numBulbs) {
+                            const I = isBroken ? 0 : totalI;
+                            let V;
+                            if (!isBroken) {
+                                V = I * R_BULB;
+                            } else {
+                                V = !bulbStates[i] ? voltage / brokenCount : 0;
+                            }
+                            const P = isBroken ? 0 : I * I * R_BULB;
+                            bulbData.push({ id: i, current: I, voltage: V, power: P, isBroken: !bulbStates[i], active: true });
+                        } else {
+                            bulbData.push({ id: i, current: 0, voltage: 0, power: 0, isBroken: false, active: false });
+                        }
+                    }
+                } else {
+                    for(let i=0; i<3; i++) {
+                        if(i < numBulbs) {
+                            const isBroken = !bulbStates[i];
+                            const I = isBroken ? 0 : voltage / R_BULB;
+                            const V = isBroken ? voltage : voltage; 
+                            const P = isBroken ? 0 : I * I * R_BULB;
+                            totalI += I;
+                            bulbData.push({ id: i, current: I, voltage: V, power: P, isBroken: isBroken, active: true });
+                        } else {
+                            bulbData.push({ id: i, current: 0, voltage: 0, power: 0, isBroken: false, active: false });
+                        }
+                    }
+                }
+                return { totalI, bulbData };
+            };
+
+            const { totalI, bulbData } = calcPhysics();
+
+            // Handle MathJax Rendering
+            useEffect(() => {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([mathJaxRef.current]).catch((err) => console.log(err));
+                }
+            }, [mode, voltage, numBulbs, bulbStates, lang]);
+
+            // Handlers
+            const toggleBulb = (index) => {
+                const newStates = [...bulbStates];
+                newStates[index] = !newStates[index];
+                setBulbStates(newStates);
+            };
+
+            const t = i18n[lang];
+
+            // --- SVG Drawing Helpers ---
+            const renderCurrentPath = (d, current) => {
+                if (current <= 0.01) return null; 
+                let duration = 3 / Math.max(0.5, current); 
+                return e('path', {
+                    d: d,
+                    fill: "none",
+                    stroke: "#FFC107",
+                    strokeWidth: "5",
+                    className: "current-flow",
+                    style: { animationDuration: `${duration}s` }
+                });
+            };
+
+            const renderBulbIcon = (x, y, data, labelPos = 'bottom') => {
+                if (!data.active) return null;
+                const maxPower = (24 * 24) / 10; 
+                const intensity = Math.min(1, data.power / maxPower);
+                const glowRadius = 25 + intensity * 50;
+                const isOn = data.power > 0.01 && !data.isBroken;
+
+                let labelX, labelY, textAnchor;
+                if (labelPos === 'bottom') {
+                    labelX = 0; labelY = 55; textAnchor = 'middle';
+                } else if (labelPos === 'right') {
+                    labelX = 35; labelY = -10; textAnchor = 'start';
+                } else if (labelPos === 'left') {
+                    labelX = -35; labelY = -10; textAnchor = 'end';
+                }
+
+                return e('g', { transform: `translate(${x}, ${y})`, className: "cursor-pointer", onClick: () => toggleBulb(data.id) },
+                    isOn ? e('circle', { cx: "0", cy: "0", r: glowRadius, fill: "rgba(255, 235, 59, 0.4)", className: "bulb-glow blur-md" }) : null,
+                    e('rect', { x: "-12", y: "18", width: "24", height: "18", fill: "#555", rx: "3" }),
+                    e('circle', { cx: "0", cy: "0", r: "22", fill: data.isBroken ? "#e2e8f0" : (isOn ? "#FFF59D" : "#f1f5f9"), stroke: "#94a3b8", strokeWidth: "2.5" }),
+                    !data.isBroken ? 
+                        e('path', { d: "M -10 10 Q 0 -12 10 10", fill: "none", stroke: isOn ? "#F57F17" : "#94a3b8", strokeWidth: "2.5" }) :
+                        e('path', { d: "M -10 10 L -4 0 M 10 10 L 4 0", fill: "none", stroke: "#ef4444", strokeWidth: "2.5" }),
+                    data.isBroken ? e('text', { x: "0", y: "-28", textAnchor: "middle", fill: "#ef4444", fontSize: "24", fontWeight: "bold" }, "!") : null,
+                    e('text', { x: labelX, y: labelY, textAnchor: textAnchor, fontSize: "16", fill: "#374151", className: "font-semibold" }, (!data.isBroken ? t.normal : t.broken) + " " + (data.id + 1)),
+                    e('text', { x: labelX, y: labelY + 20, textAnchor: textAnchor, fontSize: "14", fill: "#6b7280", className: "phy-var" }, `V = ${data.voltage.toFixed(2)}V`),
+                    e('text', { x: labelX, y: labelY + 40, textAnchor: textAnchor, fontSize: "14", fill: "#6b7280", className: "phy-var" }, `I = ${data.current.toFixed(2)}A`)
+                );
+            };
+
+            return e('div', { className: "min-h-screen w-full flex flex-col md:flex-row bg-bgLight" },
+                // --- LEFT PANEL: Controls (35%) ---
+                e('div', { className: "w-full md:w-1/3 bg-white shadow-lg z-20 flex flex-col md:h-screen md:sticky md:top-0 overflow-y-auto" },
+                    
+                    e('div', { className: "p-4 bg-primary text-white flex justify-between items-center shadow-md" },
+                        e('h1', { className: "text-lg font-bold truncate pr-2" }, t.title),
+                        e('button', { 
+                            onClick: () => setLang(lang === 'zh' ? 'en' : 'zh'),
+                            className: "px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-sm font-medium transition-colors"
+                        }, lang === 'zh' ? 'ENG' : '中文')
+                    ),
+
+                    e('div', { className: "p-6 flex-1 flex flex-col gap-6" },
+                        
+                        e('div', null,
+                            e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, t.mode),
+                            e('div', { className: "flex bg-gray-100 p-1 rounded-lg" },
+                                e('button', { 
+                                    className: `flex-1 py-2 rounded-md text-sm font-bold transition-colors ${mode === 'series' ? 'bg-white shadow text-primary' : 'text-gray-500'}`,
+                                    onClick: () => setMode('series')
+                                }, t.series),
+                                e('button', { 
+                                    className: `flex-1 py-2 rounded-md text-sm font-bold transition-colors ${mode === 'parallel' ? 'bg-white shadow text-primary' : 'text-gray-500'}`,
+                                    onClick: () => setMode('parallel')
+                                }, t.parallel)
+                            )
+                        ),
+
+                        e('div', null,
+                            e('div', { className: "flex justify-between mb-1" },
+                                e('label', { className: "text-sm font-semibold text-gray-700" }, t.voltage),
+                                e('span', { className: "text-sm font-bold text-primary phy-var" }, `${voltage} V`)
+                            ),
+                            e('input', { 
+                                type: "range", min: "1", max: "24", step: "1", 
+                                value: voltage, 
+                                onChange: (ev) => setVoltage(Number(ev.target.value)), 
+                                className: "w-full mt-2"
+                            })
+                        ),
+
+                        e('div', null,
+                            e('div', { className: "flex justify-between mb-1" },
+                                e('label', { className: "text-sm font-semibold text-gray-700" }, t.bulbs),
+                                e('span', { className: "text-sm font-bold text-primary" }, numBulbs)
+                            ),
+                            e('input', { 
+                                type: "range", min: "1", max: "3", step: "1", 
+                                value: numBulbs, 
+                                onChange: (ev) => {
+                                    setNumBulbs(Number(ev.target.value));
+                                    setBulbStates([true, true, true]);
+                                }, 
+                                className: "w-full mt-2"
+                            })
+                        ),
+
+                        e('div', { className: "bg-gray-50 p-4 rounded-lg border border-gray-100" },
+                            e('label', { className: "block text-base font-semibold text-gray-700 mb-4" }, t.bulbStatus),
+                            e('div', { className: "space-y-4" },
+                                bulbData.slice(0, numBulbs).map((bulb, i) => 
+                                    e('div', { key: i, className: "flex justify-between items-center" },
+                                        e('span', { className: "text-base text-gray-700 font-medium" }, `燈泡 / Bulb ${i+1}`),
+                                        e('div', { className: "relative inline-block w-14 mr-2 align-middle select-none transition duration-200 ease-in" },
+                                            e('input', { 
+                                                type: "checkbox", 
+                                                name: `toggle-${i}`, 
+                                                id: `toggle-${i}`,
+                                                checked: !bulb.isBroken,
+                                                onChange: () => toggleBulb(i),
+                                                className: "toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                                            }),
+                                            e('label', { 
+                                                htmlFor: `toggle-${i}`, 
+                                                className: "toggle-label block overflow-hidden h-7 rounded-full bg-gray-300 cursor-pointer"
+                                            })
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                // --- RIGHT PANEL: Circuit Canvas & Theory (65%) ---
+                e('div', { className: "w-full md:w-2/3 flex flex-col bg-bgLight min-h-[60vh] md:h-screen md:overflow-y-auto" },
+                    
+                    e('div', { className: "flex-1 relative m-3 md:m-6 bg-white rounded-2xl shadow-inner border-2 border-dashed border-gray-200 flex items-center justify-center min-h-[450px] md:min-h-0 overflow-hidden" },
+                        e('svg', { viewBox: "0 0 800 600", className: "w-full h-full max-w-4xl max-h-full p-2" },
+                            e('defs', null,
+                                e('pattern', { id: "grid", width: "40", height: "40", patternUnits: "userSpaceOnUse" },
+                                    e('path', { d: "M 40 0 L 0 0 0 40", fill: "none", stroke: "#e5e7eb", strokeWidth: "0.5" })
+                                )
+                            ),
+                            e('rect', { width: "100%", height: "100%", fill: "url(#grid)" }),
+
+                            e('g', { transform: "translate(100, 300)" },
+                                e('line', { x1: "0", y1: "-80", x2: "0", y2: "80", stroke: "#374151", strokeWidth: "5" }),
+                                e('rect', { x: "-35", y: "-50", width: "70", height: "100", fill: "#fff", stroke: "#374151", strokeWidth: "5" }),
+                                e('line', { x1: "-25", y1: "-15", x2: "25", y2: "-15", stroke: "#374151", strokeWidth: "8" }),
+                                e('line', { x1: "-15", y1: "15", x2: "15", y2: "15", stroke: "#374151", strokeWidth: "12" }),
+                                e('text', { x: "-50", y: "-15", textAnchor: "middle", dominantBaseline: "central", fontSize: "32", fontWeight: "bold", fill: "#ef4444" }, "+"),
+                                e('text', { x: "-50", y: "15", textAnchor: "middle", dominantBaseline: "central", fontSize: "40", fontWeight: "bold", fill: "#3b82f6" }, "-"),
+                                e('text', { x: "45", y: "0", dominantBaseline: "central", fontSize: "24", className: "phy-var", fontWeight: "bold", fill: "#1976D2" }, `${voltage}V`)
+                            ),
+
+                            e('g', { transform: "translate(100, 150)" },
+                                e('circle', { cx: "0", cy: "0", r: "30", fill: "#fff", stroke: "#374151", strokeWidth: "4" }),
+                                e('text', { x: "0", y: "8", textAnchor: "middle", fontSize: "24", fontWeight: "bold", fill: "#374151" }, "A"),
+                                e('rect', { x: "35", y: "-18", width: "85", height: "36", fill: "#f3f4f6", rx: "6" }),
+                                e('text', { x: "77", y: "7", textAnchor: "middle", fontSize: "18", className: "phy-var font-bold text-green-600" }, `${totalI.toFixed(2)}A`)
+                            ),
+
+                            mode === 'series' ? e(Fragment, null,
+                                e('path', { d: "M 100 220 L 100 180", fill: "none", stroke: "#374151", strokeWidth: "5" }),
+                                e('path', { d: "M 100 120 L 100 100 L 700 100 L 700 500 L 100 500 L 100 380", fill: "none", stroke: "#374151", strokeWidth: "5" }),
+                                renderCurrentPath("M 100 220 L 100 180", totalI),
+                                renderCurrentPath("M 100 120 L 100 100 L 700 100 L 700 500 L 100 500 L 100 380", totalI),
+                                numBulbs >= 1 ? renderBulbIcon(300, 100, bulbData[0], 'bottom') : null,
+                                numBulbs >= 2 ? renderBulbIcon(500, 100, bulbData[1], 'bottom') : null,
+                                numBulbs >= 3 ? renderBulbIcon(700, 300, bulbData[2], 'left') : null
+                            ) : null,
+
+                            mode === 'parallel' ? e(Fragment, null,
+                                e('path', { d: "M 100 220 L 100 180", fill: "none", stroke: "#374151", strokeWidth: "5" }),
+                                e('path', { d: "M 100 120 L 100 100 L 700 100", fill: "none", stroke: "#374151", strokeWidth: "5" }),
+                                e('path', { d: "M 100 380 L 100 500 L 700 500", fill: "none", stroke: "#374151", strokeWidth: "5" }),
+                                renderCurrentPath("M 100 220 L 100 180", totalI),
+                                renderCurrentPath("M 100 120 L 100 100 L 300 100", totalI),
+                                renderCurrentPath("M 300 500 L 100 500 L 100 380", totalI),
+                                [300, 500, 700].map((x, idx) => {
+                                    if (idx < numBulbs) {
+                                        const bData = bulbData[idx];
+                                        const nextX = [300, 500, 700][idx+1];
+                                        let currentToNextTop = 0;
+                                        for(let i=idx+1; i<numBulbs; i++) currentToNextTop += bulbData[i].current;
+                                        const labelPos = idx === 2 ? 'left' : 'right';
+
+                                        return e('g', { key: idx },
+                                            e('path', { d: `M ${x} 100 L ${x} 500`, fill: "none", stroke: "#374151", strokeWidth: "5" }),
+                                            e('circle', { cx: x, cy: "100", r: "7", fill: "#374151" }),
+                                            e('circle', { cx: x, cy: "500", r: "7", fill: "#374151" }),
+                                            renderCurrentPath(`M ${x} 100 L ${x} 500`, bData.current),
+                                            idx < numBulbs - 1 ? renderCurrentPath(`M ${x} 100 L ${nextX} 100`, currentToNextTop) : null,
+                                            idx < numBulbs - 1 ? renderCurrentPath(`M ${nextX} 500 L ${x} 500`, currentToNextTop) : null,
+                                            renderBulbIcon(x, 300, bData, labelPos)
+                                        );
+                                    }
+                                    return null;
+                                })
+                            ) : null
+                        )
+                    ),
+
+                    e('div', { className: "bg-white border-t-2 border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-10" },
+                        e('h2', { className: "text-lg font-bold text-primary flex items-center gap-2 mb-2" },
+                            e('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+                                e('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" })
+                            ),
+                            t.theory
+                        ),
+                        e('p', { className: "text-sm text-gray-700 mb-3 font-medium leading-relaxed" },
+                            mode === 'series' ? t.theorySeries : t.theoryParallel,
+                            " ",
+                            e('span', { className: "text-gray-500 font-normal" }, t.resistanceNote)
+                        ),
+                        
+                        e('div', { ref: mathJaxRef, className: "bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm overflow-x-auto" },
+                            mode === 'series' ? e('div', { className: "flex flex-col md:flex-row gap-4 items-center justify-center" },
+                                e('div', null, "$$R_{eq} = R_1 + R_2 + ...$$"),
+                                e('div', null, "$$I_{total} = \\frac{V}{R_{eq}} = \\frac{V}{N \\times R}$$")
+                            ) : e('div', { className: "flex flex-col md:flex-row gap-4 items-center justify-center" },
+                                e('div', null, "$$\\frac{1}{R_{eq}} = \\frac{1}{R_1} + \\frac{1}{R_2} + ...$$"),
+                                e('div', null, "$$I_{branch} = \\frac{V}{R_{branch}} \\quad;\\quad I_{total} = \\sum I_{branch}$$")
+                            )
+                        )
+                    )
+                )
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(e(App));
+    </script>
+</body>
+</html>

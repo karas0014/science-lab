@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DSE Physics: Magnetic Field of Straight Wire | 長直導線磁場模擬器</title>
+
+    
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & Three.js Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel Standalone (Pinned Version) -->
+    <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+    
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Roboto:ital,wght@0,400;0,700;1,400&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow: hidden;
+            background-color: #f8fafc; /* Slate 50 */
+        }
+        
+        /* Physics Variables - Times New Roman Italic */
+        .math-var {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+        
+        /* Formula Text */
+        .formula-text {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #0ea5e9; /* Sky 500 */
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 0 5px rgba(14, 165, 233, 0.4);
+            border: 2px solid white;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1; /* Slate 300 */
+            border-radius: 2px;
+        }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #0ea5e9;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #0ea5e9;
+        }
+        
+        /* iOS Style Toggle (Segmented Control) */
+        .ios-toggle-checkbox {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        .ios-toggle-label {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            height: 36px;
+            background-color: #e2e8f0;
+            border-radius: 9999px;
+            padding: 4px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .ios-toggle-knob {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: 28px;
+            background-color: white;
+            border-radius: 9999px;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .ios-toggle-checkbox:checked ~ .ios-toggle-label .ios-toggle-knob {
+            transform: translateX(100%);
+        }
+        
+        /* Canvas Container */
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none; 
+        }
+        
+        /* Interactive Panel */
+        .interactive-panel {
+            pointer-events: auto;
+            backdrop-filter: blur(12px);
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- Localization Data ---
+        const TEXT = {
+            en: {
+                title: "B-field: Straight Wire",
+                current: "Current",
+                rotationSpeed: "Field Rotation",
+                tilt: "Wire Tilt",
+                direction: "Direction",
+                view: "View",
+                up: "Up (+y)",
+                down: "Down (-y)",
+                vectors: "Magnetic field",
+                lines: "Magnetic field lines",
+                view3d: "3D View",
+                viewTop: "Top View",
+                intro: "Right-Hand Grip Rule",
+                dseNote: "DSE Key: B-field strength decreases as distance r increases.",
+                toggleLang: "中文",
+                formulaLabel: "Reference Formula",
+                electrons: "Electrons",
+                layers: "Display",
+                single: "Single",
+                multi: "Multi (5)"
+            },
+            zh: {
+                title: "長直導線磁場",
+                current: "電流強度",
+                rotationSpeed: "磁場旋轉速度",
+                tilt: "導線傾角",
+                direction: "電流方向",
+                view: "視角",
+                up: "向上 (+y)",
+                down: "向下 (-y)",
+                vectors: "磁場",
+                lines: "磁力線",
+                view3d: "立體視角 (3D)",
+                viewTop: "俯視視角 (Top)",
+                intro: "右手握拳定則",
+                dseNote: "DSE 重點：磁場強度隨距離 r 增加而減弱。",
+                toggleLang: "ENG",
+                formulaLabel: "參考公式",
+                electrons: "電子流 (藍色)",
+                layers: "顯示層數",
+                single: "單層",
+                multi: "多層 (5層)"
+            }
+        };
+
+        const App = () => {
+            const [lang, setLang] = useState('zh');
+            const [currentStrength, setCurrentStrength] = useState(7.5);
+            const [currentDirection, setCurrentDirection] = useState(1);
+            const [rotationSpeed, setRotationSpeed] = useState(0);
+            const [wireAngle, setWireAngle] = useState(0); // New: Wire Tilt Angle (0-90)
+            
+            // Toggles
+            const [showVectors, setShowVectors] = useState(true);
+            const [showLines, setShowLines] = useState(true);
+            const [showElectrons, setShowElectrons] = useState(false);
+            const [isMultiLayer, setIsMultiLayer] = useState(false);
+            
+            const [viewMode, setViewMode] = useState('3d'); 
+            const [isControlsOpen, setIsControlsOpen] = useState(true);
+            const [isInfoOpen, setIsInfoOpen] = useState(false);
+            
+            const mountRef = useRef(null);
+            const sceneRef = useRef(null);
+            
+            // Refs
+            const physicsGroupRef = useRef(null); // New: Container for all physics objects
+            const wireCurrentArrowRef = useRef(null);
+            const vectorGroupRef = useRef(null);
+            const linesGroupRef = useRef(null);
+            const symbolGroupRef = useRef(null);
+            const symbolDotRef = useRef(null);
+            const symbolCrossRef = useRef(null);
+            const electronGroupRef = useRef(null); 
+
+            // Simulation Params Ref
+            const simParamsRef = useRef({
+                direction: 1,
+                rotSpeed: 0
+            });
+
+            const electronsDataRef = useRef([]);
+            const cameraRef = useRef(null);
+            const controlsRef = useRef(null);
+
+            const t = TEXT[lang];
+
+            // --- Three.js Initialization ---
+            useEffect(() => {
+                if (!mountRef.current) return;
+
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color('#f8fafc'); 
+                sceneRef.current = scene;
+
+                const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+                camera.position.set(12, 9, 12);
+                cameraRef.current = camera;
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                mountRef.current.appendChild(renderer.domElement);
+
+                const controls = new OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                controls.minDistance = 2;
+                controls.maxDistance = 40; 
+                controlsRef.current = controls;
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+                scene.add(ambientLight);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+                dirLight.position.set(5, 10, 7);
+                scene.add(dirLight);
+
+                // --- Physics Group (Holds everything that rotates with the wire) ---
+                const physicsGroup = new THREE.Group();
+                scene.add(physicsGroup);
+                physicsGroupRef.current = physicsGroup;
+
+                // Wire
+                const wireGeo = new THREE.CylinderGeometry(0.15, 0.15, 40, 32);
+                const wireMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x64748b, 
+                    metalness: 0.4, 
+                    roughness: 0.5,
+                    transparent: true,
+                    opacity: 0.8 
+                });
+                const wire = new THREE.Mesh(wireGeo, wireMat);
+                physicsGroup.add(wire); // Add to Group
+
+                // Electrons
+                const electronGroup = new THREE.Group();
+                physicsGroup.add(electronGroup); // Add to Group
+                electronGroupRef.current = electronGroup;
+                
+                const electrons = [];
+                const electronGeo = new THREE.SphereGeometry(0.04, 8, 8); 
+                const electronMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6 }); 
+
+                for(let i=0; i<40; i++) {
+                    const mesh = new THREE.Mesh(electronGeo, electronMat);
+                    const angle = Math.random() * Math.PI * 2;
+                    const r = Math.sqrt(Math.random()) * 0.11; 
+                    
+                    mesh.position.x = Math.cos(angle) * r;
+                    mesh.position.z = Math.sin(angle) * r;
+                    mesh.position.y = (Math.random() - 0.5) * 40; 
+                    
+                    electronGroup.add(mesh);
+                    electrons.push({
+                        mesh: mesh,
+                        speedOffset: Math.random() * 0.2 + 0.9 
+                    });
+                }
+                electronsDataRef.current = electrons;
+
+                // Current Indicator
+                const currentArrowGroup = new THREE.Group();
+                const caShaftGeo = new THREE.CylinderGeometry(0.4, 0.4, 3, 16);
+                const caMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.9 });
+                const caShaft = new THREE.Mesh(caShaftGeo, caMat);
+                const caHeadGeo = new THREE.ConeGeometry(0.8, 1.2, 16);
+                const caHead = new THREE.Mesh(caHeadGeo, caMat);
+                caHead.position.y = 1.5 + 0.6; 
+                currentArrowGroup.add(caShaft);
+                currentArrowGroup.add(caHead);
+                currentArrowGroup.position.y = 0;
+                physicsGroup.add(currentArrowGroup); // Add to Group
+                wireCurrentArrowRef.current = currentArrowGroup;
+
+                // Symbols (Dot/Cross) - These stay with the wire
+                const symbolGroup = new THREE.Group();
+                symbolGroup.position.y = 2;
+                physicsGroup.add(symbolGroup); // Add to Group
+                symbolGroupRef.current = symbolGroup;
+                symbolGroup.visible = false; 
+                const symbolMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+
+                // DOT
+                const dotGroup = new THREE.Group();
+                const ringGeo = new THREE.TorusGeometry(1.2, 0.15, 16, 32);
+                const ring1 = new THREE.Mesh(ringGeo, symbolMat);
+                ring1.rotation.x = -Math.PI / 2;
+                dotGroup.add(ring1);
+                const dotGeo = new THREE.CircleGeometry(0.5, 32);
+                const dotMesh = new THREE.Mesh(dotGeo, symbolMat);
+                dotMesh.rotation.x = -Math.PI / 2;
+                dotGroup.add(dotMesh);
+                symbolGroup.add(dotGroup);
+                symbolDotRef.current = dotGroup;
+
+                // CROSS
+                const crossGroup = new THREE.Group();
+                const ring2 = new THREE.Mesh(ringGeo, symbolMat);
+                ring2.rotation.x = -Math.PI / 2;
+                crossGroup.add(ring2);
+                const barGeo = new THREE.BoxGeometry(1.6, 0.2, 0.1);
+                const bar1 = new THREE.Mesh(barGeo, symbolMat);
+                bar1.rotation.x = -Math.PI / 2;
+                bar1.rotation.z = Math.PI / 4;
+                const bar2 = new THREE.Mesh(barGeo, symbolMat);
+                bar2.rotation.x = -Math.PI / 2;
+                bar2.rotation.z = -Math.PI / 4;
+                crossGroup.add(bar1);
+                crossGroup.add(bar2);
+                symbolGroup.add(crossGroup);
+                symbolCrossRef.current = crossGroup;
+
+                // Groups for B-field
+                const vectorGroup = new THREE.Group();
+                physicsGroup.add(vectorGroup); // Add to Group
+                vectorGroupRef.current = vectorGroup;
+
+                const linesGroup = new THREE.Group();
+                physicsGroup.add(linesGroup); // Add to Group
+                linesGroupRef.current = linesGroup;
+
+                // Grid Helper (Keep outside Physics Group so it stays flat)
+                const gridHelper = new THREE.GridHelper(20, 20, 0xcbd5e1, 0xe2e8f0);
+                gridHelper.position.y = -5;
+                scene.add(gridHelper);
+
+                // Animation
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    
+                    if(wireCurrentArrowRef.current && wireCurrentArrowRef.current.visible) {
+                        wireCurrentArrowRef.current.rotation.y += 0.01;
+                    }
+
+                    const { direction, rotSpeed } = simParamsRef.current;
+                    if (rotSpeed > 0) {
+                        const angle = rotSpeed * 0.002 * direction;
+                        if(vectorGroupRef.current) vectorGroupRef.current.rotation.y += angle;
+                        if(linesGroupRef.current) linesGroupRef.current.rotation.y += angle;
+                    }
+
+                    renderer.render(scene, camera);
+                };
+                animate();
+
+                // Resize
+                const handleResize = () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                };
+                window.addEventListener('resize', handleResize);
+
+                return () => {
+                    window.removeEventListener('resize', handleResize);
+                    mountRef.current.removeChild(renderer.domElement);
+                    renderer.dispose();
+                };
+            }, []);
+
+            // --- Wire Tilt Effect ---
+            useEffect(() => {
+                if (physicsGroupRef.current) {
+                    // Rotate the entire group around Z axis
+                    // 0 deg = vertical (Y axis)
+                    // 90 deg = horizontal (X axis)
+                    const rad = THREE.MathUtils.degToRad(-wireAngle);
+                    physicsGroupRef.current.rotation.z = rad;
+                }
+            }, [wireAngle]);
+
+            // Sync State to Ref for Animation Loop
+            useEffect(() => {
+                simParamsRef.current = {
+                    direction: currentDirection,
+                    rotSpeed: rotationSpeed
+                };
+            }, [currentDirection, rotationSpeed]);
+
+            // Electrons Animation
+            const animationRef = useRef();
+            useEffect(() => {
+                const animateElectrons = () => {
+                    if (electronGroupRef.current && electronsDataRef.current) {
+                        const speed = currentStrength * 0.015; 
+                        const direction = -currentDirection; 
+                        
+                        const isVisible = currentStrength > 0 && showElectrons;
+                        
+                        if (isVisible) {
+                            electronsDataRef.current.forEach(e => {
+                                e.mesh.visible = true;
+                                // Even if wire is tilted, local Y axis matches wire direction
+                                e.mesh.position.y += speed * e.speedOffset * direction;
+                                if (e.mesh.position.y > 20) e.mesh.position.y = -20;
+                                if (e.mesh.position.y < -20) e.mesh.position.y = 20;
+                            });
+                        }
+                        electronGroupRef.current.visible = isVisible;
+                    }
+                    animationRef.current = requestAnimationFrame(animateElectrons);
+                };
+                animateElectrons();
+                return () => cancelAnimationFrame(animationRef.current);
+            }, [currentStrength, currentDirection, showElectrons]);
+
+            // View Mode
+            useEffect(() => {
+                if(!controlsRef.current || !cameraRef.current) return;
+                if (viewMode === 'top') {
+                    // When tilting, top view might look weird if we don't adjust
+                    // For now, keep "Top View" as looking down Y-axis (Standard Cross-Section view)
+                    // If wire is tilted, the cross section changes to an oval.
+                    cameraRef.current.position.set(0, 20, 0);
+                    cameraRef.current.lookAt(0, 0, 0);
+                } else {
+                    cameraRef.current.position.set(12, 9, 12);
+                    cameraRef.current.lookAt(0, 0, 0);
+                }
+                controlsRef.current.update();
+            }, [viewMode]);
+
+            // Physics Updates
+            useEffect(() => {
+                if (!sceneRef.current) return;
+
+                const isZeroCurrent = currentStrength === 0;
+
+                // 1. Arrow & Symbol
+                if (wireCurrentArrowRef.current && symbolGroupRef.current) {
+                    if (isZeroCurrent) {
+                        wireCurrentArrowRef.current.visible = false;
+                        symbolGroupRef.current.visible = false;
+                    } else if (viewMode === 'top') {
+                        wireCurrentArrowRef.current.visible = false;
+                        symbolGroupRef.current.visible = true;
+                        if (currentDirection === 1) {
+                            symbolDotRef.current.visible = true;
+                            symbolCrossRef.current.visible = false;
+                        } else {
+                            symbolDotRef.current.visible = false;
+                            symbolCrossRef.current.visible = true;
+                        }
+                    } else {
+                        wireCurrentArrowRef.current.visible = true;
+                        symbolGroupRef.current.visible = false;
+                        wireCurrentArrowRef.current.rotation.z = currentDirection === 1 ? 0 : Math.PI;
+                    }
+                }
+
+                // Shared Radii
+                const radii = [1.5, 2.5, 4.0, 6.5, 9.5];
+                // UPDATE: Increased to 5 layers: [-8, -4, 0, 4, 8]
+                const layers = isMultiLayer ? [-8, -4, 0, 4, 8] : [0];
+
+                // 2. Vectors (B-field)
+                const vGroup = vectorGroupRef.current;
+                while(vGroup.children.length > 0) vGroup.remove(vGroup.children[0]); 
+
+                if (showVectors && !isZeroCurrent) {
+                    layers.forEach(yLevel => {
+                        radii.forEach(r => {
+                            const vectorCount = Math.floor(r * 2.5); 
+                            const angleOffset = r * 0.5;
+
+                            for (let i = 0; i < vectorCount; i++) {
+                                const theta = (i / vectorCount) * Math.PI * 2 + angleOffset;
+                                const px = Math.cos(theta) * r;
+                                const pz = Math.sin(theta) * r;
+
+                                let dx, dz;
+                                // Corrected Tangent Logic
+                                if (currentDirection === 1) { 
+                                    // CCW
+                                    dx = pz; dz = -px; 
+                                } else { 
+                                    // CW
+                                    dx = -pz; dz = px; 
+                                }
+
+                                const len = Math.sqrt(dx*dx + dz*dz);
+                                const dirX = dx / len;
+                                const dirZ = dz / len;
+
+                                const magnitude = (currentStrength * 0.5) / r; 
+                                const arrowLength = Math.min(magnitude, 1.5); 
+                                
+                                const headLen = Math.min(arrowLength * 0.3, 0.5);
+                                const headW = headLen * 0.5;
+                                
+                                const dir = new THREE.Vector3(dirX, 0, dirZ);
+                                const origin = new THREE.Vector3(px, yLevel, pz); 
+                                const color = 0x06b6d4; 
+                                
+                                const arrow = new THREE.ArrowHelper(dir, origin, arrowLength, color, headLen, headW);
+                                vGroup.add(arrow);
+                            }
+                        });
+                    });
+                }
+
+                // 3. Field Lines (Red Circles)
+                const lGroup = linesGroupRef.current;
+                while(lGroup.children.length > 0) lGroup.remove(lGroup.children[0]); 
+
+                if (showLines && !isZeroCurrent) {
+                    layers.forEach(yLevel => {
+                        radii.forEach(r => {
+                            const thickness = (currentStrength * 0.0045) / r;
+                            
+                            const geometry = new THREE.TorusGeometry(r, thickness, 8, 64);
+                            geometry.rotateX(Math.PI / 2);
+
+                            const material = new THREE.MeshBasicMaterial({ 
+                                color: 0xdc2626, 
+                                transparent: true, 
+                                opacity: 0.8 
+                            });
+                            const circle = new THREE.Mesh(geometry, material);
+                            circle.position.y = yLevel; 
+                            lGroup.add(circle);
+
+                            const arrowCount = 4;
+                            for(let i=0; i<arrowCount; i++) {
+                                const angle = (i / arrowCount) * Math.PI * 2;
+                                const px = Math.cos(angle) * r;
+                                const pz = Math.sin(angle) * r;
+                                
+                                let tx, tz;
+                                if (currentDirection === 1) { 
+                                    // CCW
+                                    tx = pz; tz = -px; 
+                                } else { 
+                                    // CW
+                                    tx = -pz; tz = px; 
+                                }
+                                
+                                const tLen = Math.sqrt(tx*tx + tz*tz);
+                                const dir = new THREE.Vector3(tx/tLen, 0, tz/tLen);
+                                const origin = new THREE.Vector3(px, yLevel, pz); 
+                                
+                                const headSize = 0.15 + (thickness * 4);
+                                const arrow = new THREE.ArrowHelper(dir, origin, 0, 0xdc2626, headSize, headSize * 0.6);
+                                lGroup.add(arrow);
+                            }
+                        });
+                    });
+                }
+            }, [currentStrength, currentDirection, showVectors, showLines, viewMode, isMultiLayer]); 
+
+            return (
+                <div className="w-full h-full relative text-slate-800">
+                    <div ref={mountRef} id="canvas-container" />
+
+                    {/* UI Layer */}
+                    <div id="ui-layer" className="w-full h-full p-4 pointer-events-none">
+                        
+                        {/* 1. Header */}
+                        <div className="absolute top-4 left-4 pointer-events-auto interactive-panel p-4 rounded-xl shadow-lg z-20">
+                             <h1 className="text-xl font-bold text-slate-800 mb-1 leading-tight">
+                                {t.title}
+                            </h1>
+                            <div className="flex justify-between items-center">
+                                <p className="text-xs text-slate-500 font-mono">v4.1 (5-Layers)</p>
+                                <button 
+                                    onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+                                    className="ml-2 px-2 py-0.5 rounded border border-slate-300 text-slate-500 text-[10px] hover:bg-slate-100 transition font-medium"
+                                >
+                                    {t.toggleLang}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 2. Control Panel */}
+                        <div className={`absolute top-4 right-4 pointer-events-auto interactive-panel transition-all duration-300 shadow-2xl flex flex-col z-30 ${isControlsOpen ? 'p-5 w-72 md:w-80 gap-4 rounded-xl' : 'p-0 w-12 h-12 rounded-full items-center justify-center bg-white/90 overflow-hidden'}`}>
+                            
+                            <button 
+                                onClick={() => setIsControlsOpen(!isControlsOpen)}
+                                className={`text-slate-500 hover:text-sky-500 transition-colors z-40 flex items-center justify-center ${isControlsOpen ? 'absolute top-3 right-3' : 'w-full h-full'}`}
+                                aria-label={isControlsOpen ? "收起控制台" : "展開控制台"}
+                            >
+                                {isControlsOpen ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                )}
+                            </button>
+
+                            <div className={`${isControlsOpen ? 'opacity-100 flex flex-col gap-4' : 'opacity-0 hidden'} transition-opacity duration-200 w-full`}>
+                                
+                                {/* 1. View Toggle */}
+                                <div className="bg-slate-100 p-1 rounded-full">
+                                    <label className="relative inline-block w-full h-8 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            className="ios-toggle-checkbox"
+                                            checked={viewMode === 'top'}
+                                            onChange={() => setViewMode(viewMode === '3d' ? 'top' : '3d')}
+                                        />
+                                        <div className="ios-toggle-label h-8">
+                                            <span className={`z-20 w-1/2 text-center text-xs font-bold transition-colors duration-300 ${viewMode === '3d' ? 'text-slate-800' : 'text-slate-500'}`}>
+                                                {t.view3d}
+                                            </span>
+                                            <span className={`z-20 w-1/2 text-center text-xs font-bold transition-colors duration-300 ${viewMode === 'top' ? 'text-slate-800' : 'text-slate-500'}`}>
+                                                {t.viewTop}
+                                            </span>
+                                            <div className="ios-toggle-knob h-6 top-1 left-1 shadow-sm"></div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <hr className="border-slate-200" />
+
+                                {/* 2. Wire Tilt (New) */}
+                                <div>
+                                    <div className="flex justify-between mb-2">
+                                        <label className="text-sm font-medium text-slate-700">{t.tilt}</label>
+                                        <span className="text-sm font-mono text-slate-500">{wireAngle}°</span>
+                                    </div>
+                                    <input 
+                                        type="range" 
+                                        min="0" max="90" step="1" 
+                                        value={wireAngle}
+                                        onChange={(e) => setWireAngle(parseFloat(e.target.value))}
+                                    />
+                                </div>
+
+                                {/* 3. Current Slider */}
+                                <div>
+                                    <div className="flex justify-between mb-2">
+                                        <label className="text-sm font-medium text-slate-700">{t.current} (<i className="math-var">I</i>)</label>
+                                        <span className="text-sm font-mono text-sky-600 font-bold">{currentStrength} A</span>
+                                    </div>
+                                    <input 
+                                        type="range" 
+                                        min="0" max="15" step="0.5" 
+                                        value={currentStrength}
+                                        onChange={(e) => setCurrentStrength(parseFloat(e.target.value))}
+                                    />
+                                </div>
+
+                                {/* 4. Direction Toggle */}
+                                <div>
+                                    <label className="text-sm font-medium text-slate-700 block mb-2">{t.direction}</label>
+                                    <div className="flex bg-slate-200 rounded-lg p-1 border border-slate-300">
+                                        <button 
+                                            className={`flex-1 py-1.5 rounded-md text-sm transition font-medium ${currentDirection === 1 ? 'bg-amber-400 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                            onClick={() => setCurrentDirection(1)}
+                                        >
+                                            {t.up}
+                                        </button>
+                                        <button 
+                                            className={`flex-1 py-1.5 rounded-md text-sm transition font-medium ${currentDirection === -1 ? 'bg-amber-400 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                            onClick={() => setCurrentDirection(-1)}
+                                        >
+                                            {t.down}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* 5. Field Rotation Speed */}
+                                <div>
+                                    <div className="flex justify-between mb-2">
+                                        <label className="text-sm font-medium text-slate-700">{t.rotationSpeed}</label>
+                                        <span className="text-sm font-mono text-slate-500">{rotationSpeed}</span>
+                                    </div>
+                                    <input 
+                                        type="range" 
+                                        min="0" max="20" step="1" 
+                                        value={rotationSpeed}
+                                        onChange={(e) => setRotationSpeed(parseFloat(e.target.value))}
+                                    />
+                                </div>
+
+                                {/* 6. Layer Toggle */}
+                                <div>
+                                    <label className="text-sm font-medium text-slate-700 block mb-2">{t.layers}</label>
+                                    <div className="bg-slate-100 p-1 rounded-full">
+                                        <label className="relative inline-block w-full h-8 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                className="ios-toggle-checkbox"
+                                                checked={isMultiLayer}
+                                                onChange={() => setIsMultiLayer(!isMultiLayer)}
+                                            />
+                                            <div className="ios-toggle-label h-8">
+                                                <span className={`z-20 w-1/2 text-center text-xs font-bold transition-colors duration-300 ${!isMultiLayer ? 'text-slate-800' : 'text-slate-500'}`}>
+                                                    {t.single}
+                                                </span>
+                                                <span className={`z-20 w-1/2 text-center text-xs font-bold transition-colors duration-300 ${isMultiLayer ? 'text-slate-800' : 'text-slate-500'}`}>
+                                                    {t.multi}
+                                                </span>
+                                                <div className="ios-toggle-knob h-6 top-1 left-1 shadow-sm"></div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* 7. Show/Hide Toggles */}
+                                <div className="space-y-3 pt-2">
+                                    <label className="flex items-center cursor-pointer justify-between">
+                                        <span className="text-sm text-slate-600 font-medium">{t.vectors} (<i className="math-var">B</i>)</span>
+                                        <div className="relative">
+                                            <input type="checkbox" className="sr-only toggle-checkbox" checked={showVectors} onChange={() => setShowVectors(!showVectors)} />
+                                            <div className="w-10 h-5 bg-slate-300 rounded-full shadow-inner toggle-label transition"></div>
+                                            <div className={`dot absolute w-5 h-5 bg-white rounded-full shadow -left-1 -top-0 transition ${showVectors ? 'transform translate-x-full bg-sky-500' : ''}`}></div>
+                                        </div>
+                                    </label>
+
+                                    <label className="flex items-center cursor-pointer justify-between">
+                                        <span className="text-sm text-slate-600 font-medium">{t.lines}</span>
+                                        <div className="relative">
+                                            <input type="checkbox" className="sr-only toggle-checkbox" checked={showLines} onChange={() => setShowLines(!showLines)} />
+                                            <div className="w-10 h-5 bg-slate-300 rounded-full shadow-inner toggle-label transition"></div>
+                                            <div className={`dot absolute w-5 h-5 bg-white rounded-full shadow -left-1 -top-0 transition ${showLines ? 'transform translate-x-full bg-sky-500' : ''}`}></div>
+                                        </div>
+                                    </label>
+
+                                    {/* Electron Toggle */}
+                                    <label className="flex items-center cursor-pointer justify-between border-t border-slate-100 pt-3">
+                                        <span className="text-sm text-slate-600 font-medium">{t.electrons}</span>
+                                        <div className="relative">
+                                            <input type="checkbox" className="sr-only toggle-checkbox" checked={showElectrons} onChange={() => setShowElectrons(!showElectrons)} />
+                                            <div className="w-10 h-5 bg-slate-300 rounded-full shadow-inner toggle-label transition"></div>
+                                            <div className={`dot absolute w-5 h-5 bg-white rounded-full shadow -left-1 -top-0 transition ${showElectrons ? 'transform translate-x-full bg-blue-500' : ''}`}></div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. Info Panel */}
+                        <div className={`absolute bottom-4 right-4 pointer-events-auto interactive-panel transition-all duration-300 shadow-lg flex flex-col z-30 ${isInfoOpen ? 'p-4 rounded-xl max-w-xs' : 'p-0 w-12 h-12 rounded-full items-center justify-center bg-white/90 overflow-hidden'}`}>
+                            
+                            <button 
+                                onClick={() => setIsInfoOpen(!isInfoOpen)}
+                                className={`text-slate-500 hover:text-sky-500 transition-colors z-40 flex items-center justify-center ${isInfoOpen ? 'absolute top-2 right-2' : 'w-full h-full'}`}
+                                aria-label={isInfoOpen ? "收起資訊" : "展開資訊"}
+                            >
+                                {isInfoOpen ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                )}
+                            </button>
+
+                            <div className={`${isInfoOpen ? 'opacity-100' : 'opacity-0 hidden'} transition-opacity duration-200`}>
+                                <div className="flex items-center gap-2 mb-2 text-amber-600 pr-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="font-bold text-sm">{t.intro}</span>
+                                </div>
+                                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                                    {lang === 'en' 
+                                        ? "Point thumb in direction of I. Fingers curl in direction of B."
+                                        : "拇指指向電流 I 方向，四指彎曲方向即為磁場 B 方向。"}
+                                </p>
+                                
+                                <div className="bg-slate-50/50 rounded-lg p-3 border border-slate-200/50 text-center mb-3">
+                                    <div className="formula-text text-slate-800 font-bold">
+                                        <i className="math-var">B</i> = 
+                                        <span className="mx-1">
+                                            <span className="inline-block text-center align-middle">
+                                                <span className="block border-b border-slate-400 pb-0.5 mb-0.5">
+                                                    <i className="math-var">μ</i><sub>0</sub><i className="math-var">I</i>
+                                                </span>
+                                                <span className="block">
+                                                    2<i className="math-var">πr</i>
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <p className="text-xs text-sky-600 font-medium border-t border-slate-200 pt-2">
+                                    {t.dseNote}
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

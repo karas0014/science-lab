@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全內反射模擬器 (Total Internal Reflection)</title>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX (Pinned to stable v7 to prevent module import errors) -->
+    <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .canvas-container {
+            background-image: linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                              linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Explicitly set data-presets to avoid unexpected polyfill imports -->
+    <script type="text/babel" data-presets="react">
+        const { useState, useMemo, useEffect } = React;
+
+        const MATERIALS = [
+            { nameZh: "水", nameEn: "Water", n: 1.33, color: "#dbeafe" },       // Light blue
+            { nameZh: "玻璃", nameEn: "Glass", n: 1.50, color: "#e0e7ff" },     // Indigo tint
+            { nameZh: "珀斯佩有機玻璃", nameEn: "Perspex", n: 1.49, color: "#f3e8ff" }, // Purple tint
+            { nameZh: "鑽石", nameEn: "Diamond", n: 2.42, color: "#e0f2f1" },   // Teal tint
+            { nameZh: "自訂介質", nameEn: "Custom Medium", n: 1.6, color: "#ffe4e6" }   // Pink tint
+        ];
+
+        const AIR_N = 1.00; // Refractive index of air
+
+        const Simulation = () => {
+            const [angleIncidence, setAngleIncidence] = useState(30);
+            const [selectedMaterialIdx, setSelectedMaterialIdx] = useState(1); // Default Glass
+            const [customN, setCustomN] = useState(1.6);
+            const [lang, setLang] = useState('zh'); // Language state
+
+            const t = (zhStr, enStr) => lang === 'zh' ? zhStr : enStr;
+
+            // Get current material data
+            const material = MATERIALS[selectedMaterialIdx];
+            const n1 = selectedMaterialIdx === 4 ? customN : material.n; // Medium (bottom)
+            const n2 = AIR_N; // Air (top)
+
+            // Physics Calculations
+            // Critical Angle Formula: sin(c) = n2 / n1
+            const criticalAngleRad = Math.asin(n2 / n1);
+            const criticalAngleDeg = (criticalAngleRad * 180 / Math.PI);
+
+            // Snell's Law: n1 * sin(theta1) = n2 * sin(theta2)
+            // sin(theta2) = (n1 / n2) * sin(theta1)
+            const angleIncidenceRad = angleIncidence * Math.PI / 180;
+            const sinRefraction = (n1 / n2) * Math.sin(angleIncidenceRad);
+            
+            let angleRefraction = 0;
+            let isTIR = false; // Total Internal Reflection state
+
+            // Floating point tolerance to check for TIR
+            if (sinRefraction > 0.99999) { 
+                isTIR = true;
+            } else {
+                angleRefraction = Math.asin(sinRefraction) * 180 / Math.PI;
+            }
+
+            // SVG Drawing Helpers
+            const cx = 300; // Center X
+            const cy = 250; // Center Y
+            const rayLength = 200;
+
+            // Coordinate conversion (SVG Y is down, so we subtract Y for 'up')
+            const getCoordinates = (angleDeg, length, isUpper) => {
+                const theta = (90 - angleDeg) * Math.PI / 180;
+                
+                // For bottom half (Incident):
+                if (!isUpper) {
+                   return {
+                       x: cx - length * Math.sin(angleDeg * Math.PI / 180),
+                       y: cy + length * Math.cos(angleDeg * Math.PI / 180)
+                   };
+                } else {
+                   // For upper half (Refracted):
+                    return {
+                       x: cx + length * Math.sin(angleDeg * Math.PI / 180),
+                       y: cy - length * Math.cos(angleDeg * Math.PI / 180)
+                   };
+                }
+            };
+
+            const incidentCoords = getCoordinates(angleIncidence, rayLength, false);
+            const reflectedCoords = {
+                x: cx + rayLength * Math.sin(angleIncidence * Math.PI / 180),
+                y: cy + rayLength * Math.cos(angleIncidence * Math.PI / 180)
+            };
+            const refractedCoords = getCoordinates(angleRefraction, rayLength, true);
+
+            return (
+                <div className="min-h-screen flex flex-col items-center py-8 px-4 relative">
+                    
+                    {/* Language Toggle Button */}
+                    <div className="absolute top-4 right-4 md:top-6 md:right-8 flex items-center bg-white border border-gray-200 shadow-sm rounded-xl p-1 z-10">
+                        <button 
+                            onClick={() => setLang('zh')}
+                            className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-colors ${lang === 'zh' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                        >
+                            中文
+                        </button>
+                        <button 
+                            onClick={() => setLang('en')}
+                            className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-colors ${lang === 'en' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                        >
+                            EN
+                        </button>
+                    </div>
+
+                    <header className="mb-8 text-center mt-4">
+                        <h1 className="text-3xl font-bold text-gray-800 mb-2">{t("全內反射模擬器", "Total Internal Reflection")}</h1>
+                        <p className="text-gray-600">{t("互動物理模擬器", "Interactive Physics Simulator")}</p>
+                    </header>
+
+                    <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-6xl flex flex-col lg:flex-row gap-8">
+                        
+                        {/* Control Panel */}
+                        <div className="w-full lg:w-1/3 flex flex-col gap-6">
+                            
+                            {/* Material Selector */}
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                <h3 className="font-bold text-lg mb-3 flex items-center">
+                                    <span className="w-1 h-6 bg-blue-500 rounded mr-2"></span>
+                                    {t("1. 選擇介質", "1. Select Medium")}
+                                </h3>
+                                <div className="space-y-2">
+                                    <label className="text-sm text-gray-600 block">
+                                        {lang === 'zh' ? <>下方物料 (n<sub>1</sub>):</> : <>Bottom Material (n<sub>1</sub>):</>}
+                                    </label>
+                                    <select 
+                                        className="w-full p-2 border rounded-md bg-white text-gray-800 shadow-sm focus:ring-2 focus:ring-blue-400 outline-none"
+                                        value={selectedMaterialIdx}
+                                        onChange={(e) => setSelectedMaterialIdx(Number(e.target.value))}
+                                    >
+                                        {MATERIALS.map((m, idx) => (
+                                            <option key={idx} value={idx}>
+                                                {lang === 'zh' ? m.nameZh : m.nameEn} (n₁ = {idx === 4 ? customN : m.n})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    
+                                    {selectedMaterialIdx === 4 && (
+                                        <div className="mt-2">
+                                            <label className="text-xs text-gray-500">{t("自訂折射率 (1.01 - 3.00):", "Custom Refractive Index (1.01 - 3.00):")}</label>
+                                            <input 
+                                                type="number" 
+                                                min="1.01" 
+                                                max="3.00" 
+                                                step="0.01"
+                                                value={customN}
+                                                onChange={(e) => setCustomN(Number(e.target.value))}
+                                                className="w-full p-1 border rounded"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-between items-center text-sm pt-2 border-t mt-2">
+                                        <span>{lang === 'zh' ? <>上方物料 (n<sub>2</sub>):</> : <>Top Material (n<sub>2</sub>):</>}</span>
+                                        <span className="font-mono font-bold">{lang === 'zh' ? <>空氣 (n<sub>2</sub> ≈ 1.00)</> : <>Air (n<sub>2</sub> ≈ 1.00)</>}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Angle Slider */}
+                            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                                <h3 className="font-bold text-lg mb-3 flex items-center">
+                                    <span className="w-1 h-6 bg-yellow-500 rounded mr-2"></span>
+                                    {t("2. 改變入射角", "2. Change Incidence Angle")}
+                                </h3>
+                                <div className="mb-4">
+                                    <div className="flex justify-between mb-2">
+                                        <label className="font-semibold text-gray-700">{t("入射角 (i):", "Angle of Incidence (i):")}</label>
+                                        <span className="text-2xl font-mono text-blue-600 font-bold">{angleIncidence.toFixed(1)}°</span>
+                                    </div>
+                                    <input 
+                                        type="range" 
+                                        min="0" 
+                                        max="89.9" 
+                                        step="0.1" 
+                                        value={angleIncidence}
+                                        onChange={(e) => setAngleIncidence(Number(e.target.value))}
+                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                    />
+                                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                        <span>0°</span>
+                                        <span>{t("臨界角:", "Critical Angle:")} {criticalAngleDeg.toFixed(1)}°</span>
+                                        <span>90°</span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => setAngleIncidence(Math.max(0, criticalAngleDeg - 15))}
+                                        className="px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50 flex-1"
+                                    >
+                                        {t("一般折射", "Refraction")}
+                                    </button>
+                                    <button 
+                                        onClick={() => setAngleIncidence(criticalAngleDeg)}
+                                        className="px-3 py-1 bg-white border border-yellow-400 text-yellow-700 rounded text-sm hover:bg-yellow-50 font-medium flex-1"
+                                    >
+                                        {t("臨界角", "Critical Angle")}
+                                    </button>
+                                    <button 
+                                        onClick={() => setAngleIncidence(Math.min(89.9, criticalAngleDeg + 15))}
+                                        className="px-3 py-1 bg-white border border-red-300 text-red-700 rounded text-sm hover:bg-red-50 font-medium flex-1"
+                                    >
+                                        {t("全內反射", "TIR")}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Info Box */}
+                            <div className={`p-4 rounded-lg border-2 transition-colors duration-300 ${isTIR ? 'bg-red-50 border-red-400' : 'bg-green-50 border-green-400'}`}>
+                                <h3 className="font-bold text-lg mb-2">{t("狀態:", "Status:")}</h3>
+                                <div className="text-center py-2">
+                                    {isTIR ? (
+                                        <div className="text-red-600 font-bold text-xl animate-pulse">
+                                            ⚠️ {t("全內反射", "Total Internal Reflection")}
+                                        </div>
+                                    ) : (
+                                        <div className="text-green-700 font-bold text-xl">
+                                            {t("折射 + 微弱反射", "Refraction + Weak Reflection")}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-3 space-y-1 text-sm text-gray-700 font-mono">
+                                    <div className="flex justify-between">
+                                        <span>{t("臨界角 (C):", "Critical Angle (C):")}</span>
+                                        <span className="font-bold">{criticalAngleDeg.toFixed(2)}°</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>{t("折射角 (r):", "Angle of Refraction (r):")}</span>
+                                        <span>{isTIR ? "N/A" : `${angleRefraction.toFixed(2)}°`}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Visualization Canvas */}
+                        <div className="w-full lg:w-2/3 canvas-container relative border border-gray-300 rounded-lg overflow-hidden bg-white min-h-[400px]">
+                            
+                            {/* Canvas Labels */}
+                            <div className="absolute top-4 left-4 font-bold text-gray-500">
+                                {t("介質 2: 空氣", "Medium 2: Air")} (n<sub>2</sub>=1.00)
+                            </div>
+                            <div className="absolute bottom-4 left-4 font-bold text-gray-600">
+                                {t("介質 1:", "Medium 1:")} {lang === 'zh' ? material.nameZh : material.nameEn} (n<sub>1</sub>={n1.toFixed(2)})
+                            </div>
+
+                            <svg viewBox="0 0 600 500" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+                                <defs>
+                                    <marker id="arrow-start" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+                                        <path d="M6,3 L2,5 L6,7" fill="#dc2626" />
+                                    </marker>
+                                    <marker id="arrow-end" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+                                        <path d="M0,0 L10,5 L0,10" fill="#dc2626" />
+                                    </marker>
+                                </defs>
+
+                                {/* Backgrounds */}
+                                {/* Air (Top) */}
+                                <rect x="0" y="0" width="600" height="250" fill="#f8fafc" opacity="0.3" />
+                                {/* Material (Bottom) */}
+                                <rect x="0" y="250" width="600" height="250" fill={material.color} />
+
+                                {/* Interface Line */}
+                                <line x1="0" y1={cy} x2="600" y2={cy} stroke="#374151" strokeWidth="2" />
+                                
+                                {/* Normal Line (法線) */}
+                                <line x1={cx} y1="20" x2={cx} y2="480" stroke="#6b7280" strokeWidth="2" strokeDasharray="6 4" />
+                                <text x={cx + 5} y="40" fontSize="14" fill="#6b7280">{t("法線", "Normal")}</text>
+
+                                {/* Rays */}
+                                
+                                {/* 1. Incident Ray (入射線) - Always present */}
+                                <line 
+                                    x1={incidentCoords.x} y1={incidentCoords.y} 
+                                    x2={cx} y2={cy} 
+                                    stroke="#dc2626" 
+                                    strokeWidth="4" 
+                                />
+                                <path 
+                                    d={`M${incidentCoords.x},${incidentCoords.y} L${(incidentCoords.x + cx)/2},${(incidentCoords.y + cy)/2}`} 
+                                    stroke="transparent" 
+                                    markerEnd="url(#arrow-end)" 
+                                />
+
+                                {/* 2. Refracted Ray (折射線) - Only if not TIR */}
+                                {!isTIR && (
+                                    <>
+                                        <line 
+                                            x1={cx} y1={cy} 
+                                            x2={refractedCoords.x} y2={refractedCoords.y} 
+                                            stroke="#dc2626" 
+                                            strokeWidth="4" 
+                                            opacity="0.8"
+                                        />
+                                        <path 
+                                            d={`M${cx},${cy} L${(refractedCoords.x + cx)/2},${(refractedCoords.y + cy)/2}`} 
+                                            stroke="transparent" 
+                                            markerEnd="url(#arrow-end)" 
+                                        />
+                                    </>
+                                )}
+
+                                {/* 3. Reflected Ray (反射線) - Always present, stronger if TIR */}
+                                <line 
+                                    x1={cx} y1={cy} 
+                                    x2={reflectedCoords.x} y2={reflectedCoords.y} 
+                                    stroke="#dc2626" 
+                                    strokeWidth="4" 
+                                    opacity={isTIR ? 1 : 0.3} 
+                                />
+                                <path 
+                                    d={`M${cx},${cy} L${(reflectedCoords.x + cx)/2},${(reflectedCoords.y + cy)/2}`} 
+                                    stroke="transparent" 
+                                    markerEnd="url(#arrow-end)" 
+                                />
+
+                                {/* Angles Visualization */}
+                                
+                                {/* Incident Angle Arc */}
+                                <path d={`M ${cx} ${cy+40} A 40 40 0 0 1 ${cx - 40 * Math.sin(angleIncidenceRad)} ${cy + 40 * Math.cos(angleIncidenceRad)}`} fill="transparent" stroke="#000" strokeWidth="1" />
+                                <text x={cx - 15} y={cy + 60} fontSize="14" textAnchor="end">i = {angleIncidence.toFixed(0)}°</text>
+
+                                {/* Refracted Angle Arc (Only if not TIR) */}
+                                {!isTIR && (
+                                    <>
+                                        <path d={`M ${cx} ${cy-40} A 40 40 0 0 1 ${cx + 40 * Math.sin(angleRefraction * Math.PI/180)} ${cy - 40 * Math.cos(angleRefraction * Math.PI/180)}`} fill="transparent" stroke="#000" strokeWidth="1" />
+                                        <text x={cx + 15} y={cy - 60} fontSize="14" textAnchor="start">r = {angleRefraction.toFixed(0)}°</text>
+                                    </>
+                                )}
+
+                                {/* Reflected Angle Arc */}
+                                <path d={`M ${cx} ${cy+40} A 40 40 0 0 0 ${cx + 40 * Math.sin(angleIncidenceRad)} ${cy + 40 * Math.cos(angleIncidenceRad)}`} fill="transparent" stroke="#9ca3af" strokeWidth="1" strokeDasharray="2 2"/>
+                                
+                                {/* Labels for Rays */}
+                                <text x={incidentCoords.x - 10} y={incidentCoords.y + 20} fontSize="14" fill="#991b1b" fontWeight="bold">{t("入射線", "Incident Ray")}</text>
+                                
+                                <text x={reflectedCoords.x + 10} y={reflectedCoords.y + 20} fontSize="14" fill="#991b1b" opacity={isTIR?1:0.5} fontWeight="bold">{t("反射線", "Reflected Ray")}</text>
+
+                                {!isTIR && (
+                                    <text x={refractedCoords.x + 10} y={refractedCoords.y - 10} fontSize="14" fill="#991b1b" fontWeight="bold">{t("折射線", "Refracted Ray")}</text>
+                                )}
+
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 text-gray-500 text-sm max-w-4xl text-center">
+                        <p>{t("物理概念：當光線由光密介質（如水、玻璃）射向光疏介質（如空氣）時，若入射角大於臨界角，光線將無法折射出介面，全部被反射回原介質，此現象稱為全內反射。", "Physics Concept: When light travels from a denser medium (e.g., water, glass) to a less dense medium (e.g., air), and the angle of incidence is greater than the critical angle, the light cannot refract and is entirely reflected back into the original medium. This is called Total Internal Reflection.")}</p>
+                        <p className="mt-2 font-mono bg-white inline-block px-4 py-1 rounded shadow-sm border">Snell's Law: n<sub>1</sub>sin(i) = n<sub>2</sub>sin(r) &nbsp;|&nbsp; Critical Angle: sin(C) = n<sub>2</sub> / n<sub>1</sub></p>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Simulation />);
+    </script>
+</body>
+</html>

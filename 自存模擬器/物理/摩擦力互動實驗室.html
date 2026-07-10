@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摩擦力互動模擬器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        canvas { touch-action: none; }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col overflow-hidden">
+
+    <!-- 標題區 -->
+    <header class="bg-blue-600 text-white p-4 shadow-md shrink-0">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">📦 摩擦力互動實驗室</h1>
+            <div class="text-sm opacity-80 hidden md:block">適用於中學物理教學</div>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="flex-grow flex flex-col md:flex-row h-full overflow-hidden">
+        
+        <!-- 左側：畫布顯示區 -->
+        <div class="relative flex-grow bg-white border-b md:border-b-0 md:border-r border-slate-300 h-[60vh] md:h-auto">
+            <canvas id="simCanvas" class="w-full h-full block"></canvas>
+            
+            <!-- 數據浮動面板 -->
+            <div class="absolute top-4 left-4 bg-white/90 p-4 rounded-lg shadow-lg backdrop-blur-sm border border-slate-200 pointer-events-none select-none">
+                <h3 class="font-bold text-slate-700 mb-2 border-b pb-1">即時數據</h3>
+                <div class="space-y-1 text-sm font-mono">
+                    <p class="text-blue-600">外力 (F): <span id="val-force">0.0</span> N</p>
+                    <p class="text-red-600">摩擦力 (f): <span id="val-friction">0.0</span> N</p>
+                    <p class="text-purple-600">合力 (Fnet): <span id="val-net">0.0</span> N</p>
+                    <p class="text-slate-600">物體質量 (m): 10.0 kg</p>
+                    <p class="text-slate-600">加速度 (a): <span id="val-acc">0.00</span> m/s²</p>
+                    <p class="text-slate-600">速度 (v): <span id="val-vel">0.00</span> m/s</p>
+                    <div class="mt-2 pt-2 border-t font-bold" id="status-text">狀態：靜止</div>
+                </div>
+            </div>
+
+            <!-- 圖例 -->
+            <div class="absolute bottom-4 right-4 bg-white/90 p-3 rounded-lg shadow backdrop-blur-sm text-xs space-y-2 pointer-events-none">
+                <div class="flex items-center"><span class="w-8 h-1 bg-black mr-2 rounded"></span> 法向力 (N)</div>
+                <div class="flex items-center"><span class="w-8 h-1 bg-green-500 mr-2 rounded"></span> 重力 (W)</div>
+                <div class="flex items-center"><span class="w-8 h-1 bg-blue-500 mr-2 rounded"></span> 外力 (推力)</div>
+                <div class="flex items-center"><span class="w-8 h-1 bg-red-500 mr-2 rounded"></span> 摩擦力</div>
+                <div class="flex items-center"><span class="w-8 h-1 bg-purple-500 mr-2 rounded"></span> 合力方向</div>
+            </div>
+        </div>
+
+        <!-- 右側：控制面板 -->
+        <div class="w-full md:w-80 bg-slate-50 p-6 flex flex-col gap-6 shadow-inner overflow-y-auto shrink-0 z-10">
+            
+            <div class="space-y-4">
+                <h2 class="text-xl font-bold text-slate-700 border-l-4 border-blue-500 pl-3">實驗控制</h2>
+                
+                <!-- 摩擦係數滑桿 -->
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                    <label for="mu-slider" class="block text-sm font-medium text-slate-700 mb-2">
+                        摩擦係數 (µ): <span id="mu-display" class="text-blue-600 font-bold">0.5</span>
+                    </label>
+                    <input type="range" id="mu-slider" min="0" max="1" step="0.05" value="0.5" 
+                           class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                    <div class="flex justify-between text-xs text-slate-400 mt-1">
+                        <span>光滑 (冰面)</span>
+                        <span>粗糙 (砂紙)</span>
+                    </div>
+                </div>
+
+                <!-- 施力控制 -->
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm font-medium text-slate-700">施力大小與方向</label>
+                        <button id="btn-reset-force" class="text-xs bg-slate-200 hover:bg-slate-300 px-2 py-1 rounded text-slate-600 transition">放手 (歸零)</button>
+                    </div>
+                    
+                    <div class="relative pt-6 pb-2">
+                        <input type="range" id="force-slider" min="-100" max="100" step="1" value="0" 
+                               class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                        <!-- 中線標記 -->
+                        <div class="absolute left-1/2 top-4 w-0.5 h-3 bg-slate-400 transform -translate-x-1/2"></div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-xs font-bold text-blue-700">← 向左推</span>
+                        <span id="force-val-display" class="font-mono font-bold text-lg text-slate-800">0 N</span>
+                        <span class="text-xs font-bold text-blue-700">向右推 →</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 text-center">拖動滑桿來改變推力方向與大小</p>
+                </div>
+
+                <!-- 控制按鈕 -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="btn-reset-pos" class="bg-amber-500 hover:bg-amber-600 text-white py-2 px-4 rounded-lg shadow transition flex justify-center items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        重置箱子
+                    </button>
+                    <button id="btn-stop" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow transition flex justify-center items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+                        緊急停止
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-auto bg-blue-50 p-4 rounded border border-blue-100 text-sm text-blue-800">
+                <strong>💡 觀察重點：</strong>
+                <ul class="list-disc list-inside mt-1 space-y-1">
+                    <li>試著慢慢增加推力，觀察箱子何時開始移動（最大靜摩擦力）。</li>
+                    <li>一旦箱子動起來，需要的推力是否變小了？</li>
+                    <li>調整摩擦係數，看看對煞車距離的影響。</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- 物理常數與變數 ---
+        const CONSTANTS = {
+            g: 9.8,        // 重力加速度 m/s^2
+            mass: 10,      // 箱子質量 kg
+            pixelsPerMeter: 50, // 畫面比例
+            groundY: 0,    // 地面高度 (會在 resize 時設定)
+        };
+
+        // 模擬狀態
+        let state = {
+            x: 0,          // 箱子位置 (米)
+            v: 0,          // 速度 (m/s)
+            a: 0,          // 加速度 (m/s^2)
+            appliedForce: 0, // 使用者施力 (N)
+            mu: 0.5,       // 摩擦係數
+            frictionForce: 0, // 當前摩擦力 (N)
+            netForce: 0,    // 合力 (N)
+            isDragging: false // 是否正在拖曳滑桿
+        };
+
+        // DOM 元素
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const sliderMu = document.getElementById('mu-slider');
+        const sliderForce = document.getElementById('force-slider');
+        const displayMu = document.getElementById('mu-display');
+        const displayForceVal = document.getElementById('force-val-display');
+        const btnResetPos = document.getElementById('btn-reset-pos');
+        const btnResetForce = document.getElementById('btn-reset-force');
+        const btnStop = document.getElementById('btn-stop');
+        
+        // 數據顯示 DOM
+        const valForce = document.getElementById('val-force');
+        const valFriction = document.getElementById('val-friction');
+        const valNet = document.getElementById('val-net');
+        const valAcc = document.getElementById('val-acc');
+        const valVel = document.getElementById('val-vel');
+        const statusText = document.getElementById('status-text');
+
+        // --- 初始化 ---
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            CONSTANTS.groundY = canvas.height * 0.7;
+            // 如果箱子跑出去了，重置回來
+            if (Math.abs(state.x * CONSTANTS.pixelsPerMeter) > canvas.width / 2) {
+                state.x = 0;
+            }
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- 物理計算核心 ---
+        function updatePhysics(dt) {
+            // dt 是時間差 (秒)
+            
+            // 1. 計算垂直力 (簡化為平地，N = mg)
+            const weight = CONSTANTS.mass * CONSTANTS.g;
+            const normalForce = weight; // 平地上
+
+            // 2. 計算最大靜摩擦力 (Max Static Friction)
+            // 簡化：假設靜摩擦係數 = 動摩擦係數 (便於國中理解，若要進階可設 mu_s > mu_k)
+            const maxStaticFriction = state.mu * normalForce;
+            
+            // 3. 判斷摩擦力方向與大小
+            state.frictionForce = 0;
+            
+            // 速度極小視為靜止
+            const isMoving = Math.abs(state.v) > 0.01;
+
+            if (isMoving) {
+                // 動摩擦 (Kinetic Friction)
+                // 方向與速度相反
+                const direction = state.v > 0 ? -1 : 1;
+                state.frictionForce = direction * (state.mu * normalForce);
+            } else {
+                // 靜摩擦 (Static Friction)
+                // 如果外力小於最大靜摩擦力，則靜摩擦力等於外力但方向相反，物體不動
+                // 如果外力大於最大靜摩擦力，物體將開始移動，這時變成動摩擦模式(下一幀處理)
+                
+                if (Math.abs(state.appliedForce) <= maxStaticFriction) {
+                    state.frictionForce = -state.appliedForce;
+                    state.v = 0; // 強制歸零防止微小漂移
+                } else {
+                    // 即將移動，摩擦力為最大靜摩擦力，方向與推力相反
+                    const direction = state.appliedForce > 0 ? -1 : 1;
+                    state.frictionForce = direction * maxStaticFriction;
+                }
+            }
+
+            // 4. 計算合力 (F_net = F_app + f)
+            state.netForce = state.appliedForce + state.frictionForce;
+
+            // 5. 牛頓第二運動定律 F = ma -> a = F/m
+            state.a = state.netForce / CONSTANTS.mass;
+
+            // 6. 運動學公式更新
+            // 如果靜止且合力為0，不計算以免浮點數誤差
+            if (!isMoving && Math.abs(state.netForce) < 0.01) {
+                state.a = 0;
+                state.v = 0;
+            } else {
+                state.v += state.a * dt;
+                state.x += state.v * dt;
+            }
+
+            // 邊界檢查 (循環世界/Wrap Around)
+            // 計算螢幕邊緣的物理座標 (米)
+            // 60是箱子像素寬度, 加上一點緩衝讓箱子完全走出畫面才從另一邊出現
+            const edgeThreshold = (canvas.width / 2 + 60) / CONSTANTS.pixelsPerMeter;
+            
+            if (state.x > edgeThreshold) {
+                state.x = -edgeThreshold;
+            } else if (state.x < -edgeThreshold) {
+                state.x = edgeThreshold;
+            }
+        }
+
+        // --- 繪圖功能 ---
+        // 修改：增加 options 參數，允許設定線寬和描邊(outline)
+        function drawArrow(ctx, fromX, fromY, vecX, vecY, color, label, visualScaleFactor = 1.0, textConfig = {}, options = {}) {
+            const magnitude = Math.sqrt(vecX*vecX + vecY*vecY);
+            if (magnitude < 1) return; // 太小不畫
+
+            // 縮放向量以便顯示
+            const scale = 1.5 * visualScaleFactor; 
+            const endX = fromX + vecX * scale;
+            const endY = fromY - vecY * scale; // Canvas Y軸向下，物理Y軸通常向上
+
+            const lineWidth = options.width || 3; // 預設線寬 3
+
+            // 如果有設定描邊 (outline)，先畫一層較粗的白色底線
+            if (options.outline) {
+                ctx.beginPath();
+                ctx.moveTo(fromX, fromY);
+                ctx.lineTo(endX, endY);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = lineWidth + 4; // 比主線寬
+                ctx.stroke();
+                
+                // 描邊箭頭頭部 (選擇性，為求美觀也畫一下底)
+                const angle = Math.atan2(-vecY, vecX);
+                const headLen = 10;
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(endX - headLen * Math.cos(angle - Math.PI / 6), endY - headLen * Math.sin(angle - Math.PI / 6));
+                ctx.lineTo(endX - headLen * Math.cos(angle + Math.PI / 6), endY - headLen * Math.sin(angle + Math.PI / 6));
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                // 稍微放大一點頭部做描邊效果有點複雜，這裡主要強調箭身對比即可
+                // 若要精確描邊頭部會比較複雜，這裡僅對箭身做高對比處理
+            }
+
+            // 畫主箭頭線條
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+
+            // 畫箭頭頭部
+            const angle = Math.atan2(-vecY, vecX);
+            const headLen = 10 + (lineWidth - 3); // 線越粗頭越大一點
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            // 修正：Y軸方向計算修正，確保箭頭尖端指向正確方向 (Canvas Y軸向下)
+            ctx.lineTo(endX - headLen * Math.cos(angle - Math.PI / 6), endY - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(endX - headLen * Math.cos(angle + Math.PI / 6), endY - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            // 標籤繪製邏輯
+            ctx.fillStyle = color;
+            ctx.font = 'bold 14px "Noto Sans TC"';
+            
+            // 預設偏移和對齊
+            const offsetX = textConfig.x || 10;
+            const offsetY = textConfig.y || 0;
+            ctx.textAlign = textConfig.align || 'left';
+            
+            // 文字描邊，增加可讀性
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.strokeText(label + ` (${Math.abs(magnitude).toFixed(1)} N)`, endX + offsetX, endY + offsetY);
+            ctx.fillText(label + ` (${Math.abs(magnitude).toFixed(1)} N)`, endX + offsetX, endY + offsetY);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const boxSize = 60;
+            const boxX = centerX + state.x * CONSTANTS.pixelsPerMeter - boxSize/2;
+            const boxY = CONSTANTS.groundY - boxSize;
+
+            // 1. 畫背景 (天空與牆)
+            // 尺標網格
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            for(let i=0; i<canvas.width; i+=CONSTANTS.pixelsPerMeter) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+
+            // 2. 畫地面
+            ctx.fillStyle = '#94a3b8'; // 水泥地顏色
+            ctx.fillRect(0, CONSTANTS.groundY, canvas.width, canvas.height - CONSTANTS.groundY);
+            // 地面紋理線
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, CONSTANTS.groundY);
+            ctx.lineTo(canvas.width, CONSTANTS.groundY);
+            ctx.stroke();
+
+            // 3. 畫箱子
+            ctx.fillStyle = '#f59e0b'; // Amber-500
+            ctx.strokeStyle = '#b45309'; // Amber-700
+            ctx.lineWidth = 2;
+            ctx.fillRect(boxX, boxY, boxSize, boxSize);
+            ctx.strokeRect(boxX, boxY, boxSize, boxSize);
+
+            // 4. 畫力箭頭 (從箱子中心出發)
+            const cx = boxX + boxSize/2;
+            const cy = boxY + boxSize/2;
+
+            // 重力 (向下) - 綠色，加粗並加上白色描邊(outline)以凸顯從中心發出
+            drawArrow(
+                ctx, cx, cy, 0, -CONSTANTS.mass * CONSTANTS.g, '#22c55e', '重力 W', 0.6,
+                { x: 0, y: 25, align: 'center' },
+                { width: 5, outline: true } // 設定線寬為 5 並開啟描邊
+            );
+            
+            // 法向力 (向上) - 黑色，從地面(箱子底部)出發穿過中心
+            drawArrow(
+                ctx, cx, CONSTANTS.groundY, 0, CONSTANTS.mass * CONSTANTS.g, '#000000', '法向力 N', 0.6,
+                { x: 0, y: -10, align: 'center' },
+                { width: 3 }
+            );
+
+            // 外力 (水平) - 正常顯示
+            if (Math.abs(state.appliedForce) > 0.1) {
+                // 如果力向右，文字靠左顯示在箭頭右側；如果力向左，文字靠右顯示在箭頭左側
+                const align = state.appliedForce > 0 ? 'left' : 'right';
+                const offsetX = state.appliedForce > 0 ? 10 : -10;
+                drawArrow(
+                    ctx, cx, cy, state.appliedForce, 0, '#3b82f6', '推力 F', 1.0, 
+                    { x: offsetX, y: 5, align: align } 
+                );
+            }
+
+            // 摩擦力 (水平) - 正常顯示
+            if (Math.abs(state.frictionForce) > 0.1) {
+                const align = state.frictionForce > 0 ? 'left' : 'right';
+                const offsetX = state.frictionForce > 0 ? 10 : -10;
+                // 為了不跟推力重疊，Y軸偏移更多
+                drawArrow(
+                    ctx, cx, cy + 8, state.frictionForce, 0, '#ef4444', '摩擦力 f', 1.0,
+                    { x: offsetX, y: 5, align: align }
+                );
+            }
+
+            // 最後畫：箱子中心點 (質心) - 畫在箭頭上面，強調這裡是起點
+            ctx.fillStyle = '#000'; // 黑色中心點
+            ctx.beginPath();
+            ctx.arc(cx, cy, 4, 0, Math.PI*2); // 半徑 4
+            ctx.fill();
+            // 加一個小白圈讓它在深色背景也看得到
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 5. 速度指示器 (在箱子上方更高處，避免與法向力重疊)
+            if (Math.abs(state.v) > 0.1) {
+                 ctx.fillStyle = '#64748b';
+                 ctx.font = '12px monospace';
+                 ctx.textAlign = 'center';
+                 // 將速度顯示上移 (y - 50)，避開法向力箭頭
+                 ctx.fillText(`v = ${state.v.toFixed(2)} m/s`, cx, boxY - 50);
+                 const vDir = state.v > 0 ? "→" : "←";
+                 ctx.fillText(vDir, cx, boxY - 65);
+            }
+        }
+
+        function updateUI() {
+            // 更新數字顯示
+            valForce.textContent = state.appliedForce.toFixed(1);
+            valFriction.textContent = Math.abs(state.frictionForce).toFixed(1);
+            valNet.textContent = state.netForce.toFixed(1);
+            valAcc.textContent = state.a.toFixed(2);
+            valVel.textContent = state.v.toFixed(2);
+            
+            // 更新狀態文字
+            if (Math.abs(state.v) > 0.05) {
+                statusText.textContent = "狀態：滑動中 (動摩擦)";
+                statusText.className = "mt-2 pt-2 border-t font-bold text-red-600";
+            } else if (Math.abs(state.appliedForce) > 0) {
+                statusText.textContent = "狀態：抵抗中 (靜摩擦)";
+                statusText.className = "mt-2 pt-2 border-t font-bold text-amber-600";
+            } else {
+                statusText.textContent = "狀態：靜止";
+                statusText.className = "mt-2 pt-2 border-t font-bold text-slate-600";
+            }
+        }
+
+        // --- 主循環 ---
+        let lastTime = 0;
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = (timestamp - lastTime) / 1000; // 轉成秒
+            lastTime = timestamp;
+
+            // 限制 dt 避免切換分頁後回來瞬間飛走
+            const safeDt = Math.min(dt, 0.1);
+
+            updatePhysics(safeDt);
+            draw();
+            updateUI();
+            
+            requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+
+        // --- 事件監聽器 ---
+        
+        // 摩擦係數滑桿
+        sliderMu.addEventListener('input', (e) => {
+            state.mu = parseFloat(e.target.value);
+            displayMu.textContent = state.mu.toFixed(2);
+        });
+
+        // 施力滑桿
+        sliderForce.addEventListener('input', (e) => {
+            state.appliedForce = parseFloat(e.target.value);
+            displayForceVal.textContent = state.appliedForce + " N";
+        });
+
+        // 重置位置
+        btnResetPos.addEventListener('click', () => {
+            state.x = 0;
+            state.v = 0;
+            state.a = 0;
+        });
+
+        // 重置力量 (放手)
+        btnResetForce.addEventListener('click', () => {
+            state.appliedForce = 0;
+            sliderForce.value = 0;
+            displayForceVal.textContent = "0 N";
+        });
+
+        // 緊急停止
+        btnStop.addEventListener('click', () => {
+            state.v = 0;
+            state.a = 0;
+            state.appliedForce = 0;
+            sliderForce.value = 0;
+            displayForceVal.textContent = "0 N";
+        });
+
+    </script>
+</body>
+</html>

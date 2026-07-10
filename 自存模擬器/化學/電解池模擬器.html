@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>✨ 電解魔法實驗室 ✨</title>
+    <style>
+        /* --- 核心樣式變數 --- */
+        :root {
+            --primary: #FF9AA2;   /* 溫柔粉 */
+            --secondary: #B5EAD7; /* 薄荷綠 */
+            --accent: #97A2FF;    /* 薰衣草紫 */
+            --text: #444444;      
+            --white: #ffffff;
+            --wire-pos: #FF6B6B;  /* 正極導線紅 */
+            --wire-neg: #444444;  /* 負極導線黑 */
+            
+            --bubble-o2: rgba(255, 255, 255, 0.9);
+            --bubble-h2: rgba(255, 255, 255, 0.9);
+            --bubble-cl2: rgba(220, 255, 100, 0.9); 
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif;
+            background-color: #FFF5F7;
+            margin: 0;
+            padding: 10px;
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            background: var(--white);
+            width: 100%;
+            max-width: 900px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 3px solid var(--primary);
+        }
+
+        /* --- 標題區 --- */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            position: relative;
+        }
+
+        /* --- 導航切換 --- */
+        nav {
+            display: flex;
+            background: #ffecec;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #777;
+            cursor: pointer;
+            transition: 0.3s;
+            border-bottom: 4px solid transparent;
+            min-height: 50px; 
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            border-bottom: 4px solid var(--primary);
+            background: white;
+        }
+
+        /* --- 內容區塊 --- */
+        .content-section {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.5s;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* --- 實驗區佈局 --- */
+        .lab-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .control-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        /* 視覺區面板 */
+        .visual-panel {
+            flex: 1;
+            min-width: 300px;
+            min-height: 400px;
+            background: #F0F8FF;
+            border-radius: 20px;
+            padding: 10px;
+            /* 使用 flex 居中，但內部元素不使用絕對定位依賴面板寬度 */
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            overflow: hidden;
+        }
+
+        /* --- 關鍵修正：統一的儀器容器 --- */
+        /* 這將鎖定 SVG 和 燒杯 的相對位置，無論外層如何縮放 */
+        .apparatus-wrapper {
+            position: relative;
+            width: 300px;  /* 固定基準寬度 */
+            height: 380px; /* 固定基準高度 */
+            margin: 0 auto;
+        }
+
+        /* 背景電路圖層 (SVG) - 絕對定位於 wrapper */
+        .circuit-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* 燒杯容器 - 絕對定位於 wrapper 底部居中 */
+        .beaker-container {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%); /* 水平居中 */
+            width: 180px; /* 與 .beaker 寬度一致 */
+            height: 220px;
+            z-index: 2;
+        }
+
+        /* --- UI 元件 --- */
+        h3 { margin-top: 0; color: var(--primary); }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid var(--accent);
+            font-size: 1rem;
+            margin-bottom: 15px;
+            outline: none;
+            background: white;
+        }
+
+        .btn {
+            background-color: var(--secondary);
+            color: #444;
+            border: none;
+            padding: 15px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px #88cfa8;
+            transition: 0.2s;
+            width: 100%;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            box-shadow: 0 0 #88cfa8;
+            transform: translateY(4px);
+        }
+
+        .info-card {
+            background: #fffbe6;
+            border: 2px dashed #ffe58f;
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .explanation-box {
+            background-color: #e8f4fd;
+            border-left: 4px solid #2196f3;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .equation {
+            font-family: 'Courier New', monospace;
+            background: rgba(255,255,255,0.9);
+            padding: 8px;
+            border-radius: 5px;
+            margin: 5px 0 15px 0;
+            color: #d32f2f;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow-x: auto;
+            border: 1px solid #eee;
+        }
+
+        /* --- 電解裝置細節 --- */
+        .beaker {
+            width: 180px;
+            height: 220px;
+            border-left: 5px solid rgba(200,200,200,0.8);
+            border-right: 5px solid rgba(200,200,200,0.8);
+            border-bottom: 8px solid rgba(200,200,200,0.8);
+            border-radius: 0 0 25px 25px;
+            position: relative;
+            background: linear-gradient(to right, rgba(255,255,255,0.2), rgba(255,255,255,0.1) 40%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.1));
+            box-shadow: 0 10px 10px rgba(0,0,0,0.05), inset 0 -10px 20px rgba(255,255,255,0.5);
+            overflow: visible; 
+        }
+        
+        /* 杯口反光 */
+        .beaker::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            border: 2px solid rgba(200,200,200,0.5);
+            border-radius: 50%;
+            z-index: 10;
+        }
+
+        .liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 75%;
+            background-color: #e0f7fa;
+            transition: background-color 2s ease;
+            z-index: 1;
+            border-radius: 0 0 18px 18px;
+        }
+        
+        .liquid::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: inherit;
+            border-radius: 50%;
+            transform: scaleY(0.5) translateY(-50%);
+            opacity: 0.8;
+        }
+
+        .electrode {
+            width: 16px;
+            height: 200px;
+            background: linear-gradient(90deg, #444, #777, #444);
+            position: absolute;
+            top: -40px; 
+            z-index: 2;
+            border-radius: 4px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .anode { left: 45px; }
+        .cathode { right: 45px; }
+
+        /* 鱷魚夾 */
+        .clamp {
+            position: absolute;
+            top: -10px;
+            width: 20px;
+            height: 24px;
+            border-radius: 4px 4px 10px 10px;
+            z-index: 5;
+            left: -2px;
+        }
+        
+        .anode .clamp { background-color: var(--wire-pos); border: 2px solid #b33939; }
+        .cathode .clamp { background-color: var(--wire-neg); border: 2px solid #222; }
+
+        .material-label {
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #666;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 4px;
+            border-radius: 4px;
+            white-space: nowrap;
+            border: 1px solid #ddd;
+        }
+
+        .label-tag {
+            position: absolute;
+            top: 25px; 
+            font-size: 12px;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            z-index: 3;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .bubble {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            z-index: 2;
+            opacity: 0;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .deposit {
+            position: absolute;
+            bottom: 20%;
+            width: 22px;
+            height: 60%;
+            z-index: 3;
+            display: none;
+            border-radius: 5px;
+        }
+        
+        .anode-deposit { left: -3px; }
+        .cathode-deposit { right: -3px; }
+
+        /* --- 考核區 --- */
+        .quiz-container { max-width: 600px; margin: 0 auto; }
+        .quiz-header { text-align: center; margin-bottom: 20px; }
+        .progress-bar { width: 100%; height: 10px; background: #eee; border-radius: 5px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+        .option-btn { background: white; border: 2px solid var(--accent); color: var(--text); margin: 12px 0; padding: 15px; width: 100%; border-radius: 12px; cursor: pointer; transition: 0.2s; text-align: left; font-size: 1rem; }
+        .option-btn:hover, .option-btn:active { background: var(--accent); color: white; }
+        .result-card { text-align: center; padding: 30px; background: #fdfdfd; border-radius: 20px; }
+        .hidden { display: none !important; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes rise { 0% { bottom: 20%; opacity: 1; transform: translateX(0); } 50% { transform: translateX(3px); } 100% { bottom: 80%; opacity: 0; transform: translateX(-3px); } }
+
+        @media (max-width: 600px) {
+            body { padding: 5px; }
+            .content-section { padding: 15px; }
+            .lab-layout { gap: 10px; }
+            h3 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>✨ 電解魔法實驗室 ✨</header>
+    
+    <nav>
+        <button class="nav-btn active" onclick="switchTab('experiment')">⚗️ 實驗區</button>
+        <button class="nav-btn" onclick="switchTab('quiz')">📝 考核區</button>
+    </nav>
+
+    <!-- 實驗區 -->
+    <div id="experiment" class="content-section active">
+        <div class="lab-layout">
+            <div class="control-panel">
+                <h3>1️⃣ 選擇電解質</h3>
+                <p style="font-size: 0.9rem; color: #888;">(使用惰性電極：石墨 C 或鉑 Pt)</p>
+                <select id="electrolyteSelect">
+                    <option value="diluteNaCl">稀氯化鈉溶液 (Dilute NaCl)</option>
+                    <option value="concNaCl">濃氯化鈉溶液 (Concentrated NaCl)</option>
+                    <option value="diluteHNO3">極稀硝酸 (Very Dilute HNO3)</option>
+                    <option value="diluteH2SO4">稀硫酸 (Dilute H2SO4)</option>
+                    <option value="CuSO4">硫酸銅(II)溶液 (CuSO4)</option>
+                    <option value="AgNO3">硝酸銀溶液 (AgNO3)</option>
+                </select>
+
+                <h3>2️⃣ 開始實驗</h3>
+                <button class="btn" onclick="startExperiment()">⚡ 啟動電源 ⚡</button>
+
+                <div id="resultInfo" class="info-card hidden">
+                    
+                    <div class="explanation-box">
+                        <strong>⚡ 優先放電原因：</strong>
+                        <div id="dischargeReason" style="margin-top:5px;"></div>
+                    </div>
+
+                    <p><strong>陽極 (Anode) (+)：</strong> <span id="anodeObservation"></span></p>
+                    <div id="anodeEq" class="equation"></div>
+                    
+                    <p><strong>陰極 (Cathode) (-)：</strong> <span id="cathodeObservation"></span></p>
+                    <div id="cathodeEq" class="equation"></div>
+                    
+                    <p><strong>總反應式：</strong></p>
+                    <div id="totalEq" class="equation"></div>
+                    
+                    <p><strong>溶液變化：</strong> <span id="solutionChange"></span></p>
+                </div>
+            </div>
+
+            <div class="visual-panel">
+                <!-- 建立一個結構鎖定的容器 (300x380)，所有內容都相對這個容器定位 -->
+                <div class="apparatus-wrapper">
+                    
+                    <!-- SVG 電路圖層 -->
+                    <!-- 注意：這裡的座標是寫死在 300x400 的 viewport 中，現在 wrapper 寬度鎖定為 300，所以完美對齊 -->
+                    <svg class="circuit-layer" viewBox="0 0 300 380" preserveAspectRatio="none">
+                        <!-- 定義陰影 -->
+                        <defs>
+                            <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                                <feOffset dx="1" dy="2" result="offsetblur"/>
+                                <feComponentTransfer>
+                                    <feFuncA type="linear" slope="0.3"/>
+                                </feComponentTransfer>
+                                <feMerge> 
+                                    <feMergeNode/>
+                                    <feMergeNode in="SourceGraphic"/> 
+                                </feMerge>
+                            </filter>
+                        </defs>
+
+                        <!-- 電池 (DC Power Supply) - 居中 (300/2 = 150) -->
+                        <!-- 電池寬 80，X = 150 - 40 = 110 -->
+                        <g transform="translate(110, 20)">
+                            <rect x="0" y="10" width="80" height="50" rx="8" fill="#FFEAA7" stroke="#FAB1A0" stroke-width="2" filter="url(#dropShadow)"/>
+                            <text x="40" y="42" text-anchor="middle" font-size="14" fill="#555" font-weight="bold">D.C. 電源</text>
+                            <circle cx="15" cy="10" r="6" fill="#FF6B6B" stroke="#333" stroke-width="1"/>
+                            <text x="15" y="5" text-anchor="middle" font-size="14" fill="#FF6B6B" font-weight="bold">+</text>
+                            <circle cx="65" cy="10" r="6" fill="#444" stroke="#333" stroke-width="1"/>
+                            <text x="65" y="5" text-anchor="middle" font-size="14" fill="#444" font-weight="bold">-</text>
+                        </g>
+
+                        <!-- 
+                           精確座標計算：
+                           Wrapper 寬度: 300px
+                           Beaker 寬度: 180px, 居中 (Left = (300-180)/2 = 60px)
+                           
+                           陽極 (左側電極):
+                           相對於 Beaker Left: 45px
+                           絕對 X = 60 + 45 = 105px
+                           電極寬度 16px, 中心 = 105 + 8 = 113px
+                           
+                           陰極 (右側電極):
+                           相對於 Beaker Right: 45px
+                           Beaker Right = 60 + 180 = 240px
+                           絕對 X = 240 - 45 - 16 = 179px
+                           中心 = 179 + 8 = 187px
+                           
+                           Y 軸:
+                           Beaker 高度 220px, 底部對齊 0 (bottom:0 in CSS)
+                           Wrapper 高度 380px.
+                           Beaker Top = 380 - 220 = 160px.
+                           Electrode Top = -40px relative to Beaker = 160 - 40 = 120px absolute Top.
+                           Clamp/Wire connection point ~ 120px.
+                           Let's target Y=122 for wire end.
+                        -->
+
+                        <!-- 正極導線 (紅) -> 連接左側陽極 (X=113) -->
+                        <path d="M 125 30 V 5 H 113 V 122" stroke="#FF6B6B" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        
+                        <!-- 負極導線 (黑) -> 連接右側陰極 (X=187) -->
+                        <path d="M 175 30 V 5 H 187 V 122" stroke="#444" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        
+                        <!-- 焊點/連接點 -->
+                        <circle cx="113" cy="122" r="3" fill="#FF6B6B" />
+                        <circle cx="187" cy="122" r="3" fill="#444" />
+                    </svg>
+
+                    <!-- 燒杯區域 -->
+                    <div class="beaker-container">
+                        <div class="beaker">
+                            <!-- 陽極 -->
+                            <div class="electrode anode">
+                                <div class="clamp"></div>
+                                <div class="material-label">惰性(Pt/C)</div>
+                                <div class="label-tag" style="left: -45px;">陽極(+)</div>
+                                <div id="anodeDeposit" class="deposit anode-deposit"></div>
+                            </div>
+                            
+                            <!-- 陰極 -->
+                            <div class="electrode cathode">
+                                <div class="clamp"></div>
+                                <div class="material-label">惰性(Pt/C)</div>
+                                <div class="label-tag" style="right: -45px;">陰極(-)</div>
+                                <div id="cathodeDeposit" class="deposit cathode-deposit"></div>
+                            </div>
+                            
+                            <div id="liquid" class="liquid"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 考核區 -->
+    <div id="quiz" class="content-section">
+        <!-- 步驟 1: 輸入名字 -->
+        <div id="quizStep1" class="quiz-container" style="text-align: center; margin-top: 30px;">
+            <h3>👋 歡迎來到測試挑戰！</h3>
+            <p>這個測驗共有 10 題，你需要答對 8 題才能通過考核喔！</p>
+            <input type="text" id="studentName" placeholder="請輸入你的名字..." maxlength="10">
+            <button class="btn" onclick="startQuiz()">開始挑戰 🚀</button>
+        </div>
+
+        <!-- 步驟 2: 答題 -->
+        <div id="quizStep2" class="quiz-container hidden">
+            <div class="quiz-header">
+                <h3>第 <span id="qNum">1</span> / 10 題</h3>
+                <div class="progress-bar"><div id="progressBar" class="progress-fill"></div></div>
+            </div>
+            
+            <p id="qText" style="font-size: 1.1rem; font-weight: bold; margin: 20px 0; line-height: 1.5;"></p>
+            <div id="optionsArea"></div>
+        </div>
+
+        <!-- 步驟 3: 結果 -->
+        <div id="quizStep3" class="quiz-container hidden">
+            <div class="result-card">
+                <div id="resultIcon" style="font-size: 5rem;">🏆</div>
+                <h2 id="resultTitle" style="color: var(--primary);">恭喜通過！</h2>
+                
+                <h3>親愛的 <span id="resultName" style="color: var(--accent); text-decoration: underline;"></span> 同學</h3>
+                
+                <p id="resultMessage"></p>
+                
+                <div style="background: #f0f0f0; padding: 15px; border-radius: 10px; margin: 20px 0;">
+                    <p>你的成績</p>
+                    <p style="font-size: 2rem; font-weight: bold; margin: 5px 0;">
+                        <span id="scoreText"></span> / 10
+                    </p>
+                </div>
+
+                <button id="retryBtn" class="btn hidden" onclick="startQuiz()">🔄 重新挑戰</button>
+                <button id="homeBtn" class="btn hidden" onclick="switchTab('experiment')">⚗️ 回到實驗室</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 實驗資料庫 ---
+    const experiments = {
+        diluteNaCl: {
+            colorStart: "#e0f7fa", 
+            colorEnd: "#e0f7fa",
+            anodeObs: "產生無色氣泡 (氧氣)",
+            cathodeObs: "產生無色氣泡 (氫氣)",
+            anodeEq: "4OH⁻(aq) → 2H₂O(l) + O₂(g) + 4e⁻",
+            cathodeEq: "2H⁺(aq) + 2e⁻ → H₂(g)",
+            totalEq: "2H₂O(l) → 2H₂(g) + O₂(g)",
+            solChange: "濃度變大 (相當於水的電解，NaCl濃度相對上升)",
+            bubbleType: { anode: 'o2', cathode: 'h2' },
+            deposit: { anode: null, cathode: null },
+            explanation: "<b>陰極：</b>H⁺ 在電化學勢列(ECS)位置比 Na⁺ 低，較易獲得電子。<br><b>陽極：</b>OH⁻ 在電化學勢列位置比 Cl⁻ 低，較易失去電子。"
+        },
+        concNaCl: {
+            colorStart: "#e0f7fa",
+            colorEnd: "#e0f7fa",
+            anodeObs: "產生淡黃綠色氣泡 (氯氣)",
+            cathodeObs: "產生無色氣泡 (氫氣)",
+            anodeEq: "2Cl⁻(aq) → Cl₂(g) + 2e⁻",
+            cathodeEq: "2H⁺(aq) + 2e⁻ → H₂(g)",
+            totalEq: "2NaCl(aq) + 2H₂O(l) → 2NaOH(aq) + H₂(g) + Cl₂(g)",
+            solChange: "變成氫氧化鈉溶液 (pH 上升)",
+            bubbleType: { anode: 'cl2', cathode: 'h2' },
+            deposit: { anode: null, cathode: null },
+            explanation: "<b>陰極：</b>H⁺ 在 ECS 位置比 Na⁺ 低，較易獲得電子。<br><b>陽極：</b>雖然 OH⁻ 位置較低，但 Cl⁻ 的<b>濃度遠高於</b> OH⁻ (濃度效應)，故 Cl⁻ 優先放電。"
+        },
+        diluteHNO3: {
+            colorStart: "#f0f0f0",
+            colorEnd: "#f0f0f0",
+            anodeObs: "產生無色氣泡 (氧氣)",
+            cathodeObs: "產生無色氣泡 (氫氣)",
+            anodeEq: "4OH⁻(aq) → 2H₂O(l) + O₂(g) + 4e⁻",
+            cathodeEq: "2H⁺(aq) + 2e⁻ → H₂(g)",
+            totalEq: "2H₂O(l) → 2H₂(g) + O₂(g)",
+            solChange: "濃度變大 (水的電解)",
+            bubbleType: { anode: 'o2', cathode: 'h2' },
+            deposit: { anode: null, cathode: null },
+            explanation: "<b>陰極：</b>H⁺ 優先於金屬離子或從酸中直接被還原。<br><b>陽極：</b>OH⁻ 在 ECS 位置比 NO₃⁻ 低，優先失去電子。"
+        },
+        diluteH2SO4: {
+            colorStart: "#f0f0f0",
+            colorEnd: "#f0f0f0",
+            anodeObs: "產生無色氣泡 (氧氣)",
+            cathodeObs: "產生無色氣泡 (氫氣)",
+            anodeEq: "4OH⁻(aq) → 2H₂O(l) + O₂(g) + 4e⁻",
+            cathodeEq: "2H⁺(aq) + 2e⁻ → H₂(g)",
+            totalEq: "2H₂O(l) → 2H₂(g) + O₂(g)",
+            solChange: "濃度變大 (水的電解)",
+            bubbleType: { anode: 'o2', cathode: 'h2' },
+            deposit: { anode: null, cathode: null },
+            explanation: "<b>陰極：</b>H⁺ 優先於其他陽離子放電。<br><b>陽極：</b>OH⁻ 在 ECS 位置比 SO₄²⁻ 低，較易失去電子。"
+        },
+        CuSO4: {
+            colorStart: "#00BFFF", 
+            colorEnd: "#E0FFFF",   
+            anodeObs: "產生無色氣泡 (氧氣)",
+            cathodeObs: "有紅棕色固體析出 (銅)",
+            anodeEq: "4OH⁻(aq) → 2H₂O(l) + O₂(g) + 4e⁻",
+            cathodeEq: "Cu²⁺(aq) + 2e⁻ → Cu(s)",
+            totalEq: "2CuSO₄(aq) + 2H₂O(l) → 2Cu(s) + O₂(g) + 2H₂SO₄(aq)",
+            solChange: "藍色變淡 (Cu²⁺減少)，溶液變酸 (生成 H⁺)",
+            bubbleType: { anode: 'o2', cathode: null },
+            deposit: { anode: null, cathode: '#B87333' },
+            explanation: "<b>陰極：</b>Cu²⁺ 在 ECS 位置比 H⁺ 低，故強烈傾向優先獲得電子。<br><b>陽極：</b>OH⁻ 在 ECS 位置比 SO₄²⁻ 低，優先失去電子。"
+        },
+        AgNO3: {
+            colorStart: "#f8f9fa",
+            colorEnd: "#f8f9fa",
+            anodeObs: "產生無色氣泡 (氧氣)",
+            cathodeObs: "有銀灰色固體析出 (銀)",
+            anodeEq: "4OH⁻(aq) → 2H₂O(l) + O₂(g) + 4e⁻",
+            cathodeEq: "Ag⁺(aq) + e⁻ → Ag(s)",
+            totalEq: "4AgNO₃(aq) + 2H₂O(l) → 4Ag(s) + O₂(g) + 4HNO₃(aq)",
+            solChange: "溶液變酸 (生成 H⁺)",
+            bubbleType: { anode: 'o2', cathode: null },
+            deposit: { anode: null, cathode: '#C0C0C0' },
+            explanation: "<b>陰極：</b>Ag⁺ 在 ECS 位置比 H⁺ 低，極易獲得電子。<br><b>陽極：</b>OH⁻ 在 ECS 位置比 NO₃⁻ 低，優先失去電子。"
+        }
+    };
+
+    // --- 題庫 ---
+    const allQuestions = [
+        { q: "在電解濃氯化鈉溶液時，陽極(正極)會產生什麼氣體？", options: ["氧氣 (無色)", "氫氣 (無色)", "氯氣 (黃綠色)", "氮氣 (無色)"], ans: 2 },
+        { q: "使用惰性電極電解硫酸銅(II)溶液時，溶液顏色會發生什麼變化？", options: ["由藍色變深", "由藍色變淡", "變成紅色", "沒有變化"], ans: 1 },
+        { q: "電解稀硫酸(Dilute H₂SO₄)實際上是在電解什麼？", options: ["硫酸", "水", "氫氣", "氧氣"], ans: 1 },
+        { q: "在電解硝酸銀溶液時，陰極(負極)會觀察到什麼？", options: ["氣泡產生", "銀灰色固體析出", "綠色沉澱", "電極溶解"], ans: 1 },
+        { q: "以下哪種電解質電解後，溶液的濃度會明顯上升(因為水減少)？", options: ["濃氯化鈉", "硫酸銅", "稀硫酸", "硝酸銀"], ans: 2 },
+        { q: "為何電解濃氯化鈉溶液時，陽極釋出的是氯氣而不是氧氣？", options: ["氯離子在電化學勢列位置較低", "氫氧離子在電化學勢列位置較低", "氯離子的濃度遠高於氫氧離子 (濃度效應)", "氯氣比氧氣輕"], ans: 2 },
+        { q: "在電化學勢列(ECS)中，下列哪種離子最容易在陰極獲得電子？", options: ["Na⁺", "H⁺", "Cu²⁺", "Ag⁺"], ans: 3 },
+        { q: "電解硫酸銅溶液後，溶液的 pH 值會如何變化？", options: ["上升 (變鹼)", "下降 (變酸)", "不變", "先升後降"], ans: 1 },
+        { q: "下列哪項不是惰性電極常用的材料？", options: ["鉑 (Pt)", "石墨 (C)", "銅 (Cu)", "以上皆是"], ans: 2 },
+        { q: "在電解實驗中，電子流動的方向是？", options: ["在電解液中由陰極流向陽極", "在外電路中由電源正極流向陽極", "在外電路中由陽極流向電源正極", "電子不流動"], ans: 2 }
+    ];
+
+    // --- 實驗邏輯 ---
+    let animationIntervals = [];
+
+    function switchTab(tab) {
+        document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tab).classList.add('active');
+        const btns = document.querySelectorAll('.nav-btn');
+        if(tab === 'experiment') btns[0].classList.add('active');
+        else btns[1].classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    function clearAnimations() {
+        animationIntervals.forEach(clearInterval);
+        animationIntervals = [];
+        document.querySelectorAll('.bubble').forEach(b => b.remove());
+        document.getElementById('anodeDeposit').style.display = 'none';
+        document.getElementById('cathodeDeposit').style.display = 'none';
+    }
+
+    function startExperiment() {
+        clearAnimations();
+        const type = document.getElementById('electrolyteSelect').value;
+        const data = experiments[type];
+        const liquid = document.getElementById('liquid');
+
+        liquid.style.backgroundColor = data.colorStart;
+        setTimeout(() => { liquid.style.backgroundColor = data.colorEnd; }, 500);
+
+        document.getElementById('resultInfo').classList.remove('hidden');
+        document.getElementById('dischargeReason').innerHTML = data.explanation;
+        document.getElementById('anodeObservation').innerText = data.anodeObs;
+        document.getElementById('cathodeObservation').innerText = data.cathodeObs;
+        document.getElementById('anodeEq').innerText = data.anodeEq;
+        document.getElementById('cathodeEq').innerText = data.cathodeEq;
+        document.getElementById('totalEq').innerText = data.totalEq;
+        document.getElementById('solutionChange').innerText = data.solChange;
+
+        if (data.bubbleType.anode) createBubbles('anode', data.bubbleType.anode);
+        if (data.bubbleType.cathode) createBubbles('cathode', data.bubbleType.cathode);
+
+        if (data.deposit.cathode) {
+            const dep = document.getElementById('cathodeDeposit');
+            dep.style.backgroundColor = data.deposit.cathode;
+            dep.style.display = 'block';
+        }
+    }
+
+    function createBubbles(electrodeClass, gasType) {
+        const interval = setInterval(() => {
+            const bubble = document.createElement('div');
+            bubble.classList.add('bubble');
+            if (gasType === 'cl2') bubble.style.backgroundColor = 'var(--bubble-cl2)';
+            else bubble.style.backgroundColor = 'var(--bubble-o2)';
+
+            // 調整氣泡生成位置，相對於電極
+            let leftPos = electrodeClass === 'anode' ? 48 : 118; // 稍微調整座標以匹配新的寬度
+            leftPos += (Math.random() * 8 - 4);
+            
+            bubble.style.left = leftPos + 'px';
+            bubble.style.bottom = '20%';
+            bubble.style.animation = `rise ${2 + Math.random()}s linear infinite`;
+
+            document.querySelector('.beaker').appendChild(bubble);
+            setTimeout(() => { bubble.remove(); }, 3000);
+        }, 300);
+        animationIntervals.push(interval);
+    }
+
+    // --- 考核邏輯 ---
+    let currentQuiz = [];
+    let currentQIndex = 0;
+    let score = 0;
+    let studentName = "";
+    const PASS_SCORE = 8;
+
+    function startQuiz() {
+        if (!document.getElementById('quizStep3').classList.contains('hidden')) {
+             // 重新挑戰的情況，不需做特別處理
+        } else {
+            const nameInput = document.getElementById('studentName');
+            if (!nameInput.value.trim()) { alert("請輸入名字以開始紀錄成績！"); return; }
+            studentName = nameInput.value;
+        }
+
+        const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
+        currentQuiz = shuffled.slice(0, 10);
+        currentQIndex = 0;
+        score = 0;
+
+        document.getElementById('quizStep1').classList.add('hidden');
+        document.getElementById('quizStep3').classList.add('hidden');
+        document.getElementById('quizStep2').classList.remove('hidden');
+        updateProgressBar();
+        showQuestion();
+    }
+
+    function updateProgressBar() {
+        const percent = ((currentQIndex) / currentQuiz.length) * 100;
+        document.getElementById('progressBar').style.width = percent + '%';
+    }
+
+    function showQuestion() {
+        const qData = currentQuiz[currentQIndex];
+        document.getElementById('qNum').innerText = currentQIndex + 1;
+        document.getElementById('qText').innerText = qData.q;
+        const optionsDiv = document.getElementById('optionsArea');
+        optionsDiv.innerHTML = "";
+        qData.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(idx);
+            optionsDiv.appendChild(btn);
+        });
+        updateProgressBar();
+    }
+
+    function checkAnswer(selectedIdx) {
+        if (selectedIdx === currentQuiz[currentQIndex].ans) score++;
+        currentQIndex++;
+        if (currentQIndex < currentQuiz.length) showQuestion();
+        else showResult();
+    }
+
+    function showResult() {
+        document.getElementById('quizStep2').classList.add('hidden');
+        document.getElementById('quizStep3').classList.remove('hidden');
+        document.getElementById('resultName').innerText = studentName;
+        document.getElementById('scoreText').innerText = score;
+        const retryBtn = document.getElementById('retryBtn');
+        const homeBtn = document.getElementById('homeBtn');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultMsg = document.getElementById('resultMessage');
+
+        if (score >= PASS_SCORE) {
+            resultIcon.innerText = "🏆";
+            resultTitle.innerText = "恭喜通過考核！";
+            resultMsg.innerHTML = "太棒了！你已經完全掌握了電解的原理。<br>你是真正的化學小博士！✨";
+            resultTitle.style.color = "var(--secondary)";
+            retryBtn.classList.add('hidden');
+            homeBtn.classList.remove('hidden');
+        } else {
+            resultIcon.innerText = "💪";
+            resultTitle.innerText = "考核未通過";
+            resultMsg.innerHTML = `別氣餒！通過標準是 10 題中答對 ${PASS_SCORE} 題。<br>建議再去實驗區複習一下原理，然後再來挑戰！`;
+            resultTitle.style.color = "#ff6b6b";
+            retryBtn.classList.remove('hidden');
+            homeBtn.classList.add('hidden');
+        }
+    }
+</script>
+
+</body>
+</html>

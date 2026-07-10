@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>3D 磁棒磁場模擬器 | 3D Bar Magnet Simulator | HKDSE Physics</title>
+
+<!-- Google Tag -->
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<style>
+:root {
+  --bg-dark: #0a1420;
+  --bg-light: #f5f1ea;
+  --accent: #f59e0b;
+  --accent-2: #14b8a6;
+  --pole-n: #e63946;
+  --pole-s: #2c5fa8;
+  --text-dark: #e2e8f0;
+  --text-light: #1e293b;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+body {
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-dark);
+  transition: background 0.4s ease, color 0.4s ease;
+}
+body.light {
+  background: var(--bg-light);
+  color: var(--text-light);
+}
+#canvas-container {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.panel {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease;
+}
+body.light .panel {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0,0,0,0.02) inset;
+}
+#controlPanel.collapsed {
+  transform: translateX(-120%);
+  opacity: 0;
+  pointer-events: none;
+}
+.pill {
+  display: inline-flex;
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+body.light .pill { background: rgba(0,0,0,0.05); }
+.pill button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.pill button.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(245,158,11,0.3);
+}
+.segmented {
+  display: flex;
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+body.light .segmented { background: rgba(0,0,0,0.05); }
+.segmented button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 7px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.segmented button.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(245,158,11,0.3);
+}
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  outline: none;
+}
+body.light input[type=range] { background: rgba(0,0,0,0.1); }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px; height: 20px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(245,158,11,0.18);
+  transition: box-shadow 0.2s;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 6px rgba(245,158,11,0.25);
+}
+input[type=range]::-moz-range-thumb {
+  width: 20px; height: 20px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 0 4px rgba(245,158,11,0.18);
+}
+input[type=checkbox] {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+.btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: inherit;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+body.light .btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
+body.light .btn:hover { background: rgba(0,0,0,0.08); }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+.btn-primary:hover { background: #d97706; }
+#info-window {
+  position: absolute;
+  top: 70px;
+  right: 16px;
+  width: 310px;
+  max-height: calc(100vh - 90px);
+  z-index: 20;
+}
+.drag-handle {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.drag-handle:active { cursor: grabbing; }
+.collapse-btn {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  background: rgba(255,255,255,0.06);
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.collapse-btn:hover { background: rgba(255,255,255,0.14); }
+body.light .collapse-btn { background: rgba(0,0,0,0.05); }
+body.light .collapse-btn:hover { background: rgba(0,0,0,0.1); }
+#info-content {
+  overflow-y: auto;
+  max-height: calc(100vh - 150px);
+  transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+}
+#info-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 999px;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 100;
+  font-size: 13px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.scroll-thin::-webkit-scrollbar { width: 5px; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+.scroll-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+body.light .scroll-thin::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+.info-section h4 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.info-section p, .info-section li {
+  font-size: 12.5px;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+.info-section ul { padding-left: 16px; margin: 4px 0; }
+.info-section li { list-style: disc; }
+.color-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.color-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.instruction-text {
+  font-size: 11px;
+  color: var(--accent-2);
+  margin-top: 4px;
+  display: none;
+}
+#interaction-mode {
+  display: none;
+}
+@media (max-width: 768px) {
+  #info-window {
+    width: calc(100% - 24px);
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    max-height: 45vh;
+  }
+  #info-content { max-height: 35vh; }
+  #controlPanel {
+    width: calc(100% - 24px) !important;
+    max-width: 280px;
+    left: 12px !important;
+    top: 60px !important;
+  }
+  h1#title { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<!-- Header -->
+<header class="absolute top-0 left-0 right-0 z-30 px-4 py-3 flex items-center justify-between pointer-events-none">
+  <div class="flex items-center gap-2.5 pointer-events-auto">
+    <h1 id="title" class="text-base md:text-lg font-bold tracking-tight" data-zh="3D 磁棒磁場模擬器" data-en="3D Bar Magnet Simulator">3D 磁棒磁場模擬器</h1>
+    <button onclick="togglePanel('controlPanel')" class="text-gray-300 hover:text-white transition-colors p-1.5 bg-white/5 rounded-full hover:bg-white/15 backdrop-blur-sm border border-white/10" title="Settings">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transform hover:rotate-90 transition-transform duration-300">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+  </div>
+  <div class="flex items-center gap-2 pointer-events-auto">
+    <div class="pill">
+      <button id="lang-zh" class="active" onclick="setLang('zh')">中</button>
+      <button id="lang-en" onclick="setLang('en')">EN</button>
+    </div>
+    <button onclick="toggleDarkMode()" id="theme-btn" class="p-1.5 rounded-full transition-colors border border-white/10" style="background: rgba(255,255,255,0.05);" title="Toggle Dark/Light Mode">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<!-- Control Panel -->
+<aside id="controlPanel" class="panel absolute top-14 left-4 z-20 p-4 w-72 scroll-thin" style="max-height: calc(100vh - 80px); overflow-y: auto;">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="font-bold text-sm" data-zh="控制面板" data-en="Control Panel">控制面板</h2>
+    <div class="collapse-btn" onclick="togglePanel('controlPanel')">
+      <span>−</span>
+    </div>
+  </div>
+
+  <div class="mb-3.5 space-y-2 border-b border-white/10 pb-3">
+    <label class="flex items-center justify-between cursor-pointer text-[12.5px]">
+      <span data-zh="顯示第二塊磁棒" data-en="Show 2nd Magnet">顯示第二塊磁棒</span>
+      <input type="checkbox" id="magnet2-toggle" onchange="onMagnet2Toggle(this.checked)">
+    </label>
+    <div class="instruction-text" id="interaction-hint" style="display:block;">
+      <span data-zh="💡 點擊畫面中的磁棒來選取並移動/旋轉" data-en="💡 Click a magnet to move or rotate it">💡 點擊畫面中的磁棒來選取並移動/旋轉</span>
+    </div>
+    <button class="btn w-full" style="margin-top: 8px;" onclick="alignMagnets()" data-zh="⬍ 水平對齊磁棒 (同一高度)" data-en="⬍ Align Magnets (Same Height)">⬍ 水平對齊磁棒 (同一高度)</button>
+    <button class="btn w-full" style="margin-top: 8px;" onclick="alignMagnetsSideBySide()" data-zh="⬌ 左右對齊磁棒 (同一深度)" data-en="⬌ Align Left-Right (Same Depth)">⬌ 左右對齊磁棒 (同一深度)</button>
+    <button class="btn w-full" style="margin-top: 8px;" onclick="alignMagnetsAxis()" data-zh="⤢ 軸線對齊磁棒 (同一直線)" data-en="⤢ Align Axis (Same Line)">⤢ 軸線對齊磁棒 (同一直線)</button>
+  </div>
+
+  <!-- Dynamic Interaction Mode Options -->
+  <div class="mb-3.5 pb-3 border-b border-white/10" id="interaction-mode">
+    <label class="text-[11px] font-semibold opacity-60 block mb-1.5" data-zh="操作模式 (已選取磁棒)" data-en="Mode (Selected Magnet)">操作模式 (已選取磁棒)</label>
+    <div class="segmented">
+      <button id="mode-translate" class="active" onclick="setTransformMode('translate')" data-zh="移動" data-en="Move">移動</button>
+      <button id="mode-rotate" onclick="setTransformMode('rotate')" data-zh="旋轉" data-en="Rotate">旋轉</button>
+    </div>
+  </div>
+
+  <div class="mb-3.5" id="lines-control">
+    <label class="text-[11px] font-semibold opacity-60 flex justify-between mb-1.5">
+      <span data-zh="磁力線數量" data-en="Field Lines">磁力線數量</span>
+      <span id="lines-val">288</span>
+    </label>
+    <input type="range" id="lines-slider" min="12" max="1152" step="12" value="288" oninput="onLinesChange(this.value)">
+  </div>
+
+  <div class="mb-3.5" id="vectors-control">
+    <label class="text-[11px] font-semibold opacity-60 flex justify-between mb-1.5">
+      <span data-zh="向量密度 (每線)" data-en="Vectors / Line">向量密度 (每線)</span>
+      <span id="vectors-val">2</span>
+    </label>
+    <input type="range" id="vectors-slider" min="1" max="6" step="1" value="2" oninput="onVectorsChange(this.value)">
+  </div>
+
+  <div class="mb-3.5 space-y-2">
+    <label class="flex items-center justify-between cursor-pointer text-[12.5px]">
+      <span data-zh="3D 磁力線" data-en="3D Field Lines">3D 磁力線</span>
+      <input type="checkbox" id="lines-toggle" checked onchange="onLinesToggle(this.checked)">
+    </label>
+    <label class="flex items-center justify-between cursor-pointer text-[12.5px]">
+      <span data-zh="3D 磁場向量" data-en="3D B-Field Vectors">3D 磁場向量</span>
+      <input type="checkbox" id="compass-toggle" checked onchange="onCompassToggle(this.checked)">
+    </label>
+    <label class="flex items-center justify-between cursor-pointer text-[12.5px]">
+      <span data-zh="方向箭嘴" data-en="Direction Arrows">方向箭嘴</span>
+      <input type="checkbox" id="arrows-toggle" onchange="onArrowsToggle(this.checked)">
+    </label>
+  </div>
+
+  <div class="mb-3.5">
+    <label class="text-[11px] font-semibold opacity-60 flex justify-between mb-1.5">
+      <span data-zh="動畫速度" data-en="Animation Speed">動畫速度</span>
+      <span><span id="speed-val">1.0</span>×</span>
+    </label>
+    <input type="range" id="speed-slider" min="0" max="3" step="0.1" value="1.0" oninput="onSpeedChange(this.value)">
+  </div>
+
+  <div class="flex gap-2">
+    <button class="btn flex-1" onclick="resetView()" data-zh="重置視角" data-en="Reset View">重置視角</button>
+    <button class="btn btn-primary flex-1" onclick="resetAll()" data-zh="全部重置" data-en="Reset All">全部重置</button>
+  </div>
+
+  <div class="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+    <div class="color-legend">
+      <div class="color-dot" style="background:#e63946;"></div>
+      <span data-zh="N 極（北極）" data-en="N pole (North)">N 極（北極）</span>
+    </div>
+    <div class="color-legend">
+      <div class="color-dot" style="background:#2c5fa8;"></div>
+      <span data-zh="S 極（南極）" data-en="S pole (South)">S 極（南極）</span>
+    </div>
+    <div class="color-legend">
+      <div class="color-dot" style="background:#f59e0b;"></div>
+      <span data-zh="磁力線 / 強磁場" data-en="Field line / Strong B">磁力線 / 強磁場</span>
+    </div>
+    <div class="color-legend">
+      <div class="color-dot" style="background:#14b8a6;"></div>
+      <span data-zh="弱磁場" data-en="Weak B">弱磁場</span>
+    </div>
+  </div>
+</aside>
+
+<!-- Info Window -->
+<div id="info-window" class="panel">
+  <div class="drag-handle flex items-center justify-between p-3 border-b border-white/10">
+    <h3 class="font-bold text-[13px]" data-zh="📖 物理重點" data-en="📖 Physics Key Points">📖 物理重點</h3>
+    <div class="collapse-btn" onclick="toggleInfoContent()">
+      <span id="info-collapse-icon">−</span>
+    </div>
+  </div>
+  <div id="info-content" class="p-3.5 scroll-thin space-y-3 info-section">
+    <div>
+      <h4 data-zh="核心概念" data-en="Core Concept">核心概念</h4>
+      <p data-zh="磁場 (B) 對磁極施加力。方向 = 自由放置的 N 極所受的力。單位：特斯拉 (T)。" data-en="Magnetic field (B) exerts force on magnetic poles. Direction = force on a free N-pole. Unit: Tesla (T).">磁場 (B) 對磁極施加力。方向 = 自由放置的 N 極所受的力。單位：特斯拉 (T)。</p>
+    </div>
+
+    <div>
+      <h4 data-zh="磁力線規則" data-en="Field Line Rules">磁力線規則</h4>
+      <ul>
+        <li data-zh="磁鐵外部：N → S" data-en="Outside magnet: N → S">磁鐵外部：N → S</li>
+        <li data-zh="磁鐵內部：S → N（閉合迴路）" data-en="Inside magnet: S → N (closed loops)">磁鐵內部：S → N（閉合迴路）</li>
+        <li data-zh="磁力線永不相交" data-en="Field lines never cross">磁力線永不相交</li>
+        <li data-zh="磁力線越密 → 磁場越強" data-en="Denser lines → stronger field">磁力線越密 → 磁場越強</li>
+        <li data-zh="多個磁鐵互動時，空間中的磁場會進行向量疊加 (Superposition)" data-en="When multiple magnets interact, their fields superimpose in space">多個磁鐵互動時，空間中的磁場會進行向量疊加 (Superposition)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
+
+// ==================== State ====================
+const state = {
+  magnetType: 'bar', // Only bar magnet now
+  strength: 1.0,
+  numLines: 288,
+  vectorDensity: 2,
+  showFieldLines: true,
+  showCompasses: true,
+  showArrows: false,
+  showMagnet2: false,
+  showNeutralPoints: false,
+  animSpeed: 1.0,
+  isDark: true,
+  lang: 'zh'
+};
+
+let scene, camera, renderer, controls, clock;
+let magnet1, magnet2;
+let fieldLinesGroup, compassesGroup;
+let gridHelper, floorMesh;
+let currentPoles = [];
+
+// Interactions
+let transformControl;
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// Flow Arrow System
+let flowArrows = [];
+const FLOW_ARROW_COUNT = 8000; // 擴大渲染池以應付高達 1152 條磁力線 * 6 倍密度
+const flowArrowGeo = new THREE.ConeGeometry(0.035, 0.126, 5);
+let activeFieldLines = []; // Store closed loop points
+
+// ==================== Init ====================
+function init() {
+  const container = document.getElementById('canvas-container');
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a1420);
+  scene.fog = new THREE.Fog(0x0a1420, 12, 28);
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(3.8, 4.8, 5.8);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  container.appendChild(renderer.domElement);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 2;
+  controls.maxDistance = 14;
+  controls.target.set(0, 0, 0);
+
+  // Transform Controls for dragging / rotating
+  transformControl = new TransformControls(camera, renderer.domElement);
+  transformControl.addEventListener('dragging-changed', function (event) {
+    controls.enabled = !event.value;
+    if (!event.value) {
+      // Drag ended, recalculate the expensive field lines
+      rebuildFieldLines();
+    }
+  });
+  transformControl.addEventListener('change', function () {
+    // Update poles continuously during drag so compasses reflect real-time changes
+    updateDynamicPoles(); 
+  });
+  scene.add(transformControl);
+
+  // Interaction click listener
+  renderer.domElement.addEventListener('pointerdown', onPointerDown);
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+  dirLight.position.set(5, 9, 5);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.set(1024, 1024);
+  dirLight.shadow.camera.left = -5;
+  dirLight.shadow.camera.right = 5;
+  dirLight.shadow.camera.top = 5;
+  dirLight.shadow.camera.bottom = -5;
+  dirLight.shadow.bias = -0.001;
+  scene.add(dirLight);
+  scene.add(new THREE.HemisphereLight(0x88aaff, 0x443322, 0.35));
+
+  // Floor for shadows
+  const floorGeo = new THREE.PlaneGeometry(20, 20);
+  const floorMat = new THREE.ShadowMaterial({ opacity: 0.28 });
+  floorMesh = new THREE.Mesh(floorGeo, floorMat);
+  floorMesh.rotation.x = -Math.PI / 2;
+  floorMesh.position.y = -1.5;
+  floorMesh.receiveShadow = true;
+  scene.add(floorMesh);
+
+  // Grid
+  gridHelper = new THREE.GridHelper(10, 20, 0x2a4a6a, 0x1a3040);
+  gridHelper.position.y = -1.499;
+  scene.add(gridHelper);
+
+  // Groups
+  fieldLinesGroup = new THREE.Group();
+  scene.add(fieldLinesGroup);
+  compassesGroup = new THREE.Group();
+  scene.add(compassesGroup);
+
+  clock = new THREE.Clock();
+
+  // Build scene
+  initMagnets();
+  initFlowArrows();
+  rebuildFieldLines();
+
+  // Auto-detect language
+  const userLang = (navigator.language || 'zh-HK').toLowerCase();
+  state.lang = userLang.startsWith('zh') ? 'zh' : 'en';
+  applyLang();
+
+  // Make info window draggable
+  makeDraggable(document.getElementById('info-window'), document.querySelector('.drag-handle'));
+
+  animate();
+  window.addEventListener('resize', onResize);
+}
+
+function onPointerDown(event) {
+  if (transformControl.dragging) return;
+
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const activeMagnets = state.showMagnet2 ? [magnet1, magnet2] : [magnet1];
+  const testMeshes = [];
+  activeMagnets.forEach(m => m.children.forEach(c => {
+    if (c.isMesh && c.geometry.type === 'BoxGeometry') testMeshes.push(c);
+  }));
+
+  const intersects = raycaster.intersectObjects(testMeshes);
+  if (intersects.length > 0) {
+    const selected = intersects[0].object.parent;
+    transformControl.attach(selected);
+    document.getElementById('interaction-mode').style.display = 'block';
+  } else {
+    // check if we clicked on TransformControls axis, if not detach
+    if (!transformControl.axis) {
+      transformControl.detach();
+      document.getElementById('interaction-mode').style.display = 'none';
+    }
+  }
+}
+
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  controls.update();
+
+  if (state.showCompasses) {
+    updateFlowArrows(dt);
+  }
+
+  renderer.render(scene, camera);
+}
+
+// ==================== Magnet Models & Dynamic Poles ====================
+function createLabelSprite(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.font = 'bold 88px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 6;
+  ctx.fillText(text, 64, 64);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.renderOrder = 10;
+  return sprite;
+}
+
+function createBarMagnetModel() {
+  const group = new THREE.Group();
+  
+  const matN = new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.4, metalness: 0.1 });
+  const matS = new THREE.MeshStandardMaterial({ color: 0x2c5fa8, roughness: 0.4, metalness: 0.1 });
+
+  const w = 0.4, h = 0.4, halfLen = 0.6;
+
+  const N = new THREE.Mesh(new THREE.BoxGeometry(w, h, halfLen), matN);
+  N.position.set(0, 0, halfLen / 2);
+  N.castShadow = true;
+  N.receiveShadow = true;
+  group.add(N);
+
+  const S = new THREE.Mesh(new THREE.BoxGeometry(w, h, halfLen), matS);
+  S.position.set(0, 0, -halfLen / 2);
+  S.castShadow = true;
+  S.receiveShadow = true;
+  group.add(S);
+
+  const labelN = createLabelSprite('N');
+  labelN.position.set(0, h/2 + 0.1, halfLen / 2);
+  labelN.scale.set(0.3, 0.3, 1);
+  group.add(labelN);
+
+  const labelS = createLabelSprite('S');
+  labelS.position.set(0, h/2 + 0.1, -halfLen / 2);
+  labelS.scale.set(0.3, 0.3, 1);
+  group.add(labelS);
+
+  return group;
+}
+
+function initMagnets() {
+  magnet1 = createBarMagnetModel();
+  scene.add(magnet1);
+  
+  magnet2 = createBarMagnetModel();
+  magnet2.visible = false;
+  scene.add(magnet2);
+
+  updateDynamicPoles();
+}
+
+function updateDynamicPoles() {
+  currentPoles = [];
+  const activeMagnets = state.showMagnet2 ? [magnet1, magnet2] : [magnet1];
+  
+  activeMagnets.forEach(mag => {
+    // Update local matrices
+    mag.updateMatrixWorld(true);
+    
+    // Pole physical centers in local space
+    const nPosLocal = new THREE.Vector3(0, 0, 0.45);
+    const sPosLocal = new THREE.Vector3(0, 0, -0.45);
+    
+    // Convert to world space
+    const nPosWorld = nPosLocal.applyMatrix4(mag.matrixWorld);
+    const sPosWorld = sPosLocal.applyMatrix4(mag.matrixWorld);
+    
+    currentPoles.push({ pos: nPosWorld, q: state.strength });
+    currentPoles.push({ pos: sPosWorld, q: -state.strength });
+  });
+}
+
+function isInsideMagnet(pos) {
+  const activeMagnets = state.showMagnet2 ? [magnet1, magnet2] : [magnet1];
+  for (let mag of activeMagnets) {
+    const localPos = mag.worldToLocal(pos.clone());
+    if (Math.abs(localPos.x) < 0.22 && Math.abs(localPos.y) < 0.22 && Math.abs(localPos.z) < 0.65) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ==================== Field Calculation ====================
+function fieldAt(pos, poles) {
+  const B = new THREE.Vector3(0, 0, 0);
+  const tmp = new THREE.Vector3();
+  for (const pole of poles) {
+    tmp.subVectors(pos, pole.pos);
+    const r2 = tmp.lengthSq();
+    if (r2 < 0.012) continue;
+    const r = Math.sqrt(r2);
+    // Superposition: Vectors inherently add up correctly
+    const factor = pole.q / (r2 * r);
+    B.addScaledVector(tmp, factor);
+  }
+  return B;
+}
+
+// ==================== Field Line Tracing (RK4) ====================
+function traceFieldLine(startPos, poles, direction = 1, maxSteps = 500, stepSize = 0.06) {
+  const points = [startPos.clone()];
+  const pos = startPos.clone();
+  const k1 = new THREE.Vector3(), k2 = new THREE.Vector3(), k3 = new THREE.Vector3(), k4 = new THREE.Vector3();
+  const tmp = new THREE.Vector3();
+
+  for (let i = 0; i < maxSteps; i++) {
+    const B1 = fieldAt(pos, poles);
+    if (B1.lengthSq() < 1e-24) break;
+    k1.copy(B1).multiplyScalar(direction * stepSize / B1.length());
+
+    tmp.copy(pos).addScaledVector(k1, 0.5);
+    const B2 = fieldAt(tmp, poles);
+    if (B2.lengthSq() < 1e-24) break;
+    k2.copy(B2).multiplyScalar(direction * stepSize / B2.length());
+
+    tmp.copy(pos).addScaledVector(k2, 0.5);
+    const B3 = fieldAt(tmp, poles);
+    if (B3.lengthSq() < 1e-24) break;
+    k3.copy(B3).multiplyScalar(direction * stepSize / B3.length());
+
+    tmp.copy(pos).add(k3);
+    const B4 = fieldAt(tmp, poles);
+    if (B4.lengthSq() < 1e-24) break;
+    k4.copy(B4).multiplyScalar(direction * stepSize / B4.length());
+
+    pos.addScaledVector(k1, 1/6).addScaledVector(k2, 1/3).addScaledVector(k3, 1/3).addScaledVector(k4, 1/6);
+    points.push(pos.clone());
+
+    // Termination: near opposite-sign pole
+    let done = false;
+    for (const pole of poles) {
+      if ((direction > 0 && pole.q < 0) || (direction < 0 && pole.q > 0)) {
+        if (pos.distanceToSquared(pole.pos) < 0.02) {
+          points.push(pole.pos.clone());
+          done = true;
+          break;
+        }
+      }
+    }
+    if (done) break;
+
+    // Bounds
+    if (pos.lengthSq() > 120) break;
+  }
+  return points;
+}
+
+// ==================== Starting Points (Strictly Symmetrical) ====================
+function generateStartPoints(poles, count) {
+  const nPoles = poles.filter(p => p.q > 0);
+  if (nPoles.length === 0) return [];
+
+  const points = [];
+  const pointsPerLayer = 36; // 36 lines per layer for perfect 10-degree rotational symmetry
+  
+  // Distribute requested count evenly among all N-poles
+  const countPerPole = Math.max(1, count / nPoles.length);
+  const layers = Math.max(1, Math.round(countPerPole / pointsPerLayer));
+  const r = 0.15; // Starting sphere radius around N pole
+
+  const activeMagnets = state.showMagnet2 ? [magnet1, magnet2] : [magnet1];
+
+  for (let mIdx = 0; mIdx < nPoles.length; mIdx++) {
+    const pole = nPoles[mIdx];
+    const parentMagnet = activeMagnets[mIdx];
+
+    for (let l = 0; l < layers; l++) {
+      const theta = (l + 0.5) / layers * (Math.PI / 2); // Distribute across hemispheres
+      for (let p = 0; p < pointsPerLayer; p++) {
+        const phi = (p / pointsPerLayer) * Math.PI * 2;
+        
+        // Direction in local space (N-pole points along +Z)
+        const localDir = new THREE.Vector3(
+          Math.sin(theta) * Math.cos(phi),
+          Math.sin(theta) * Math.sin(phi),
+          Math.cos(theta)
+        );
+        
+        // Transform direction to world space rotation
+        const worldDir = localDir.applyQuaternion(parentMagnet.quaternion);
+        
+        const startPos = new THREE.Vector3().copy(pole.pos).addScaledVector(worldDir, r);
+        
+        // Force the point outwards until it is strictly outside the magnet bounds
+        let limit = 0;
+        while (isInsideMagnet(startPos) && limit < 20) {
+          startPos.addScaledVector(worldDir, 0.05);
+          limit++;
+        }
+        
+        points.push(startPos);
+      }
+    }
+  }
+  
+  // Update the UI to reflect the actual symmetric count
+  if (document.getElementById('lines-control').style.display !== 'none') {
+      const linesVal = document.getElementById('lines-val');
+      if (linesVal) linesVal.textContent = points.length;
+  }
+  
+  return points;
+}
+
+// ==================== Field Line Rendering ====================
+function createFieldLineObject(points, color, showArrows) {
+  const group = new THREE.Group();
+
+  // Main line
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const material = new THREE.LineBasicMaterial({
+    color: color,
+    transparent: true,
+    opacity: 0.72
+  });
+  const line = new THREE.Line(geometry, material);
+  group.add(line);
+
+  // Direction arrows
+  if (showArrows && points.length > 8) {
+    const mat = new THREE.MeshBasicMaterial({ color: color });
+    const numArrows = Math.max(1, Math.min(4, Math.floor(points.length / 35)));
+    for (let a = 1; a <= numArrows; a++) {
+      const t = a / (numArrows + 1);
+      const idx = Math.floor(t * (points.length - 2));
+      const idxNext = Math.min(idx + 1, points.length - 1);
+      const pos = points[idx];
+      const dir = new THREE.Vector3().subVectors(points[idxNext], points[idx]);
+      if (dir.lengthSq() < 1e-10) continue;
+      dir.normalize();
+
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.0385, 0.112, 6), mat);
+      cone.position.copy(pos);
+      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+      group.add(cone);
+    }
+  }
+  return group;
+}
+
+function rebuildFieldLines() {
+  // Clear
+  while (fieldLinesGroup.children.length > 0) {
+    const child = fieldLinesGroup.children[0];
+    fieldLinesGroup.remove(child);
+    if (child.geometry) child.geometry.dispose();
+    if (child.material) child.material.dispose();
+  }
+  activeFieldLines = []; 
+  
+  fieldLinesGroup.visible = state.showFieldLines;
+  if (!state.showFieldLines) {
+    rebuildFlowArrows(); 
+    return;
+  }
+
+  const startPoints = generateStartPoints(currentPoles, state.numLines);
+  const lineColor = state.isDark ? 0xf59e0b : 0xd97706;
+
+  for (const start of startPoints) {
+    const externalPoints = traceFieldLine(start, currentPoles, 1, 500, 0.06);
+    if (externalPoints.length < 5) continue;
+
+    const closedPoints = [...externalPoints];
+    
+    // Draw straight line backward if it reached another pole to close the loop
+    if (closedPoints.length > 0) {
+       closedPoints.push(start.clone()); 
+    }
+
+    const lineObj = createFieldLineObject(closedPoints, lineColor, state.showArrows);
+    fieldLinesGroup.add(lineObj);
+    activeFieldLines.push(closedPoints);
+  }
+
+  rebuildFlowArrows();
+}
+
+// ==================== 3D Flowing Vectors (Compasses) ====================
+function initFlowArrows() {
+  for(let i=0; i<FLOW_ARROW_COUNT; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0x14b8a6, transparent: true, opacity: 0.85 });
+    const mesh = new THREE.Mesh(flowArrowGeo, mat);
+    mesh.visible = false;
+    compassesGroup.add(mesh);
+    flowArrows.push({
+      mesh: mesh,
+      lineIdx: 0,
+      progress: 0 // 初始化進度
+    });
+  }
+  compassesGroup.visible = state.showCompasses;
+}
+
+function rebuildFlowArrows() {
+  if (activeFieldLines.length === 0) {
+    flowArrows.forEach(a => a.mesh.visible = false);
+    return;
+  }
+  
+  // 為每條磁力線生成隨機的初始偏移量，避免所有箭嘴同步「脈衝」，營造連續水流感
+  const lineOffsets = activeFieldLines.map(() => Math.random());
+  
+  // 根據滑桿設定取得每條線的箭嘴數量
+  const arrowsPerLine = state.vectorDensity;
+  const required = Math.min(activeFieldLines.length * arrowsPerLine, flowArrows.length);
+  
+  for (let i = 0; i < flowArrows.length; i++) {
+    const arrow = flowArrows[i];
+    if (i < required) {
+      arrow.lineIdx = Math.floor(i / arrowsPerLine);
+      const subIdx = i % arrowsPerLine;
+      
+      // 將箭嘴均勻分佈在同一條線上，並加上該線專屬的隨機偏移量
+      arrow.progress = ((subIdx / arrowsPerLine) + lineOffsets[arrow.lineIdx]) % 1.0;
+      arrow.mesh.visible = state.showCompasses;
+    } else {
+      arrow.mesh.visible = false;
+    }
+  }
+}
+
+function updateFlowArrows(dt) {
+  if (activeFieldLines.length === 0) return;
+  
+  const baseSpeed = state.animSpeed * 15.0; // 統一的空間移動速度 (每秒走過多少個節點)
+  const tempDir = new THREE.Vector3(0, 1, 0);
+  
+  for (let arrow of flowArrows) {
+    if (!arrow.mesh.visible) continue;
+    
+    const line = activeFieldLines[arrow.lineIdx];
+    if (!line || line.length < 2) continue;
+    
+    const totalSegments = line.length - 1;
+    
+    // 根據線的總長度調整進度增加量，確保所有箭嘴在 3D 空間中的「絕對移動速度」一致
+    arrow.progress += (baseSpeed * dt) / Math.max(1, totalSegments);
+    if (arrow.progress >= 1.0) arrow.progress -= 1.0;
+    
+    const exactSeg = arrow.progress * totalSegments;
+    const idx = Math.floor(exactSeg);
+    const t = exactSeg - idx;
+    const idxNext = (idx + 1) % line.length;
+    
+    const p1 = line[idx];
+    const p2 = line[idxNext];
+    
+    const pos = new THREE.Vector3().lerpVectors(p1, p2, t);
+    const dir = new THREE.Vector3().subVectors(p2, p1);
+    
+    if (dir.lengthSq() > 1e-10) {
+        dir.normalize();
+        arrow.mesh.quaternion.setFromUnitVectors(tempDir, dir);
+    }
+    
+    arrow.mesh.position.copy(pos);
+    
+    const B = fieldAt(pos, currentPoles);
+    const mag = B.length();
+    const t_color = Math.min(1, Math.log10(1 + mag * 30) / 1.8);
+    const hue = 0.5 - 0.45 * t_color; 
+    arrow.mesh.material.color.setHSL(hue, 0.72, 0.52);
+  }
+}
+
+// ==================== Theme & Language ====================
+function applyTheme() {
+  if (state.isDark) {
+    document.body.classList.remove('light');
+    scene.background = new THREE.Color(0x0a1420);
+    scene.fog.color = new THREE.Color(0x0a1420);
+    gridHelper.material.color = new THREE.Color(0x2a4a6a);
+    if (gridHelper.material.opacity !== undefined) gridHelper.material.opacity = 0.5;
+  } else {
+    document.body.classList.add('light');
+    scene.background = new THREE.Color(0xf5f1ea);
+    scene.fog.color = new THREE.Color(0xf5f1ea);
+    gridHelper.material.color = new THREE.Color(0xc4b89e);
+    if (gridHelper.material.opacity !== undefined) gridHelper.material.opacity = 0.6;
+  }
+  rebuildFieldLines();
+}
+
+function applyLang() {
+  document.querySelectorAll('[data-zh]').forEach(el => {
+    const text = el.getAttribute('data-' + state.lang);
+    if (text) el.textContent = text;
+  });
+  document.getElementById('lang-zh').classList.toggle('active', state.lang === 'zh');
+  document.getElementById('lang-en').classList.toggle('active', state.lang === 'en');
+  document.documentElement.lang = state.lang === 'zh' ? 'zh-HK' : 'en';
+}
+
+function makeDraggable(element, handle) {
+  let isDragging = false;
+  let offsetX = 0, offsetY = 0;
+
+  function onStart(e) {
+    isDragging = true;
+    const touch = e.touches ? e.touches[0] : e;
+    const rect = element.getBoundingClientRect();
+    offsetX = touch.clientX - rect.left;
+    offsetY = touch.clientY - rect.top;
+    element.style.left = rect.left + 'px';
+    element.style.top = rect.top + 'px';
+    element.style.right = 'auto';
+    element.style.bottom = 'auto';
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!isDragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    let nx = touch.clientX - offsetX;
+    let ny = touch.clientY - offsetY;
+    nx = Math.max(0, Math.min(window.innerWidth - element.offsetWidth, nx));
+    ny = Math.max(0, Math.min(window.innerHeight - 40, ny));
+    element.style.left = nx + 'px';
+    element.style.top = ny + 'px';
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onEnd() { isDragging = false; }
+
+  handle.addEventListener('mousedown', onStart);
+  handle.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
+}
+
+// ==================== UI Handlers ====================
+window.togglePanel = function(id) {
+  const panel = document.getElementById(id);
+  panel.classList.toggle('collapsed');
+};
+
+window.toggleInfoContent = function() {
+  const content = document.getElementById('info-content');
+  const icon = document.getElementById('info-collapse-icon');
+  content.classList.toggle('collapsed');
+  icon.textContent = content.classList.contains('collapsed') ? '+' : '−';
+};
+
+window.setLang = function(l) {
+  state.lang = l;
+  applyLang();
+};
+
+window.toggleDarkMode = function() {
+  state.isDark = !state.isDark;
+  applyTheme();
+};
+
+window.onMagnet2Toggle = function(checked) {
+  state.showMagnet2 = checked;
+  magnet2.visible = checked;
+  
+  if (checked) {
+    // Offset both magnets for cool interaction
+    magnet1.position.set(-1.2, 0, 0);
+    magnet1.rotation.set(0, 0, 0);
+    
+    magnet2.position.set(1.2, 0, 0);
+    magnet2.rotation.set(0, Math.PI, 0); // Opposing poles face each other
+  } else {
+    // Reset to center
+    magnet1.position.set(0, 0, 0);
+    magnet1.rotation.set(0, 0, 0);
+    if (transformControl.object === magnet2) {
+      transformControl.detach();
+      document.getElementById('interaction-mode').style.display = 'none';
+    }
+  }
+  
+  updateDynamicPoles();
+  rebuildFieldLines();
+};
+
+window.setTransformMode = function(mode) {
+  transformControl.setMode(mode);
+  document.getElementById('mode-translate').classList.toggle('active', mode === 'translate');
+  document.getElementById('mode-rotate').classList.toggle('active', mode === 'rotate');
+};
+
+window.alignMagnets = function() {
+  // 將第一塊磁棒的 Y 軸高度設為 0，並重置傾斜角度使其平放
+  magnet1.position.y = 0;
+  magnet1.rotation.x = 0;
+  magnet1.rotation.z = 0;
+  
+  if (state.showMagnet2) {
+    // 將第二塊磁棒的 Y 軸高度設為 0，並重置傾斜角度
+    magnet2.position.y = 0;
+    magnet2.rotation.x = 0;
+    magnet2.rotation.z = 0;
+  }
+  
+  updateDynamicPoles();
+  rebuildFieldLines();
+  showToast(state.lang === 'zh' ? '磁棒已水平對齊' : 'Magnets aligned horizontally');
+};
+
+window.alignMagnetsSideBySide = function() {
+  // 將磁棒的 Z 軸深度設為 0，並重置左右旋轉角度使其對齊
+  magnet1.position.z = 0;
+  magnet1.rotation.y = 0;
+  
+  if (state.showMagnet2) {
+    magnet2.position.z = 0;
+    magnet2.rotation.y = Math.PI; // 使兩塊磁棒極性相對
+  }
+  
+  updateDynamicPoles();
+  rebuildFieldLines();
+  showToast(state.lang === 'zh' ? '磁棒已左右對齊' : 'Magnets aligned left-right');
+};
+
+window.alignMagnetsAxis = function() {
+  // 將磁棒置於同一 Z 軸線上 (首尾相對)
+  magnet1.position.set(0, 0, -1.0);
+  magnet1.rotation.set(0, 0, 0);
+  
+  if (state.showMagnet2) {
+    magnet2.position.set(0, 0, 1.0);
+    magnet2.rotation.set(0, 0, 0); // N極對S極相吸排列
+  }
+  
+  updateDynamicPoles();
+  rebuildFieldLines();
+  showToast(state.lang === 'zh' ? '磁棒已軸線對齊' : 'Magnets aligned on axis');
+};
+
+let linesDebounceTimer;
+window.onLinesChange = function(val) {
+  document.getElementById('lines-val').textContent = val;
+  // Mobile/Tablet Optimization: Debounce heavy RK4 calculations during slider drag
+  clearTimeout(linesDebounceTimer);
+  linesDebounceTimer = setTimeout(() => {
+    state.numLines = parseInt(val);
+    rebuildFieldLines();
+  }, 200); 
+};
+
+window.onVectorsChange = function(val) {
+  state.vectorDensity = parseInt(val);
+  document.getElementById('vectors-val').textContent = val;
+  rebuildFlowArrows();
+};
+
+window.onLinesToggle = function(checked) {
+  state.showFieldLines = checked;
+  rebuildFieldLines(); 
+};
+
+window.onCompassToggle = function(checked) {
+  state.showCompasses = checked;
+  compassesGroup.visible = checked;
+  flowArrows.forEach(a => a.mesh.visible = checked);
+};
+
+window.onArrowsToggle = function(checked) {
+  state.showArrows = checked;
+  rebuildFieldLines();
+};
+
+window.onSpeedChange = function(val) {
+  state.animSpeed = parseFloat(val);
+  document.getElementById('speed-val').textContent = state.animSpeed.toFixed(1);
+};
+
+window.resetView = function() {
+  camera.position.set(3.8, 4.8, 5.8);
+  controls.target.set(0, 0, 0);
+  controls.update();
+  showToast(state.lang === 'zh' ? '視角已重置' : 'View reset');
+};
+
+window.resetAll = function() {
+  state.strength = 1.0;
+  state.numLines = 288;
+  state.vectorDensity = 2;
+  state.showFieldLines = true;
+  state.showCompasses = true;
+  state.showArrows = false;
+  state.showMagnet2 = false;
+  state.showNeutralPoints = false;
+  state.animSpeed = 1.0;
+
+  document.getElementById('lines-slider').value = 288;
+  document.getElementById('lines-val').textContent = '288';
+  document.getElementById('vectors-slider').value = 2;
+  document.getElementById('vectors-val').textContent = '2';
+  document.getElementById('lines-toggle').checked = true;
+  document.getElementById('compass-toggle').checked = true;
+  document.getElementById('arrows-toggle').checked = false;
+  
+  // Guard against missing elements if features were conditionally removed
+  const neutralToggle = document.getElementById('neutral-toggle');
+  if (neutralToggle) neutralToggle.checked = false;
+  
+  const magnet2Toggle = document.getElementById('magnet2-toggle');
+  if (magnet2Toggle) magnet2Toggle.checked = false;
+  
+  document.getElementById('speed-slider').value = 1.0;
+  document.getElementById('speed-val').textContent = '1.0';
+  
+  fieldLinesGroup.visible = true;
+  compassesGroup.visible = true;
+  if (magnet2) magnet2.visible = false;
+  
+  magnet1.position.set(0, 0, 0);
+  magnet1.rotation.set(0, 0, 0);
+  
+  if (transformControl) {
+    transformControl.detach();
+  }
+  const interactionMode = document.getElementById('interaction-mode');
+  if (interactionMode) interactionMode.style.display = 'none';
+
+  updateDynamicPoles();
+  rebuildFieldLines();
+  camera.position.set(3.8, 4.8, 5.8);
+  controls.target.set(0, 0, 0);
+  controls.update();
+  showToast(state.lang === 'zh' ? '已重置所有設定' : 'All settings reset');
+};
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// ==================== Start ====================
+init();
+</script>
+
+</body>
+</html>

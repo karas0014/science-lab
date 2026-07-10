@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DSE Physics: Longitudinal Wave Simulator</title>
+
+    
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- MathJax -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4F46E5;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .slider-thumb::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4F46E5;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        /* Custom Toggle Switch Logic */
+        .toggle-checkbox:checked + .toggle-track .toggle-knob {
+            transform: translateX(100%);
+            border-color: #4F46E5;
+        }
+        .toggle-checkbox:checked + .toggle-track {
+            background-color: #4F46E5;
+        }
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 flex flex-col overflow-hidden text-slate-800" style="height: 100vh; height: 100dvh;">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center shadow-sm z-10 shrink-0">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">P</div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight md:text-xl text-slate-800">縱波模擬器 <span class="text-xs font-normal text-slate-500 block md:inline">Longitudinal Wave Sim</span></h1>
+            </div>
+        </div>
+        
+        <div id="langBtn" class="relative flex items-center bg-slate-200 rounded-lg p-1 cursor-pointer select-none w-24 h-9 shadow-inner">
+            <div id="langIndicator" class="absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-md shadow-sm transition-transform duration-300"></div>
+            <div class="z-10 w-1/2 text-center text-sm font-bold transition-colors duration-300 text-indigo-600" id="text-zh">中</div>
+            <div class="z-10 w-1/2 text-center text-sm font-bold transition-colors duration-300 text-slate-500" id="text-en">EN</div>
+        </div>
+    </header>
+
+    <!-- Main Canvas Area -->
+    <main class="flex-1 relative w-full bg-slate-50 min-h-0">
+        <canvas id="waveCanvas" class="absolute inset-0 w-full h-full block touch-none"></canvas>
+        
+        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-slate-200 text-xs md:text-sm pointer-events-none select-none">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                <span id="label-particle">追蹤粒子 (Tracked Particle)</span>
+            </div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="w-3 h-3 rounded-full bg-indigo-500 opacity-50"></span>
+                <span id="label-others">介質粒子 (Medium Particles)</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Responsive Controls Dashboard -->
+    <section class="bg-white border-t border-slate-200 px-3 py-3 md:px-4 md:py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20 shrink-0 max-h-[50vh] overflow-y-auto overscroll-contain">
+        <div class="max-w-6xl mx-auto flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-8">
+            
+            <!-- Left Side: Core Buttons & Toggles (4/12 width on tablet+) -->
+            <div class="md:col-span-5 lg:col-span-4 flex flex-col gap-3">
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="playBtn" class="h-11 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-semibold shadow-md flex items-center justify-center transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    
+                    <select id="modeSelect" class="h-11 px-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium text-xs focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer text-center">
+                        <option value="particles">粒子</option>
+                        <option value="sound">聲波</option>
+                        <option value="spring">彈簧</option>
+                    </select>
+
+                    <button id="resetBtn" class="h-11 rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Toggles -->
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center justify-center gap-2 h-11 px-3 rounded-xl border border-slate-200 bg-white cursor-pointer hover:bg-slate-50">
+                        <input type="checkbox" id="gridCheck" class="toggle-checkbox hidden" checked>
+                        <div class="toggle-track w-8 h-4 bg-slate-300 rounded-full relative transition-colors p-0.5">
+                            <div class="toggle-knob w-3 h-3 bg-white rounded-full shadow-sm transition-transform"></div>
+                        </div>
+                        <span class="text-xs font-bold text-slate-600" id="txt-grid">Grid</span>
+                    </label>
+
+                    <label class="flex items-center justify-center gap-2 h-11 px-3 rounded-xl border border-slate-200 bg-white cursor-pointer hover:bg-slate-50">
+                        <input type="checkbox" id="labelCheck" class="toggle-checkbox hidden">
+                        <div class="toggle-track w-8 h-4 bg-slate-300 rounded-full relative transition-colors p-0.5">
+                            <div class="toggle-knob w-3 h-3 bg-white rounded-full shadow-sm transition-transform"></div>
+                        </div>
+                        <span class="text-xs font-bold text-slate-600" id="txt-label">A-Z</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Right Side: Sliders (8/12 width on tablet+) -->
+            <div class="md:col-span-7 lg:col-span-8 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-center">
+                <div class="flex-1 flex flex-col">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase" id="label-amp">振幅</label>
+                        <span id="val-amp" class="text-xs font-mono font-bold text-indigo-600">1.0</span>
+                    </div>
+                    <input type="range" id="slider-amp" min="0.1" max="2.0" step="0.1" value="1.0" class="slider-thumb w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <div class="flex-1 flex flex-col">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase" id="label-freq">頻率</label>
+                        <span id="val-freq" class="text-xs font-mono font-bold text-indigo-600">0.5 Hz</span>
+                    </div>
+                    <input type="range" id="slider-freq" min="0.1" max="2.0" step="0.1" value="0.5" class="slider-thumb w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <div class="flex-1 flex flex-col">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase" id="label-lambda">波長</label>
+                        <span id="val-lambda" class="text-xs font-mono font-bold text-indigo-600">300 px</span>
+                    </div>
+                    <input type="range" id="slider-lambda" min="100" max="600" step="10" value="300" class="slider-thumb w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const CONFIG = {
+            colors: { primary: '#4F46E5', secondary: '#94A3B8', highlight: '#EF4444', grid: '#E2E8F0', text: '#334155' },
+            particleCount: 40, particleRadius: 5, baseAmp: 40, baseYPercentage: 0.35, graphYPercentage: 0.75
+        };
+
+        const DEFAULTS = { amplitude: 1.0, frequency: 0.5, wavelength: 300 };
+
+        let state = {
+            isPlaying: false, time: 0,
+            amplitude: DEFAULTS.amplitude, frequency: DEFAULTS.frequency, wavelength: DEFAULTS.wavelength,
+            lang: 'zh', showLabels: false, showGrid: true, visualMode: 'particles',
+            width: 0, height: 0, scale: 1
+        };
+
+        const DICT = {
+            zh: {
+                title: '縱波模擬器', btnStart: '開始', btnPause: '暫停', labelAmp: '振幅 (A)', labelFreq: '頻率 (f)', labelLambda: '波長 (λ)',
+                labelParticle: '追蹤粒子', labelOthers: '介質粒子', graphTitle: '位移-距離關係圖 (s-x graph)',
+                modeParticles: '粒子', modeSound: '聲波', modeSpring: '彈簧', txtGrid: '網格', txtLabel: '標籤'
+            },
+            en: {
+                title: 'Longitudinal Wave Sim', btnStart: 'Start', btnPause: 'Pause', labelAmp: 'Amplitude', labelFreq: 'Frequency', labelLambda: 'Wavelength',
+                labelParticle: 'Tracked Particle', labelOthers: 'Medium Particles', graphTitle: 'Displacement-Distance (s-x graph)',
+                modeParticles: 'Particles', modeSound: 'Sound', modeSpring: 'Spring', txtGrid: 'Grid', txtLabel: 'A-Z'
+            }
+        };
+
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+        const playBtn = document.getElementById('playBtn');
+        const playIcon = playBtn.querySelector('svg');
+        const modeSelect = document.getElementById('modeSelect');
+        const gridCheck = document.getElementById('gridCheck');
+        const labelCheck = document.getElementById('labelCheck');
+        const resetBtn = document.getElementById('resetBtn');
+
+        function resize() {
+            const parent = canvas.parentElement;
+            state.width = parent.clientWidth;
+            state.height = parent.clientHeight;
+            state.scale = window.devicePixelRatio || 1;
+            canvas.width = state.width * state.scale;
+            canvas.height = state.height * state.scale;
+            ctx.scale(state.scale, state.scale);
+        }
+
+        function getDisplacement(xEq, t) {
+            const k = (2 * Math.PI) / state.wavelength;
+            const omega = 2 * Math.PI * state.frequency;
+            return CONFIG.baseAmp * state.amplitude * Math.sin(k * xEq - omega * t);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, state.width, state.height);
+            const pY = state.height * CONFIG.baseYPercentage;
+            const gY = state.height * CONFIG.graphYPercentage;
+            
+            if (state.showGrid) {
+                ctx.beginPath();
+                ctx.strokeStyle = CONFIG.colors.grid;
+                for(let x=0; x<=state.width; x+=50) { ctx.moveTo(x, 0); ctx.lineTo(x, state.height); }
+                for(let y=0; y<=state.height; y+=50) { ctx.moveTo(0, y); ctx.lineTo(state.width, y); }
+                ctx.stroke();
+            }
+
+            // Graph
+            ctx.beginPath();
+            ctx.strokeStyle = '#94A3B8';
+            ctx.moveTo(0, gY); ctx.lineTo(state.width, gY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.strokeStyle = CONFIG.colors.primary;
+            ctx.lineWidth = 3;
+            let crossings = [];
+            for (let x=0; x<=state.width; x+=2) {
+                const s = getDisplacement(x, state.time);
+                if (x === 0) ctx.moveTo(x, gY - s); else ctx.lineTo(x, gY - s);
+                if (x > 0) {
+                    const ps = getDisplacement(x-2, state.time);
+                    if ((ps > 0 && s <= 0) || (ps < 0 && s >= 0)) crossings.push({x, slope: s-ps});
+                }
+            }
+            ctx.stroke();
+
+            // Particles
+            const gap = state.width / (CONFIG.particleCount + 1);
+            let prevX = null;
+            for (let i=0; i<=CONFIG.particleCount+2; i++) {
+                const eqX = i * gap;
+                const s = getDisplacement(eqX, state.time);
+                const fX = eqX + s;
+                const isT = (i === Math.floor(CONFIG.particleCount/2));
+
+                if (state.visualMode === 'spring') {
+                    if (prevX !== null) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = isT ? CONFIG.colors.highlight : CONFIG.colors.secondary;
+                        ctx.moveTo(prevX, pY);
+                        for(let j=1; j<=20; j++) {
+                            const tx = prevX + (fX - prevX) * (j/20);
+                            const ty = pY + Math.sin(j * Math.PI * 0.4) * 10;
+                            ctx.lineTo(tx, ty);
+                        }
+                        ctx.stroke();
+                    }
+                    prevX = fX;
+                } else if (state.visualMode === 'sound') {
+                    ctx.beginPath();
+                    ctx.strokeStyle = isT ? CONFIG.colors.highlight : '#475569';
+                    ctx.globalAlpha = isT ? 1 : 0.6;
+                    ctx.moveTo(fX, pY-30); ctx.lineTo(fX, pY+30);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                } else {
+                    ctx.beginPath();
+                    ctx.fillStyle = isT ? CONFIG.colors.highlight : CONFIG.colors.primary;
+                    ctx.arc(fX, pY, CONFIG.particleRadius + (isT?2:0), 0, Math.PI*2);
+                    ctx.fill();
+                    if (isT) {
+                        ctx.beginPath(); ctx.setLineDash([2,2]); ctx.strokeStyle='#EF444455';
+                        ctx.moveTo(eqX, pY-20); ctx.lineTo(eqX, pY+20); ctx.stroke(); ctx.setLineDash([]);
+                    }
+                }
+
+                if (state.showLabels && i < 26) {
+                    ctx.fillStyle = isT ? CONFIG.colors.highlight : CONFIG.colors.text;
+                    ctx.font = "bold 10px sans-serif";
+                    ctx.fillText(String.fromCharCode(65+i), fX-4, pY-40);
+                }
+            }
+
+            // C/R Labels
+            crossings.forEach(c => {
+                const isC = c.slope < 0;
+                const col = isC ? '#059669' : '#D97706';
+                ctx.fillStyle = col;
+                ctx.font = "bold 14px sans-serif";
+                ctx.fillText(isC?'C':'R', c.x-5, gY + (isC?20:-15));
+            });
+        }
+
+        function updateUI() {
+            const d = DICT[state.lang];
+            playIcon.innerHTML = state.isPlaying ? '<path d="M7 8h2v4H7V8zm4 0h2v4h-2V8z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a8 8 0 110 16 8 8 0 010-16z" clip-rule="evenodd"/>' : '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />';
+            document.getElementById('label-amp').textContent = d.labelAmp;
+            document.getElementById('label-freq').textContent = d.labelFreq;
+            document.getElementById('label-lambda').textContent = d.labelLambda;
+            document.getElementById('txt-grid').textContent = d.txtGrid;
+            document.getElementById('txt-label').textContent = d.txtLabel;
+            modeSelect.options[0].text = d.modeParticles;
+            modeSelect.options[1].text = d.modeSound;
+            modeSelect.options[2].text = d.modeSpring;
+            
+            const langInd = document.getElementById('langIndicator');
+            langInd.style.transform = state.lang === 'zh' ? 'translateX(0)' : 'translateX(100%)';
+            document.getElementById('text-zh').style.color = state.lang === 'zh' ? '#4F46E5' : '#64748B';
+            document.getElementById('text-en').style.color = state.lang === 'en' ? '#4F46E5' : '#64748B';
+        }
+
+        playBtn.onclick = () => { state.isPlaying = !state.isPlaying; updateUI(); };
+        document.getElementById('langBtn').onclick = () => { state.lang = state.lang === 'zh'?'en':'zh'; updateUI(); };
+        resetBtn.onclick = () => {
+            state.amplitude = DEFAULTS.amplitude; state.frequency = DEFAULTS.frequency; state.wavelength = DEFAULTS.wavelength;
+            state.time = 0;
+            document.getElementById('slider-amp').value = state.amplitude;
+            document.getElementById('slider-freq').value = state.frequency;
+            document.getElementById('slider-lambda').value = state.wavelength;
+            ['val-amp','val-freq','val-lambda'].forEach(id => {
+               const val = id.includes('amp')?state.amplitude.toFixed(1) : id.includes('freq')?state.frequency.toFixed(1)+' Hz' : state.wavelength+' px';
+               document.getElementById(id).textContent = val;
+            });
+        };
+
+        modeSelect.onchange = (e) => state.visualMode = e.target.value;
+        gridCheck.onchange = (e) => state.showGrid = e.target.checked;
+        labelCheck.onchange = (e) => state.showLabels = e.target.checked;
+        document.getElementById('slider-amp').oninput = (e) => { state.amplitude = parseFloat(e.target.value); document.getElementById('val-amp').textContent = state.amplitude.toFixed(1); };
+        document.getElementById('slider-freq').oninput = (e) => { state.frequency = parseFloat(e.target.value); document.getElementById('val-freq').textContent = state.frequency.toFixed(1) + ' Hz'; };
+        document.getElementById('slider-lambda').oninput = (e) => { state.wavelength = parseInt(e.target.value); document.getElementById('val-lambda').textContent = state.wavelength + ' px'; };
+
+        window.onresize = resize;
+        function animate() { if(state.isPlaying) state.time += 0.02; draw(); requestAnimationFrame(animate); }
+        resize(); updateUI(); animate();
+    </script>
+</body>
+</html>

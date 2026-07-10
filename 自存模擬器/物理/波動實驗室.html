@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics: Wave Properties (Tailwind Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                        serif: ['"Times New Roman"', 'Times', 'serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#1e293b', // 自定義深色背景用
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 僅保留極少量的自定義樣式，處理 Webkit Slider 的細節與數學符號字體 */
+        
+        /* 數學符號專用字體 */
+        .math-symbol {
+            font-family: "Times New Roman", Times, serif;
+            font-style: italic;
+            font-weight: normal;
+        }
+
+        /* 讓 Range Slider 在 Webkit 瀏覽器中有更好的互動手感 (雖然 accent-color 已處理大部分) */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #0ea5e9; /* sky-500 */
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 0 4px #f0f9ff; /* 光暈效果 */
+        }
+    </style>
+</head>
+<body class="bg-sky-50 text-slate-900 min-h-screen flex flex-col items-center p-5 font-sans selection:bg-sky-200">
+
+    <!-- Header -->
+    <header class="w-full max-w-3xl flex justify-between items-center mb-6">
+        <h1 id="app-title" class="text-2xl font-bold text-sky-600 tracking-tight">波動實驗室</h1>
+        
+        <!-- Toggle Container -->
+        <div class="flex items-center gap-3 text-sm font-medium text-slate-500">
+            <span id="lang-label-zh" class="text-slate-900 transition-colors font-bold">中</span>
+            
+            <!-- Tailwind iOS Switch -->
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="lang-toggle" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500 hover:bg-slate-400 peer-checked:hover:bg-sky-600 transition-colors"></div>
+            </label>
+            
+            <span id="lang-label-en" class="transition-colors">EN</span>
+        </div>
+    </header>
+
+    <!-- Canvas Container -->
+    <!-- 乾淨的卡片容器，帶有細微陰影與邊框 -->
+    <div class="canvas-container w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative mb-6 h-[400px]">
+        <canvas id="waveCanvas" class="w-full h-full block touch-none"></canvas>
+    </div>
+
+    <!-- Controls Grid -->
+    <div class="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        
+        <!-- Amplitude -->
+        <div class="flex flex-col gap-2">
+            <div class="flex justify-between text-sm text-slate-500">
+                <span data-i18n="amplitude">振幅 (<span class="math-symbol text-base">A</span>)</span>
+                <span id="val-amp" class="text-sky-600 font-mono font-bold">1.0 m</span>
+            </div>
+            <!-- 使用 accent-sky-500 進行原生著色 -->
+            <input type="range" id="slider-amp" min="0.1" max="2.0" step="0.1" value="1.0" 
+                   class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 transition-all">
+        </div>
+
+        <!-- Frequency -->
+        <div class="flex flex-col gap-2">
+            <div class="flex justify-between text-sm text-slate-500">
+                <span data-i18n="frequency">頻率 (<span class="math-symbol text-base">f</span>)</span>
+                <span id="val-freq" class="text-sky-600 font-mono font-bold">0.5 Hz</span>
+            </div>
+            <input type="range" id="slider-freq" min="0.1" max="2.0" step="0.1" value="0.5" 
+                   class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 transition-all">
+        </div>
+
+        <!-- Wavelength -->
+        <div class="flex flex-col gap-2">
+            <div class="flex justify-between text-sm text-slate-500">
+                <span data-i18n="wavelength">波長 (<span class="math-symbol text-base">λ</span>)</span>
+                <span id="val-lambda" class="text-sky-600 font-mono font-bold">2.0 m</span>
+            </div>
+            <input type="range" id="slider-lambda" min="1.0" max="5.0" step="0.1" value="2.0" 
+                   class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 transition-all">
+        </div>
+        
+        <!-- Play/Pause Button -->
+        <div class="flex items-end">
+            <button id="btn-pause" data-i18n="pause" 
+                    class="w-full py-2.5 px-4 bg-sky-500 hover:bg-sky-400 text-white font-semibold rounded-lg shadow-sm transition-all active:scale-[0.98] flex justify-center items-center gap-2 outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>暫停</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="w-full max-w-3xl grid grid-cols-2 gap-5 mb-6">
+        <!-- Period Card -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-sky-500 flex flex-col justify-center">
+            <!-- Removed 'uppercase' class to ensure physics symbols (f, v) are rendered correctly in lowercase -->
+            <div class="text-sm tracking-wide text-slate-500 mb-1" data-i18n="period">
+                週期 (<span class="math-symbol">T</span> = 1/<span class="math-symbol">f</span>)
+            </div>
+            <div class="text-2xl font-bold text-slate-900 font-mono" id="disp-period">2.00 s</div>
+        </div>
+        
+        <!-- Speed Card -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-sky-500 flex flex-col justify-center">
+            <!-- Removed 'uppercase' class here as well -->
+            <div class="text-sm tracking-wide text-slate-500 mb-1" data-i18n="waveSpeed">
+                波速 (<span class="math-symbol">v</span> = <span class="math-symbol">fλ</span>)
+            </div>
+            <div class="text-2xl font-bold text-slate-900 font-mono" id="disp-speed">1.00 m/s</div>
+        </div>
+    </div>
+
+    <!-- Tip Box -->
+    <div class="w-full max-w-3xl bg-amber-50 border border-amber-200 text-amber-900 p-5 rounded-2xl shadow-sm flex gap-3 items-start">
+        <div class="shrink-0 mt-0.5 text-amber-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div>
+            <strong class="block mb-1 text-amber-700 font-bold" data-i18n="tipTitle">💡 學習重點：</strong>
+            <span class="text-sm leading-relaxed text-amber-800/90" data-i18n="tipContent">
+                注意紅色粒子的運動方向！在橫波中，粒子只會上下振動 (Oscillation)，不會隨波向右移動。這是考試中常見的陷阱。
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration & State ---
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Define Theme Colors matching Tailwind Palette
+        // 這些顏色直接對應 Tailwind 的預設色票，確保 JS 繪圖與 CSS 介面一致
+        const theme = {
+            wave: '#0284c7',      // sky-600 (深天藍，用於波浪線)
+            particle: '#e11d48',  // rose-600 (鮮豔玫紅，用於粒子)
+            grid: '#cbd5e1',      // slate-300 (淺灰，用於格線)
+            guide: '#b45309',     // amber-700 (深琥珀，用於標註)
+            equilibrium: '#94a3b8', // slate-400 (中灰，用於平衡位置)
+            text: '#0f172a',      // slate-900 (深黑，用於標籤文字)
+            panelBg: '#ffffff'    // white (用於遮罩文字背景)
+        };
+
+        const state = {
+            amplitude: 1.0, 
+            frequency: 0.5, 
+            wavelength: 2.0, 
+            phase: 0,
+            time: 0,
+            pixelsPerMeter: 60, 
+        };
+
+        let isEnglish = false;
+        let isPaused = false;
+
+        // I18N Dictionary
+        const i18n = {
+            zh: {
+                title: "波動實驗室",
+                amplitude: "振幅 (<span class='math-symbol'>A</span>)",
+                frequency: "頻率 (<span class='math-symbol'>f</span>)",
+                wavelength: "波長 (<span class='math-symbol'>λ</span>)",
+                period: "週期 (<span class='math-symbol'>T</span> = 1/<span class='math-symbol'>f</span>)",
+                waveSpeed: "波速 (<span class='math-symbol'>v</span> = <span class='math-symbol'>fλ</span>)",
+                tipTitle: "💡 學習重點：",
+                tipContent: "注意紅色粒子的運動方向！在橫波中，粒子只會上下振動 (Oscillation)，不會隨波向右移動。這是考試中常見的陷阱。",
+                pause: "<span>暫停</span>",
+                play: "<span>播放</span>"
+            },
+            en: {
+                title: "Wave Lab",
+                amplitude: "Amplitude (<span class='math-symbol'>A</span>)",
+                frequency: "Frequency (<span class='math-symbol'>f</span>)",
+                wavelength: "Wavelength (<span class='math-symbol'>λ</span>)",
+                period: "Period (<span class='math-symbol'>T</span> = 1/<span class='math-symbol'>f</span>)",
+                waveSpeed: "Wave Speed (<span class='math-symbol'>v</span> = <span class='math-symbol'>fλ</span>)",
+                tipTitle: "💡 Study Tip:",
+                tipContent: "Watch the red particle! In a transverse wave, particles only oscillate up and down. They do NOT travel to the right with the wave. Common exam trap.",
+                pause: "<span>Pause</span>",
+                play: "<span>Play</span>"
+            }
+        };
+
+        // --- Elements ---
+        const sliders = {
+            amp: document.getElementById('slider-amp'),
+            freq: document.getElementById('slider-freq'),
+            lambda: document.getElementById('slider-lambda')
+        };
+
+        const displays = {
+            amp: document.getElementById('val-amp'),
+            freq: document.getElementById('val-freq'),
+            lambda: document.getElementById('val-lambda'),
+            period: document.getElementById('disp-period'),
+            speed: document.getElementById('disp-speed'),
+            title: document.getElementById('app-title')
+        };
+        
+        const pauseBtn = document.getElementById('btn-pause');
+
+        // --- Core Physics Logic ---
+        function updatePhysics(dt) {
+            if (isPaused) return; 
+
+            const w = 2 * Math.PI * state.frequency;
+            // Phase increments by angular frequency * time step
+            state.phase += w * dt;
+            state.time += dt;
+        }
+
+        // --- Drawing Helper Functions ---
+        function drawDimensionLine(ctx, x1, y1, x2, y2, label, color, offset = 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+            
+            ctx.font = "italic 18px 'Times New Roman', serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const perpAngle = angle - Math.PI / 2;
+            const ox = Math.cos(perpAngle) * offset;
+            const oy = Math.sin(perpAngle) * offset;
+
+            const sx = x1 + ox;
+            const sy = y1 + oy;
+            const ex = x2 + ox;
+            const ey = y2 + oy;
+            const headLen = 8;
+            
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+
+            // Arrowheads
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx + headLen * Math.cos(angle + Math.PI / 6), sy + headLen * Math.sin(angle + Math.PI / 6));
+            ctx.lineTo(sx + headLen * Math.cos(angle - Math.PI / 6), sy + headLen * Math.sin(angle - Math.PI / 6));
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(ex, ey);
+            ctx.lineTo(ex - headLen * Math.cos(angle + Math.PI / 6), ey - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.lineTo(ex - headLen * Math.cos(angle - Math.PI / 6), ey - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.fill();
+
+            // Label Background
+            const midX = (sx + ex) / 2;
+            const midY = (sy + ey) / 2;
+            const textMetrics = ctx.measureText(label);
+            const padding = 6;
+            
+            ctx.fillStyle = theme.panelBg; 
+            ctx.fillRect(midX - textMetrics.width/2 - padding, midY - 12, textMetrics.width + padding*2, 24);
+            
+            ctx.fillStyle = color;
+            ctx.fillText(label, midX, midY);
+        }
+
+        function drawWave() {
+            // FIX: Use clientWidth/clientHeight (Logical Pixels) instead of width/height (Physical Pixels)
+            // This ensures correct positioning regardless of Device Pixel Ratio (Retina screens)
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            
+            // Define grid size first to use in calculation
+            const gridSize = state.pixelsPerMeter / 2; // 每 0.5 米一格 (30px)
+
+            // Adjust Vertical Position
+            // Previously height * 0.4. 
+            // Action: Move down by 1 grid unit (+ gridSize)
+            const centerY = (height * 0.4) + gridSize; 
+
+            ctx.clearRect(0, 0, width, height);
+
+            // --- Draw Grid Lines (Background) ---
+            
+            ctx.beginPath();
+            ctx.strokeStyle = theme.grid; 
+            ctx.lineWidth = 1;
+
+            // Vertical Grid
+            for (let x = 0; x <= width; x += gridSize) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+            }
+
+            // Horizontal Grid
+            // Draw from centerY outwards to align grid with equilibrium
+            for (let y = centerY; y < height; y += gridSize) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+            }
+            for (let y = centerY; y > 0; y -= gridSize) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+            }
+            ctx.stroke();
+
+            // Equilibrium Line
+            ctx.beginPath();
+            ctx.strokeStyle = theme.equilibrium;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]); 
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+            ctx.setLineDash([]); 
+
+            const ampPx = state.amplitude * state.pixelsPerMeter; 
+            const lambdaPx = state.wavelength * state.pixelsPerMeter; 
+            
+            // Sine Wave
+            ctx.beginPath();
+            ctx.strokeStyle = theme.wave;
+            ctx.lineWidth = 4; 
+
+            for (let x = 0; x <= width; x++) {
+                const xMeters = x / state.pixelsPerMeter;
+                const k = (2 * Math.PI) / state.wavelength;
+                const phaseShift = state.phase; 
+                
+                const y = -ampPx * Math.sin(k * xMeters - phaseShift); 
+                
+                if (x === 0) ctx.moveTo(x, centerY + y);
+                else ctx.lineTo(x, centerY + y);
+            }
+            ctx.stroke();
+
+            // Dimensions
+            const k = (2 * Math.PI) / state.wavelength;
+            const midScreen = width / 2;
+            const startMeasureX = midScreen - lambdaPx/2;
+            const endMeasureX = midScreen + lambdaPx/2;
+            
+            drawDimensionLine(ctx, startMeasureX, centerY - ampPx - 30, endMeasureX, centerY - ampPx - 30, "λ", theme.guide, 0);
+            drawDimensionLine(ctx, 40, centerY, 40, centerY - ampPx, "A", theme.guide, 0);
+
+            // Particle
+            const particleX = width / 2;
+            const particleXMeters = particleX / state.pixelsPerMeter;
+            const particleYVal = -ampPx * Math.sin(k * particleXMeters - state.phase);
+            
+            // Guide Line (Particle vertical motion path)
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(225, 29, 72, 0.3)"; // Rose-600 with opacity
+            ctx.lineWidth = 2; 
+            ctx.moveTo(particleX, centerY - ampPx);
+            ctx.lineTo(particleX, centerY + ampPx);
+            ctx.stroke();
+
+            // Particle Circle
+            ctx.beginPath();
+            ctx.fillStyle = theme.particle;
+            ctx.arc(particleX, centerY + particleYVal, 10, 0, Math.PI * 2); 
+            ctx.fill();
+            
+            // White stroke for separation
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 3; 
+            ctx.stroke();
+
+            // Label P
+            ctx.fillStyle = theme.text;
+            ctx.font = "italic 18px 'Times New Roman', serif";
+            ctx.fillText("P", particleX + 22, centerY + particleYVal);
+        }
+
+        // --- Animation Loop ---
+        let lastTime = 0;
+        function animate(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = (timestamp - lastTime) / 1000; 
+            lastTime = timestamp;
+
+            const safeDt = Math.min(dt, 0.05);
+
+            updatePhysics(safeDt);
+            drawWave();
+            requestAnimationFrame(animate);
+        }
+
+        // --- Resizing ---
+        function resize() {
+            const container = document.querySelector('.canvas-container'); // Tailwind class
+            // 使用 Device Pixel Ratio 確保在 Retina 螢幕上線條清晰
+            const dpr = window.devicePixelRatio || 1;
+            const rect = container.getBoundingClientRect();
+            
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            // Scale context to match dpr
+            ctx.scale(dpr, dpr);
+            
+            // 讓 Canvas 顯示大小與容器一致
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+
+            if (isPaused) drawWave(); 
+        }
+
+        // --- Interactions ---
+        function updateCalculations() {
+            displays.amp.textContent = state.amplitude.toFixed(1) + " m";
+            displays.freq.textContent = state.frequency.toFixed(1) + " Hz";
+            displays.lambda.textContent = state.wavelength.toFixed(1) + " m";
+
+            const period = 1 / state.frequency;
+            const speed = state.frequency * state.wavelength;
+
+            displays.period.textContent = period.toFixed(2) + " s";
+            displays.speed.textContent = speed.toFixed(2) + " m/s";
+        }
+
+        sliders.amp.addEventListener('input', (e) => {
+            state.amplitude = parseFloat(e.target.value);
+            updateCalculations();
+            if (isPaused) drawWave();
+        });
+
+        sliders.freq.addEventListener('input', (e) => {
+            state.frequency = parseFloat(e.target.value);
+            updateCalculations();
+        });
+
+        sliders.lambda.addEventListener('input', (e) => {
+            state.wavelength = parseFloat(e.target.value);
+            updateCalculations();
+            if (isPaused) drawWave();
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            
+            // 使用 Tailwind class list 進行按鈕樣式切換
+            if (isPaused) {
+                // 暫停狀態：變為 Amber 色系
+                pauseBtn.classList.remove('bg-sky-500', 'hover:bg-sky-400', 'focus:ring-sky-400');
+                pauseBtn.classList.add('bg-amber-500', 'hover:bg-amber-400', 'focus:ring-amber-400');
+            } else {
+                // 播放狀態：變回 Sky 色系
+                pauseBtn.classList.remove('bg-amber-500', 'hover:bg-amber-400', 'focus:ring-amber-400');
+                pauseBtn.classList.add('bg-sky-500', 'hover:bg-sky-400', 'focus:ring-sky-400');
+            }
+            
+            updateLanguage(); 
+        });
+
+        // Language Toggle
+        const langToggle = document.getElementById('lang-toggle');
+        const labelsZh = document.getElementById('lang-label-zh');
+        const labelsEn = document.getElementById('lang-label-en');
+
+        function updateLanguage() {
+            const lang = isEnglish ? 'en' : 'zh';
+            const dict = i18n[lang];
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (key === 'pause') {
+                    // 更新按鈕內的 SVG + Text
+                    const btnContent = isPaused ? dict.play : dict.pause;
+                    // 保留 SVG，只換字
+                    const icon = isPaused 
+                        ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+                        : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                    pauseBtn.innerHTML = `${icon} ${btnContent}`;
+                } else if (dict[key]) {
+                    el.innerHTML = dict[key];
+                }
+            });
+
+            displays.title.textContent = dict.title;
+
+            // 切換語言標籤的樣式 (Bold + Color)
+            if (isEnglish) {
+                labelsZh.classList.remove('text-slate-900', 'font-bold');
+                labelsZh.classList.add('text-slate-500');
+                labelsEn.classList.remove('text-slate-500');
+                labelsEn.classList.add('text-slate-900', 'font-bold');
+            } else {
+                labelsEn.classList.remove('text-slate-900', 'font-bold');
+                labelsEn.classList.add('text-slate-500');
+                labelsZh.classList.remove('text-slate-500');
+                labelsZh.classList.add('text-slate-900', 'font-bold');
+            }
+        }
+
+        langToggle.addEventListener('change', (e) => {
+            isEnglish = e.target.checked;
+            updateLanguage();
+        });
+
+        window.addEventListener('resize', resize);
+        
+        // 初始化
+        setTimeout(() => {
+             resize();
+             updateCalculations(); 
+             updateLanguage(); 
+             requestAnimationFrame(animate); 
+        }, 50);
+
+    </script>
+</body>
+</html>
