@@ -16,17 +16,37 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
     
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+HK:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
+        :root{ --ac:#38bdf8; }
         body {
-            font-family: 'Inter', 'Noto Sans HK', sans-serif;
-            background-color: #0f172a; /* Slate 900 */
+            font-family: 'Noto Sans HK', sans-serif;
+            background-color: #0a1626;
             color: #e2e8f0;
             overflow: hidden;
             margin: 0;
             padding: 0;
         }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-btn{
+            position:fixed;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;
+            border:1px solid #2c3e57;background:rgba(10,22,38,.85);color:#cbd5e1;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        body.light{ background-color:#eaeef3; color:#0f172a; }
+        body.light .bp-btn{ background:rgba(255,255,255,.9);border-color:#c3ccd8;color:#334155; }
+        body.light .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.light .bg-slate-900{ background:#eaeef3 !important; }
+        body.light .bg-slate-800\/50{ background:rgba(255,255,255,.92)!important; }
+        body.light .bg-slate-700, body.light .bg-slate-700\/50{ background:#e2e8f0!important; }
+        body.light .bg-slate-900\/50{ background:rgba(255,255,255,.7)!important; }
+        body.light .text-slate-200, body.light .text-slate-400, body.light .text-slate-500{ color:#475569!important; }
+        body.light .text-white{ color:#0f172a!important; }
+        body.light .border-slate-700, body.light .border-slate-800{ border-color:#c3ccd8!important; }
         
         .math-var {
             font-family: 'Times New Roman', Times, serif;
@@ -89,7 +109,21 @@
     </style>
 </head>
 <body>
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<a href="../../physics.html" class="bp-btn" style="top:12px;right:118px" aria-label="返回索引 / Back to index">
+    <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
+</a>
+<button onclick="toggleTheme()" class="bp-btn" style="top:12px;right:12px" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+    <span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span>
+</button>
+<script>
+    function toggleTheme(){
+        const light = !document.body.classList.contains('light');
+        document.body.classList.toggle('light', light);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${light?'moon':'sun'}" width="16" height="16"></i>`;
+        if(window.lucide) lucide.createIcons();
+    }
+    window.addEventListener('load', ()=>{ if(window.lucide) lucide.createIcons(); });
+</script>
     <div id="root"></div>
 
     <!-- 改用原生 JavaScript 標籤，不依賴 Babel 編譯 -->
@@ -606,7 +640,7 @@
                 // Left Sidebar
                 e('aside', { className: "w-80 flex-shrink-0 flex flex-col border-r border-slate-700 bg-slate-800/50 backdrop-blur overflow-y-auto" },
                     e('div', { className: "p-6 border-b border-slate-700" },
-                        e('h1', { className: "text-xl font-bold text-sky-400 mb-2" }, t.title),
+                        e('h1', { className: "serif-font text-xl font-bold text-sky-400 mb-2" }, t.title),
                         e('button', {
                             onClick: () => setLang(l => l === 'en' ? 'zh' : 'en'),
                             className: "text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded transition"
