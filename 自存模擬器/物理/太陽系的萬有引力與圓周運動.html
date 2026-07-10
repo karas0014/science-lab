@@ -6,8 +6,24 @@
     <title>萬有引力與圓周運動模擬器 | HKDSE Physics</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; overflow: hidden; background-color: #03050c; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        :root{ --ac:#3b82f6; }
+        body { margin: 0; overflow: hidden; background-color: #03050c; color: #e2e8f0; font-family: 'Noto Sans HK', sans-serif; }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;
+            border:1px solid #2c3e57;background:rgba(10,22,38,.75);color:#cbd5e1;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+            transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        body.light .bp-btn{ background:rgba(255,255,255,.9);border-color:#c3ccd8;color:#334155; }
+        body.light .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.light .glass-panel{ background:rgba(255,255,255,.9)!important;border-color:#c3ccd8!important;box-shadow:0 10px 30px -10px rgba(2,6,23,.25)!important; }
+        body.light .text-gray-300, body.light .text-gray-400, body.light .text-gray-500{ color:#475569 !important; }
+        body.light .text-white{ color:#0f172a !important; }
         /* 確保畫布填滿螢幕 */
         canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
         
@@ -71,7 +87,14 @@
     </style>
 </head>
 <body class="antialiased select-none">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<script>
+    function toggleTheme(){
+        const light = !document.body.classList.contains('light');
+        document.body.classList.toggle('light', light);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${light?'moon':'sun'}" width="15" height="15"></i>`;
+        if(window.lucide) lucide.createIcons();
+    }
+</script>
 
     <!-- 高效能 Canvas 畫布 -->
     <canvas id="simCanvas"></canvas>
@@ -84,7 +107,13 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transform hover:rotate-90 transition-transform duration-300"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
         </div>
-        <div class="pointer-events-auto">
+        <div class="pointer-events-auto flex items-center gap-2">
+            <a href="../../physics.html" class="bp-btn" aria-label="返回索引 / Back to index">
+                <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+            </a>
+            <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+                <span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span>
+            </button>
             <div class="pill-toggle">
                 <div id="btn-zh" class="pill-btn active" onclick="setLang('zh')">中文</div>
                 <div id="btn-en" class="pill-btn" onclick="setLang('en')">EN</div>
@@ -304,6 +333,7 @@
 
             setSystem('sun_earth');
             setLang('zh');
+            if(window.lucide) lucide.createIcons();
             requestAnimationFrame(simLoop);
         }
 
