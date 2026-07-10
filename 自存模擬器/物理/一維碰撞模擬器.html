@@ -7,7 +7,10 @@
     
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
     <!-- 設定 MathJax -->
     <script>
         window.MathJax = {
@@ -22,14 +25,58 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 
     <style>
-        body { margin: 0; padding: 0; background-color: #f8fafc; }
-        /* 隱藏卷軸但保持可滾動 */
+        :root{ --ac:#10b981; }
+        body { margin: 0; padding: 0; font-family:'Noto Sans HK',sans-serif; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .bp-surface{
+            background-color:#eaeef3;
+            background-image:
+                linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),
+                linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        body.dark .bp-surface, body.dark#body-bp{
+            background-color:#0a1626;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .bp-btn{
+            position:fixed;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+            box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
     </style>
 </head>
-<body>
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body id="body-bp" class="dark bp-surface">
+<a href="../../physics.html" class="bp-btn" style="top:12px;left:12px" aria-label="返回索引 / Back to index">
+    <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
+</a>
+<button onclick="toggleTheme()" class="bp-btn" style="top:12px;left:118px" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+    <span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span>
+</button>
+<script>
+    function toggleTheme(){
+        const dark = !document.body.classList.contains('dark');
+        document.body.classList.toggle('dark', dark);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="16" height="16"></i>`;
+        if(window.lucide) lucide.createIcons();
+    }
+</script>
     <div id="root"></div>
 
     <script>
@@ -283,45 +330,45 @@
                 );
             };
 
-            return e("div", { className: "flex flex-col items-center p-4 min-h-screen font-sans text-gray-800" },
+            return e("div", { className: "flex flex-col items-center p-4 pt-16 min-h-screen text-slate-800 dark:text-slate-200" },
                 // Header
                 e("div", { className: "w-full max-w-5xl flex justify-between items-center mb-6" },
-                    e("h1", { className: "text-2xl md:text-3xl font-bold text-gray-900" }, t.title),
-                    e("button", { onClick: () => setLang(lang === 'zh' ? 'en' : 'zh'), className: "flex items-center gap-2 px-3 md:px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 transition font-bold text-sm md:text-base" },
+                    e("h1", { className: "text-2xl md:text-3xl font-bold text-slate-900 dark:text-white serif-font" }, t.title),
+                    e("button", { onClick: () => setLang(lang === 'zh' ? 'en' : 'zh'), className: "mono flex items-center gap-2 px-3 md:px-4 py-2 bg-white/80 dark:bg-slate-800/70 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition font-bold text-sm md:text-base" },
                         e(IconGlobe), ` ${t.langToggle}`
                     )
                 ),
 
                 // Settings Cards
-                e("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl bg-white p-6 rounded-xl shadow-md mb-6" },
+                e("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl bg-white/75 dark:bg-[#0d192b]/60 border border-slate-300 dark:border-slate-700 p-6 rounded-md shadow-md mb-6" },
                     e("div", { className: "space-y-4 border-l-4 border-red-500 pl-4" },
                         e("h2", { className: "text-xl font-bold text-red-600" }, t.redCar),
                         e("div", null,
-                            e("label", { className: "flex justify-between text-sm font-medium text-gray-700 mb-1" }, e(MathText, { content: t.mass }), e("span", null, `${uiState.red.m.toFixed(1)} kg`)),
+                            e("label", { className: "flex justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" }, e(MathText, { content: t.mass }), e("span", null, `${uiState.red.m.toFixed(1)} kg`)),
                             e("input", { type: "range", min: "1", max: "10", step: "0.5", value: uiState.red.m, onChange: (ev) => { stateRef.current.red.m = parseFloat(ev.target.value); setUiState({...stateRef.current}); }, className: "w-full accent-red-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" })
                         ),
                         e("div", null,
-                            e("label", { className: "flex justify-between text-sm font-medium text-gray-700 mb-1" }, e(MathText, { content: t.velocity }), e("span", null, `${uiState.red.v.toFixed(1)} m/s`)),
+                            e("label", { className: "flex justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" }, e(MathText, { content: t.velocity }), e("span", null, `${uiState.red.v.toFixed(1)} m/s`)),
                             e("input", { type: "range", min: "-10", max: "10", step: "0.5", value: uiState.red.v, onChange: (ev) => { stateRef.current.red.v = parseFloat(ev.target.value); setUiState({...stateRef.current}); }, className: "w-full accent-red-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" })
                         )
                     ),
                     e("div", { className: "space-y-4 border-l-4 border-blue-500 pl-4" },
                         e("h2", { className: "text-xl font-bold text-blue-600" }, t.blueCar),
                         e("div", null,
-                            e("label", { className: "flex justify-between text-sm font-medium text-gray-700 mb-1" }, e(MathText, { content: t.mass }), e("span", null, `${uiState.blue.m.toFixed(1)} kg`)),
+                            e("label", { className: "flex justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" }, e(MathText, { content: t.mass }), e("span", null, `${uiState.blue.m.toFixed(1)} kg`)),
                             e("input", { type: "range", min: "1", max: "10", step: "0.5", value: uiState.blue.m, onChange: (ev) => { stateRef.current.blue.m = parseFloat(ev.target.value); setUiState({...stateRef.current}); }, className: "w-full accent-blue-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" })
                         ),
                         e("div", null,
-                            e("label", { className: "flex justify-between text-sm font-medium text-gray-700 mb-1" }, e(MathText, { content: t.velocity }), e("span", null, `${uiState.blue.v.toFixed(1)} m/s`)),
+                            e("label", { className: "flex justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" }, e(MathText, { content: t.velocity }), e("span", null, `${uiState.blue.v.toFixed(1)} m/s`)),
                             e("input", { type: "range", min: "-10", max: "10", step: "0.5", value: uiState.blue.v, onChange: (ev) => { stateRef.current.blue.v = parseFloat(ev.target.value); setUiState({...stateRef.current}); }, className: "w-full accent-blue-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" })
                         )
                     )
                 ),
 
                 // Controls
-                e("div", { className: "flex flex-wrap gap-4 md:gap-6 mb-6 items-center justify-center w-full max-w-5xl bg-white p-4 rounded-xl shadow-sm" },
+                e("div", { className: "flex flex-wrap gap-4 md:gap-6 mb-6 items-center justify-center w-full max-w-5xl bg-white/75 dark:bg-[#0d192b]/60 border border-slate-300 dark:border-slate-700 p-4 rounded-md shadow-sm" },
                     e("div", { className: "flex items-center gap-4" },
-                        e("span", { className: "font-bold text-gray-700" }, t.collisionType),
+                        e("span", { className: "font-bold text-slate-700 dark:text-slate-200" }, t.collisionType),
                         e("label", { className: "inline-flex items-center cursor-pointer" },
                             e("input", { type: "radio", value: "elastic", checked: collisionType === 'elastic', onChange: () => setCollisionType('elastic'), className: "form-radio text-green-600 w-4 h-4" }),
                             e("span", { className: "ml-2 mr-2 text-sm md:text-base" }, t.elastic)
@@ -343,9 +390,9 @@
                 ),
 
                 // Simulation Track
-                e("div", { className: "relative w-full max-w-5xl bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 mb-6" },
-                    e("div", { className: "absolute top-2 left-4 text-sm font-bold text-gray-400" }, t.positionView),
-                    e("svg", { viewBox: `0 0 ${TRACK_WIDTH} 250`, className: "w-full h-auto bg-slate-50" },
+                e("div", { className: "relative w-full max-w-5xl bg-white/75 dark:bg-[#0d192b]/60 rounded-md shadow-lg overflow-hidden border border-slate-300 dark:border-slate-700 mb-6" },
+                    e("div", { className: "mono absolute top-2 left-4 text-xs font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500 z-10" }, t.positionView),
+                    e("svg", { viewBox: `0 0 ${TRACK_WIDTH} 250`, className: "w-full h-auto bg-slate-50 dark:bg-slate-900/40" },
                         e("defs", null,
                             e("pattern", { id: "grid", width: "50", height: "250", patternUnits: "userSpaceOnUse" }, e("path", { d: "M 50 0 L 50 250", fill: "none", stroke: "#e2e8f0", strokeWidth: "1" })),
                             e("marker", { id: "arrow-red", markerWidth: "10", markerHeight: "7", refX: "9", refY: "3.5", orient: "auto" }, e("polygon", { points: "0 0, 10 3.5, 0 7", fill: "#ef4444" })),
@@ -377,10 +424,10 @@
                 // Mini Graphs
                 e("div", { className: "w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" },
                     // VT Mini
-                    e("div", { onClick: () => setExpandedGraph('vt'), className: "bg-white rounded-xl shadow-md border border-gray-100 p-4 flex flex-col items-center cursor-pointer transition-all hover:scale-105 hover:shadow-xl hover:border-blue-300 relative group" },
+                    e("div", { onClick: () => setExpandedGraph('vt'), className: "bg-white/75 dark:bg-[#0d192b]/60 rounded-md shadow-md border border-slate-200 dark:border-slate-700 p-4 flex flex-col items-center cursor-pointer transition-all hover:scale-105 hover:shadow-xl hover:border-emerald-400 relative group" },
                         e("div", { className: "absolute top-2 right-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" }, e(IconMaximize)),
-                        e("h3", { className: "text-sm font-bold text-gray-700 mb-2 border-b w-full text-center pb-2" }, e(MathText, { content: t.vtGraph })),
-                        e("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, className: "w-full h-auto bg-white border border-gray-100" },
+                        e("h3", { className: "text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 border-b border-slate-200 dark:border-slate-700 w-full text-center pb-2" }, e(MathText, { content: t.vtGraph })),
+                        e("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, className: "w-full h-auto bg-white dark:bg-slate-100 rounded border border-slate-200 dark:border-slate-700" },
                             e("defs", null, e("clipPath", { id: "clipMini1" }, e("rect", { x: "0", y: "0", width: GRAPH_WIDTH, height: GRAPH_HEIGHT }))),
                             e("g", { clipPath: "url(#clipMini1)" },
                                 e("line", { x1: "0", y1: GRAPH_HEIGHT/2, x2: GRAPH_WIDTH, y2: GRAPH_HEIGHT/2, stroke: "#94a3b8", strokeWidth: "1.5", strokeDasharray: "4" }),
@@ -394,10 +441,10 @@
                         )
                     ),
                     // PT Mini
-                    e("div", { onClick: () => setExpandedGraph('pt'), className: "bg-white rounded-xl shadow-md border border-gray-100 p-4 flex flex-col items-center cursor-pointer transition-all hover:scale-105 hover:shadow-xl hover:border-blue-300 relative group" },
+                    e("div", { onClick: () => setExpandedGraph('pt'), className: "bg-white/75 dark:bg-[#0d192b]/60 rounded-md shadow-md border border-slate-200 dark:border-slate-700 p-4 flex flex-col items-center cursor-pointer transition-all hover:scale-105 hover:shadow-xl hover:border-emerald-400 relative group" },
                         e("div", { className: "absolute top-2 right-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" }, e(IconMaximize)),
-                        e("h3", { className: "text-sm font-bold text-gray-700 mb-2 border-b w-full text-center pb-2" }, e(MathText, { content: t.ptGraph })),
-                        e("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, className: "w-full h-auto bg-white border border-gray-100" },
+                        e("h3", { className: "text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 border-b border-slate-200 dark:border-slate-700 w-full text-center pb-2" }, e(MathText, { content: t.ptGraph })),
+                        e("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, className: "w-full h-auto bg-white dark:bg-slate-100 rounded border border-slate-200 dark:border-slate-700" },
                             e("defs", null, e("clipPath", { id: "clipMini2" }, e("rect", { x: "0", y: "0", width: GRAPH_WIDTH, height: GRAPH_HEIGHT }))),
                             e("g", { clipPath: "url(#clipMini2)" },
                                 e("line", { x1: "0", y1: GRAPH_HEIGHT/2, x2: GRAPH_WIDTH, y2: GRAPH_HEIGHT/2, stroke: "#94a3b8", strokeWidth: "1.5", strokeDasharray: "4" }),
@@ -413,10 +460,10 @@
                         )
                     ),
                     // KT Mini
-                    e("div", { onClick: () => setExpandedGraph('kt'), className: "bg-white rounded-xl shadow-md border border-gray-100 p-4 flex flex-col items-center cursor-pointer transition-all hover:scale-105 hover:shadow-xl hover:border-blue-300 relative group" },
+                    e("div", { onClick: () => setExpandedGraph('kt'), className: "bg-white/75 dark:bg-[#0d192b]/60 rounded-md shadow-md border border-slate-200 dark:border-slate-700 p-4 flex flex-col items-center cursor-pointer transition-all hover:scale-105 hover:shadow-xl hover:border-emerald-400 relative group" },
                         e("div", { className: "absolute top-2 right-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" }, e(IconMaximize)),
-                        e("h3", { className: "text-sm font-bold text-gray-700 mb-2 border-b w-full text-center pb-2" }, e(MathText, { content: t.ktGraph })),
-                        e("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, className: "w-full h-auto bg-white border border-gray-100" },
+                        e("h3", { className: "text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 border-b border-slate-200 dark:border-slate-700 w-full text-center pb-2" }, e(MathText, { content: t.ktGraph })),
+                        e("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, className: "w-full h-auto bg-white dark:bg-slate-100 rounded border border-slate-200 dark:border-slate-700" },
                             e("defs", null, e("clipPath", { id: "clipMini3" }, e("rect", { x: "0", y: "0", width: GRAPH_WIDTH, height: GRAPH_HEIGHT }))),
                             e("g", { clipPath: "url(#clipMini3)" },
                                 e("line", { x1: "0", y1: GRAPH_HEIGHT - ((0 - (-50)) / (K_MAX - (-50))) * GRAPH_HEIGHT, x2: GRAPH_WIDTH, y2: GRAPH_HEIGHT - ((0 - (-50)) / (K_MAX - (-50))) * GRAPH_HEIGHT, stroke: "#94a3b8", strokeWidth: "1.5", strokeDasharray: "4" }),
@@ -435,12 +482,12 @@
 
                 // Data Dashboard
                 e("div", { className: "w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12" },
-                    e("div", { className: "bg-red-50 p-5 rounded-xl border border-red-100 shadow-sm" },
-                        e("h3", { className: "text-red-800 font-bold mb-3 border-b border-red-200 pb-2 text-lg" }, t.redData),
+                    e("div", { className: "bg-red-50 dark:bg-red-500/10 p-5 rounded-md border border-red-100 dark:border-red-500/30 shadow-sm" },
+                        e("h3", { className: "text-red-800 dark:text-red-300 font-bold mb-3 border-b border-red-200 dark:border-red-500/30 pb-2 text-lg" }, t.redData),
                         e("div", { className: "space-y-3 text-sm" },
-                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentV }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.vR.toFixed(2)} m/s`)),
-                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentP }), e("span", { className: "font-mono font-bold text-base" }, currentData.pR.toFixed(2))),
-                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentK }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.kR.toFixed(2)} J`))
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-slate-600 dark:text-slate-300", content: t.currentV }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.vR.toFixed(2)} m/s`)),
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-slate-600 dark:text-slate-300", content: t.currentP }), e("span", { className: "font-mono font-bold text-base" }, currentData.pR.toFixed(2))),
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-slate-600 dark:text-slate-300", content: t.currentK }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.kR.toFixed(2)} J`))
                         )
                     ),
                     e("div", { className: "bg-gray-800 text-white p-5 rounded-xl shadow-lg transform scale-105 z-10 flex flex-col justify-center" },
@@ -451,12 +498,12 @@
                             e("div", { className: "text-xs text-center text-gray-400 mt-4 bg-gray-900 rounded p-2" }, e(MathText, { content: collisionType === 'elastic' ? t.elasticMsg : t.inelasticMsg }))
                         )
                     ),
-                    e("div", { className: "bg-blue-50 p-5 rounded-xl border border-blue-100 shadow-sm" },
-                        e("h3", { className: "text-blue-800 font-bold mb-3 border-b border-blue-200 pb-2 text-lg" }, t.blueData),
+                    e("div", { className: "bg-blue-50 dark:bg-blue-500/10 p-5 rounded-md border border-blue-100 dark:border-blue-500/30 shadow-sm" },
+                        e("h3", { className: "text-blue-800 dark:text-blue-300 font-bold mb-3 border-b border-blue-200 dark:border-blue-500/30 pb-2 text-lg" }, t.blueData),
                         e("div", { className: "space-y-3 text-sm" },
-                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentV }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.vB.toFixed(2)} m/s`)),
-                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentP }), e("span", { className: "font-mono font-bold text-base" }, currentData.pB.toFixed(2))),
-                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-gray-700", content: t.currentK }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.kB.toFixed(2)} J`))
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-slate-600 dark:text-slate-300", content: t.currentV }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.vB.toFixed(2)} m/s`)),
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-slate-600 dark:text-slate-300", content: t.currentP }), e("span", { className: "font-mono font-bold text-base" }, currentData.pB.toFixed(2))),
+                            e("div", { className: "flex justify-between" }, e(MathText, { className: "text-slate-600 dark:text-slate-300", content: t.currentK }), e("span", { className: "font-mono font-bold text-base" }, `${currentData.kB.toFixed(2)} J`))
                         )
                     )
                 ),
@@ -502,5 +549,6 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(e(App));
     </script>
+    <script>if(window.lucide) lucide.createIcons();</script>
 </body>
 </html>
