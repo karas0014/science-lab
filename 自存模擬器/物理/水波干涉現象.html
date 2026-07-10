@@ -9,32 +9,51 @@
 
     <!-- Three.js CDN (Essential for 3D View) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg-dark: #0f172a; /* Slate 900 */
-            --bg-panel: #1e293b; /* Slate 800 */
-            --text-primary: #e2e8f0; /* Slate 200 */
-            --text-secondary: #94a3b8; /* Slate 400 */
-            --accent: #38bdf8; /* Sky 400 */
-            --accent-hover: #0ea5e9; /* Sky 500 */
-            --border: #334155; /* Slate 700 */
-            --danger: #f43f5e; /* Rose 500 */
-            --success: #22c55e; /* Green 500 */
+            --bg-dark: #0a1626;
+            --bg-panel: #0d192b;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --border: #2c3e57;
+            --danger: #f43f5e;
+            --success: #22c55e;
+        }
+        body.light {
+            --bg-dark: #eaeef3;
+            --bg-panel: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border: #c3ccd8;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
+
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Noto Sans HK', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-primary);
             overflow: hidden; /* Prevent body scroll */
             height: 100vh;
             width: 100vw;
         }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-btn{
+            position:fixed;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;
+            border:1px solid var(--border);background:rgba(10,22,38,.8);color:#cbd5e1;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--accent);color:#fff; }
+        body.light .bp-btn{ background:rgba(255,255,255,.9);color:#334155; }
+        body.light .bp-btn:hover{ color:#0f172a; }
 
         /* Physics Math Font */
         .math-var {
@@ -355,7 +374,20 @@
     </style>
 </head>
 <body>
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<a href="../../physics.html" class="bp-btn" style="top:12px;right:118px" aria-label="返回索引 / Back to index">
+    <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
+</a>
+<button onclick="toggleTheme()" class="bp-btn" style="top:12px;right:12px" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+    <span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span>
+</button>
+<script>
+    function toggleTheme(){
+        const light = !document.body.classList.contains('light');
+        document.body.classList.toggle('light', light);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${light?'moon':'sun'}" width="16" height="16"></i>`;
+        if(window.lucide) lucide.createIcons();
+    }
+</script>
     <div id="root">
         <div class="app-container">
             <!-- Sidebar -->
@@ -374,7 +406,7 @@
 
                 <!-- Headers -->
                 <div class="sidebar-header">
-                    <h1 class="title" id="text-title"></h1>
+                    <h1 class="serif-font title" id="text-title"></h1>
                     <div class="subtitle" id="text-subtitle"></div>
                 </div>
 
@@ -587,7 +619,7 @@
             let time = 0;
 
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0f172a);
+            scene.background = new THREE.Color(0x0a1626);
 
             const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 200);
             camera.position.set(0, -28, 28); 
@@ -761,7 +793,7 @@
                 const width = canvas.width;
                 const height = canvas.height;
                 
-                ctx.fillStyle = '#0f172a';
+                ctx.fillStyle = '#0a1626';
                 ctx.fillRect(0, 0, width, height);
                 
                 const scale = 25; // px per cm
@@ -886,6 +918,7 @@
             updateValues();
             init3D();
             init2D();
+            if(window.lucide) lucide.createIcons();
         };
 
     </script>
