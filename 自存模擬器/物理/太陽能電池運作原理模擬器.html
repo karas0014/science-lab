@@ -5,80 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>太陽能電池運作原理模擬器</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- 引入 Tone.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
-        body { background-color: #f0f4f8; font-family: sans-serif; overflow-x: hidden; }
-        .canvas-container { 
-            position: relative; 
-            width: 100%; 
-            max-width: 800px; 
-            margin: 0 auto;
-        }
-        canvas { 
-            background: #fff; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-            width: 100%; 
-            height: auto;
-            display: block;
-        }
+        :root{ --ac:#10b981; }
+        body { background-color: #eaeef3; font-family: 'Noto Sans HK', sans-serif; overflow-x: hidden; }
+        body.dark { background-color: #0a1626; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .canvas-container { position: relative; width: 100%; max-width: 800px; margin: 0 auto; }
+        canvas { background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 100%; height: auto; display: block; }
         .controls { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .dashboard-card {
-            background: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            text-align: center;
-            border-top: 4px solid #3b82f6;
+        body.dark .controls { background:#0d192b; color:#e2e8f0; border:1px solid #2c3e57; }
+        .dashboard-card { background: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #3b82f6; }
+        body.dark .dashboard-card { background:#0d192b; }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s;
         }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
     </style>
 </head>
-<body class="p-4 md:p-8">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark p-4 md:p-8 text-slate-800 dark:text-slate-200">
     <div class="max-w-6xl mx-auto">
-        <h1 class="text-2xl md:text-3xl font-bold text-center text-slate-800 mb-6">太陽能電池運作原理模擬器</h1>
+        <div class="flex items-center justify-between mb-4">
+            <a href="../../physics.html" class="bp-btn" aria-label="返回索引 / Back to index">
+                <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+                    <span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span>
+                </button>
+                <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language">
+                    <i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span>
+                </button>
+            </div>
+        </div>
+        <h1 class="serif-font text-2xl md:text-3xl font-bold text-center text-slate-800 dark:text-white mb-6">
+            <span class="lang-zh">太陽能電池運作原理模擬器</span><span class="lang-en hidden">Solar Cell Simulator</span>
+        </h1>
         
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <!-- 控制面板 -->
             <div class="lg:col-span-1 space-y-4">
                 <div class="controls">
-                    <h2 class="text-xl font-semibold mb-4 text-slate-700">實驗控制</h2>
+                    <h2 class="text-xl font-semibold mb-4 text-slate-700 dark:text-slate-200"><span class="lang-zh">實驗控制</span><span class="lang-en hidden">Controls</span></h2>
                     
                     <div class="grid grid-cols-2 gap-2 mb-4">
                         <button id="btnPause" class="py-2 px-2 bg-amber-500 text-white rounded font-bold hover:bg-amber-600 transition text-sm">暫停</button>
-                        <button id="btnReset" class="py-2 px-2 bg-rose-600 text-white rounded font-bold hover:bg-rose-700 transition text-sm">重新開始</button>
+                        <button id="btnReset" class="py-2 px-2 bg-rose-600 text-white rounded font-bold hover:bg-rose-700 transition text-sm"><span class="lang-zh">重新開始</span><span class="lang-en hidden">Restart</span></button>
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">光照強度 (亮度)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"><span class="lang-zh">光照強度 (亮度)</span><span class="lang-en hidden">Light intensity</span></label>
                         <input type="range" id="lightIntensity" min="0" max="100" value="30" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">光子頻率 (能量/顏色)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"><span class="lang-zh">光子頻率 (能量/顏色)</span><span class="lang-en hidden">Photon frequency (energy/colour)</span></label>
                         <input type="range" id="photonFrequency" min="1" max="100" value="50" class="w-full h-2 bg-gradient-to-r from-red-500 via-green-500 to-violet-500 rounded-lg appearance-none cursor-pointer">
                     </div>
 
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">粒子移動速度</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"><span class="lang-zh">粒子移動速度</span><span class="lang-en hidden">Particle speed</span></label>
                         <input type="range" id="speedMultiplier" min="0.1" max="3" step="0.1" value="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">外部負荷 (Load)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"><span class="lang-zh">外部負荷 (Load)</span><span class="lang-en hidden">External load</span></label>
                         <div class="flex gap-2">
-                            <button id="btnMotor" class="flex-1 py-2 px-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm">馬達</button>
-                            <button id="btnSpeaker" class="flex-1 py-2 px-2 bg-gray-200 text-slate-700 rounded hover:bg-gray-300 transition text-sm">揚聲器</button>
+                            <button id="btnMotor" class="flex-1 py-2 px-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"><span class="lang-zh">馬達</span><span class="lang-en hidden">Motor</span></button>
+                            <button id="btnSpeaker" class="flex-1 py-2 px-2 bg-gray-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-gray-300 dark:hover:bg-slate-600 transition text-sm"><span class="lang-zh">揚聲器</span><span class="lang-en hidden">Speaker</span></button>
                         </div>
                     </div>
 
-                    <div class="border-t pt-4 mt-4">
-                        <h3 class="font-bold text-sm mb-2 text-slate-600">圖例說明：</h3>
-                        <div class="grid grid-cols-2 gap-2 text-xs text-slate-500">
-                            <div class="flex items-center"><span class="w-3 h-3 bg-yellow-400 rounded-full mr-1"></span>光子</div>
-                            <div class="flex items-center"><span class="w-3 h-3 bg-blue-500 rounded-full mr-1"></span>電子 (-)</div>
-                            <div class="flex items-center"><span class="w-3 h-3 bg-red-500 rounded-full mr-1"></span>空穴 (+)</div>
+                    <div class="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
+                        <h3 class="font-bold text-sm mb-2 text-slate-600 dark:text-slate-300"><span class="lang-zh">圖例說明：</span><span class="lang-en hidden">Legend:</span></h3>
+                        <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400">
+                            <div class="flex items-center"><span class="w-3 h-3 bg-yellow-400 rounded-full mr-1"></span><span class="lang-zh">光子</span><span class="lang-en hidden">Photon</span></div>
+                            <div class="flex items-center"><span class="w-3 h-3 bg-blue-500 rounded-full mr-1"></span><span class="lang-zh">電子 (-)</span><span class="lang-en hidden">Electron (-)</span></div>
+                            <div class="flex items-center"><span class="w-3 h-3 bg-red-500 rounded-full mr-1"></span><span class="lang-zh">空穴 (+)</span><span class="lang-en hidden">Hole (+)</span></div>
                         </div>
                     </div>
                 </div>
@@ -93,33 +105,54 @@
                 <!-- 數據 Dashboard -->
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
                     <div class="dashboard-card" style="border-top-color: #facc15;">
-                        <div class="text-xs text-gray-500 font-bold">光子數量</div>
-                        <div id="statPhotons" class="text-2xl font-mono text-slate-800">0</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-400 font-bold"><span class="lang-zh">光子數量</span><span class="lang-en hidden">Photons</span></div>
+                        <div id="statPhotons" class="text-2xl font-mono text-slate-800 dark:text-slate-100">0</div>
                     </div>
                     <div class="dashboard-card" style="border-top-color: #3b82f6;">
-                        <div class="text-xs text-gray-500 font-bold">電子數量</div>
-                        <div id="statElectrons" class="text-2xl font-mono text-slate-800">0</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-400 font-bold"><span class="lang-zh">電子數量</span><span class="lang-en hidden">Electrons</span></div>
+                        <div id="statElectrons" class="text-2xl font-mono text-slate-800 dark:text-slate-100">0</div>
                     </div>
                     <div class="dashboard-card" style="border-top-color: #ef4444;">
-                        <div class="text-xs text-gray-500 font-bold">空穴數量</div>
-                        <div id="statHoles" class="text-2xl font-mono text-slate-800">0</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-400 font-bold"><span class="lang-zh">空穴數量</span><span class="lang-en hidden">Holes</span></div>
+                        <div id="statHoles" class="text-2xl font-mono text-slate-800 dark:text-slate-100">0</div>
                     </div>
                     <div class="dashboard-card" style="border-top-color: #10b981;">
-                        <div class="text-xs text-gray-500 font-bold">電流 (mA)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-400 font-bold"><span class="lang-zh">電流 (mA)</span><span class="lang-en hidden">Current (mA)</span></div>
                         <div id="statCurrent" class="text-2xl font-mono text-emerald-600">0.0</div>
                     </div>
                     <div class="dashboard-card" style="border-top-color: #8b5cf6;">
-                        <div class="text-xs text-gray-500 font-bold">電壓 (V)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-400 font-bold"><span class="lang-zh">電壓 (V)</span><span class="lang-en hidden">Voltage (V)</span></div>
                         <div id="statVoltage" class="text-2xl font-mono text-violet-600">0.00</div>
                     </div>
                 </div>
 
-                <div id="statusDisplay" class="mt-4 p-4 bg-white rounded shadow text-center text-lg font-medium text-slate-700">
+                <div id="statusDisplay" class="mt-4 p-4 bg-white dark:bg-[#0d192b] rounded shadow text-center text-lg font-medium text-slate-700 dark:text-slate-200">
                     系統運作中
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        window.__lang = 'zh';
+        function applyLang(){
+            document.querySelectorAll('.lang-zh').forEach(el=>el.classList.toggle('hidden', window.__lang!=='zh'));
+            document.querySelectorAll('.lang-en').forEach(el=>el.classList.toggle('hidden', window.__lang!=='en'));
+        }
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+        function toggleLang(){
+            window.__lang = window.__lang==='zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = window.__lang==='zh' ? 'EN' : '中';
+            applyLang();
+            if(window.__onLangChange) window.__onLangChange();
+        }
+        function tt(pair){ return (window.__lang||'zh')==='zh' ? pair[0] : pair[1]; }
+    </script>
 
     <script>
         const canvas = document.getElementById('simCanvas');
@@ -132,6 +165,13 @@
         const btnMotor = document.getElementById('btnMotor');
         const btnSpeaker = document.getElementById('btnSpeaker');
         const statusDisplay = document.getElementById('statusDisplay');
+
+        // Blueprint bilingual helpers
+        const STATUS = { running:['系統運作中','Running'], paused:['模擬已暫停','Paused'], reset:['已重新開始','Restarted'] };
+        let statusKey = 'running';
+        function setStatus(key){ statusKey = key; statusDisplay.textContent = tt(STATUS[key]); }
+        function setPauseBtn(){ btnPause.textContent = isPaused ? tt(['恢復','Resume']) : tt(['暫停','Pause']); }
+        window.__onLangChange = function(){ setPauseBtn(); setStatus(statusKey); };
 
         // Dashboard Elements
         const statPhotons = document.getElementById('statPhotons');
@@ -203,10 +243,10 @@
 
         btnPause.onclick = () => {
             isPaused = !isPaused;
-            btnPause.textContent = isPaused ? "恢復" : "暫停";
+            setPauseBtn();
             btnPause.classList.toggle('bg-amber-500');
             btnPause.classList.toggle('bg-green-500');
-            statusDisplay.textContent = isPaused ? "模擬已暫停" : "系統運作中";
+            setStatus(isPaused ? 'paused' : 'running');
             // 暫停時音訊會透過 updateAudio() 靜音
         };
 
@@ -227,8 +267,8 @@
 
             if (gainNode) gainNode.gain.rampTo(0, 0.1); // 重置時靜音
 
-            statusDisplay.textContent = "已重新開始";
-            setTimeout(() => { if(!isPaused) statusDisplay.textContent = "系統運作中"; }, 1500);
+            setStatus('reset');
+            setTimeout(() => { if(!isPaused) setStatus('running'); }, 1500);
         };
 
         btnMotor.onclick = () => {
@@ -397,11 +437,11 @@
             ctx.textAlign = 'right';
             
             ctx.fillStyle = '#1e40af';
-            ctx.fillText("N-型半導體 ⮕", cellX - 15, cellY + nHeight/2 + 5);
+            ctx.fillText(tt(["N-型半導體 ⮕","N-type ⮕"]), cellX - 15, cellY + nHeight/2 + 5);
             ctx.fillStyle = '#854d0e';
-            ctx.fillText("PN 接面 (耗盡區) ⮕", cellX - 15, cellY + nHeight + junctionHeight/2 + 5);
+            ctx.fillText(tt(["PN 接面 (耗盡區) ⮕","PN junction (depletion) ⮕"]), cellX - 15, cellY + nHeight + junctionHeight/2 + 5);
             ctx.fillStyle = '#991b1b';
-            ctx.fillText("P-型半導體 ⮕", cellX - 15, cellY + nHeight + junctionHeight + pHeight/2 + 5);
+            ctx.fillText(tt(["P-型半導體 ⮕","P-type ⮕"]), cellX - 15, cellY + nHeight + junctionHeight + pHeight/2 + 5);
 
             ctx.lineWidth = 1;
             ctx.textAlign = 'left';
@@ -516,9 +556,9 @@
                 ctx.font = 'bold 13px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#3b82f6';
-                ctx.fillText("電子流 (Electron Flow) ➡➡", loadX - 120, cellY - 55);
+                ctx.fillText(tt(["電子流 (Electron Flow) ➡➡","Electron flow ➡➡"]), loadX - 120, cellY - 55);
                 ctx.fillStyle = '#ef4444';
-                ctx.fillText("傳統電流 (I) ➡➡", loadX - 120, cellY + cellHeight + 65);
+                ctx.fillText(tt(["傳統電流 (I) ➡➡","Conventional current (I) ➡➡"]), loadX - 120, cellY + cellHeight + 65);
             }
         }
 
@@ -590,6 +630,8 @@
             requestAnimationFrame(loop);
         }
 
+        setPauseBtn(); setStatus('running'); applyLang();
+        if(window.lucide) lucide.createIcons();
         loop();
     </script>
 </body>
