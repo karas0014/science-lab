@@ -9,7 +9,7 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -17,16 +17,39 @@
             --bg-panel: rgba(17, 24, 39, 0.85);
             --accent-blue: #3b82f6;
             --accent-blue-glow: rgba(59, 130, 246, 0.5);
+            --ac: #3b82f6;
         }
 
-        body { 
-            margin: 0; overflow: hidden; 
-            background-color: var(--bg-deep); 
-            font-family: 'Inter', sans-serif; 
+        body {
+            margin: 0; overflow: hidden;
+            background-color: var(--bg-deep);
+            font-family: 'Noto Sans HK', sans-serif;
             color: #e2e8f0;
             -webkit-font-smoothing: antialiased;
             touch-action: none; /* 防止手機雙指縮放干擾 */
         }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;
+            border:1px solid rgba(255,255,255,.1);background:rgba(15,23,42,.8);color:#cbd5e1;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(8px);transition:all .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        /* Light-mode panel re-skin (canvas stays dark) */
+        body.light .bp-btn{ background:rgba(255,255,255,.85);border-color:#c3ccd8;color:#334155; }
+        body.light #ui-panel{ background:rgba(255,255,255,.92)!important; border-color:#c3ccd8; box-shadow:0 20px 40px -12px rgba(2,6,23,.25); }
+        body.light .app-header{ background:rgba(255,255,255,.85); border-color:#c3ccd8; }
+        body.light .app-header h1{ color:#0f172a !important; }
+        body.light #status-bar{ background:rgba(255,255,255,.85); color:#0f172a; border-color:#c3ccd8; }
+        body.light .lang-toggle{ background:rgba(255,255,255,.85); border-color:#c3ccd8; }
+        body.light .lang-btn{ color:#64748b; }
+        body.light .lang-btn.active{ background:#e2e8f0; color:#0f172a; }
+        body.light .icon-btn{ background:rgba(255,255,255,.85); border-color:#c3ccd8; color:#334155; }
+        body.light .control-title{ color:#64748b; }
+        body.light select{ background-color:#f8fafc; border-color:#c3ccd8; color:#0f172a; }
+        body.light .btn-reset{ background:rgba(15,23,42,.05); border-color:#c3ccd8; color:#334155; }
+        body.light input[type=range]{ background:#e2e8f0; }
         
         #canvas-container { 
             width: 100vw; height: 100vh; 
@@ -170,14 +193,21 @@
     </style>
 </head>
 <body>
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<script>
+    function toggleTheme(){
+        const light = !document.body.classList.contains('light');
+        document.body.classList.toggle('light', light);
+        document.getElementById('theme-ic').className = light ? 'fas fa-moon' : 'fas fa-sun';
+    }
+</script>
 
     <div class="app-header">
-        <div class="app-icon"><i class="fas fa-eye text-white text-[12px]"></i></div>
-        <h1 class="font-bold text-white tracking-wide m-0" id="ui-title">糾視光學模擬器</h1>
+        <a href="../../physics.html" class="bp-btn" aria-label="返回索引 / Back to index"><i class="fas fa-house text-xs"></i><span>INDEX</span></a>
+        <h1 class="serif-font font-bold text-white tracking-wide m-0" id="ui-title">糾視光學模擬器</h1>
     </div>
 
     <div class="top-right-controls">
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><i id="theme-ic" class="fas fa-sun text-xs"></i></button>
         <div class="lang-toggle">
             <button class="lang-btn active" id="btn-zh" onclick="setLang('zh')">中</button>
             <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
