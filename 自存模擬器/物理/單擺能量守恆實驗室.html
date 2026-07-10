@@ -9,14 +9,26 @@
     <meta name="description" content="HKDSE Physics Simulation: Conservation of Energy in Simple Pendulum. Interactive visualization of KE, PE and Total Energy.">
     <title>HKDSE Physics: Pendulum Energy 擺錘能量守恆</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
-
+        :root{ --ac:#2563eb; }
         body {
-            font-family: 'Inter', 'Noto Sans TC', sans-serif;
-            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Noto Sans HK', sans-serif;
             overscroll-behavior: none; /* Prevent pull-to-refresh on mobile */
         }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        body.dark .toggle-btn.active{ background-color:#1e293b; color:#fff; }
 
         /* Physics Variables Font Class */
         .math-var {
@@ -82,11 +94,18 @@
         }
     </style>
 </head>
-<body class="h-screen flex flex-col text-slate-800 overflow-hidden no-select">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark h-screen flex flex-col bg-slate-50 dark:bg-[#0a1626] text-slate-800 dark:text-slate-200 overflow-hidden no-select">
+<script>
+    function toggleTheme(){
+        const dark = !document.body.classList.contains('dark');
+        document.body.classList.toggle('dark', dark);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+        if(window.lucide) lucide.createIcons();
+    }
+</script>
 
     <!-- Navbar -->
-    <header class="bg-white border-b border-slate-200 h-16 shrink-0 flex items-center justify-between px-4 lg:px-6 z-20 shadow-sm">
+    <header class="bg-white dark:bg-[#0d192b] border-b border-slate-200 dark:border-slate-700 h-16 shrink-0 flex items-center justify-between px-4 lg:px-6 z-20 shadow-sm">
         <div class="flex items-center gap-3">
             <div class="bg-blue-600 w-9 h-9 rounded-lg flex items-center justify-center shadow-sm">
                 <!-- Energy Icon -->
@@ -95,15 +114,17 @@
                 </svg>
             </div>
             <div>
-                <h1 class="text-lg lg:text-xl font-bold text-slate-800 leading-tight">
+                <h1 class="serif-font text-lg lg:text-xl font-bold text-slate-800 dark:text-white leading-tight">
                     <span id="title-text">能量守恆實驗室</span>
                 </h1>
-                <p class="text-[10px] text-slate-500 font-medium tracking-wide uppercase">DSE Physics Simulator</p>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wide uppercase">DSE Physics Simulator</p>
             </div>
         </div>
         
-        <div class="flex items-center gap-3">
-             <div class="bg-slate-100 p-1 rounded-lg flex text-xs font-medium text-slate-500">
+        <div class="flex items-center gap-2">
+            <a href="../../physics.html" class="bp-btn" aria-label="返回索引 / Back to index"><i data-lucide="home" width="14" height="14"></i><span>INDEX</span></a>
+            <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+            <div class="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg flex text-xs font-medium text-slate-500 dark:text-slate-400">
                 <button id="lang-en" class="toggle-btn px-3 py-1.5 rounded-md" onclick="setLang('en')">EN</button>
                 <button id="lang-zh" class="toggle-btn px-3 py-1.5 rounded-md active" onclick="setLang('zh-HK')">中文</button>
             </div>
@@ -111,10 +132,10 @@
     </header>
 
     <!-- Main Layout -->
-    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-slate-50">
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-slate-50 dark:bg-[#0a1626]">
         
         <!-- Simulation Viewport (Left/Top) -->
-        <div class="lg:col-span-7 relative flex flex-col border-r border-slate-200">
+        <div class="lg:col-span-7 relative flex flex-col border-r border-slate-200 dark:border-slate-700">
             <!-- Canvas Container -->
             <div class="relative flex-1 w-full h-full bg-slate-50 overflow-hidden cursor-crosshair">
                 <canvas id="simCanvas" class="w-full h-full block"></canvas>
@@ -150,12 +171,12 @@
         </div>
 
         <!-- Dashboard (Right/Bottom) -->
-        <div class="lg:col-span-5 bg-white flex flex-col h-full overflow-y-auto z-10 shadow-[-4px_0_20px_rgba(0,0,0,0.02)]">
+        <div class="lg:col-span-5 bg-white dark:bg-[#0d192b] flex flex-col h-full overflow-y-auto z-10 shadow-[-4px_0_20px_rgba(0,0,0,0.02)]">
             
             <!-- 1. Energy Bars -->
-            <div class="p-5 border-b border-slate-100 shrink-0">
+            <div class="p-5 border-b border-slate-100 dark:border-slate-700 shrink-0">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
                         <span class="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
                         <span data-i18n="energy_conservation">Energy Conservation</span>
                     </h3>
@@ -165,33 +186,33 @@
                     <!-- KE -->
                     <div class="flex flex-col items-center justify-end group">
                         <div class="text-xs font-mono font-bold text-emerald-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity" id="text-ke">0J</div>
-                        <div class="w-full max-w-[40px] bg-slate-100 rounded-t-lg relative h-full overflow-hidden">
+                        <div class="w-full max-w-[40px] bg-slate-100 dark:bg-slate-800 rounded-t-lg relative h-full overflow-hidden">
                             <div id="bar-ke" class="absolute bottom-0 w-full bg-emerald-500 transition-all duration-[50ms] ease-linear" style="height: 0%"></div>
                         </div>
-                        <div class="mt-2 text-xs font-bold text-slate-500 border-t-2 border-emerald-500 pt-1 w-full text-center">K.E.</div>
+                        <div class="mt-2 text-xs font-bold text-slate-500 dark:text-slate-300 border-t-2 border-emerald-500 pt-1 w-full text-center">K.E.</div>
                     </div>
                     <!-- PE -->
                     <div class="flex flex-col items-center justify-end group">
                         <div class="text-xs font-mono font-bold text-blue-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity" id="text-pe">0J</div>
-                        <div class="w-full max-w-[40px] bg-slate-100 rounded-t-lg relative h-full overflow-hidden">
+                        <div class="w-full max-w-[40px] bg-slate-100 dark:bg-slate-800 rounded-t-lg relative h-full overflow-hidden">
                             <div id="bar-pe" class="absolute bottom-0 w-full bg-blue-500 transition-all duration-[50ms] ease-linear" style="height: 0%"></div>
                         </div>
-                        <div class="mt-2 text-xs font-bold text-slate-500 border-t-2 border-blue-500 pt-1 w-full text-center">P.E.</div>
+                        <div class="mt-2 text-xs font-bold text-slate-500 dark:text-slate-300 border-t-2 border-blue-500 pt-1 w-full text-center">P.E.</div>
                     </div>
                     <!-- TE -->
                     <div class="flex flex-col items-center justify-end group">
                         <div class="text-xs font-mono font-bold text-amber-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity" id="text-te">0J</div>
-                        <div class="w-full max-w-[40px] bg-slate-100 rounded-t-lg relative h-full overflow-hidden">
+                        <div class="w-full max-w-[40px] bg-slate-100 dark:bg-slate-800 rounded-t-lg relative h-full overflow-hidden">
                             <div id="bar-te" class="absolute bottom-0 w-full bg-amber-500 transition-all duration-[50ms] ease-linear" style="height: 0%"></div>
                         </div>
-                        <div class="mt-2 text-xs font-bold text-slate-500 border-t-2 border-amber-500 pt-1 w-full text-center">Total</div>
+                        <div class="mt-2 text-xs font-bold text-slate-500 dark:text-slate-300 border-t-2 border-amber-500 pt-1 w-full text-center">Total</div>
                     </div>
                 </div>
             </div>
 
             <!-- 2. Energy vs Height Graph (Moved Here) -->
-            <div class="p-6 border-b border-slate-100 shrink-0">
-                 <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden relative h-48">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 shrink-0">
+                 <div class="bg-white dark:bg-slate-100 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden relative h-48">
                     <!-- Title Rewritten: Energy vs Height -->
                     <div class="absolute top-3 w-full text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider z-10">Energy vs Height</div>
                     <canvas id="graphHeight" class="w-full h-full"></canvas>
@@ -203,8 +224,8 @@
                 <!-- Mass -->
                 <div class="control-group">
                     <div class="flex justify-between mb-2">
-                        <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide" data-i18n="mass">Mass</label>
-                        <span class="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700"><span id="disp-mass">1.0</span> <span class="math-unit">kg</span></span>
+                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wide" data-i18n="mass">Mass</label>
+                        <span class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-200"><span id="disp-mass">1.0</span> <span class="math-unit">kg</span></span>
                     </div>
                     <input type="range" id="slider-mass" min="0.1" max="5.0" step="0.1" value="1.0">
                 </div>
@@ -212,8 +233,8 @@
                 <!-- Length -->
                 <div class="control-group">
                     <div class="flex justify-between mb-2">
-                        <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide" data-i18n="length">Length</label>
-                        <span class="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700"><span id="disp-length">1.5</span> <span class="math-unit">m</span></span>
+                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wide" data-i18n="length">Length</label>
+                        <span class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-200"><span id="disp-length">1.5</span> <span class="math-unit">m</span></span>
                     </div>
                     <input type="range" id="slider-length" min="0.5" max="3.0" step="0.1" value="1.5">
                 </div>
@@ -221,15 +242,15 @@
                 <!-- Angle -->
                 <div class="control-group">
                     <div class="flex justify-between mb-2">
-                        <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide" data-i18n="angle">Initial Angle</label>
-                        <span class="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700"><span id="disp-angle">45</span>°</span>
+                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wide" data-i18n="angle">Initial Angle</label>
+                        <span class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-200"><span id="disp-angle">45</span>°</span>
                     </div>
                     <input type="range" id="slider-angle" min="5" max="80" step="1" value="45">
                 </div>
                 
                 <!-- Air Resistance Toggle -->
-                 <label class="flex items-center justify-between cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                    <span class="text-sm font-medium text-slate-700" data-i18n="air_resistance">Air Resistance (Damping)</span>
+                 <label class="flex items-center justify-between cursor-pointer p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200" data-i18n="air_resistance">Air Resistance (Damping)</span>
                     <div class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="check-air" class="sr-only peer">
                         <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
@@ -381,6 +402,7 @@ function init() {
     handleResize();
     setLang('zh-HK');
     resetSimulation();
+    if(window.lucide) lucide.createIcons();
     requestAnimationFrame(gameLoop);
 }
 
