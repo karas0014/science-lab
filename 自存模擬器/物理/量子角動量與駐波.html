@@ -7,7 +7,9 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
     <!-- MathJax for Physics Equations -->
     <script>
         MathJax = {
@@ -51,9 +53,26 @@
         
         body {
             overflow-x: hidden;
-            background-color: #0f172a; /* Tailwind slate-900 */
+            background-color: #0a1626;
+            font-family: 'Noto Sans HK', sans-serif;
         }
-        
+        :root{ --ac:#22d3ee; }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;
+            border:1px solid #2c3e57;background:rgba(10,22,38,.8);color:#cbd5e1;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        body.light{ background-color:#eaeef3; }
+        body.light .bp-btn{ background:rgba(255,255,255,.9);border-color:#c3ccd8;color:#334155; }
+        body.light .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.light .bg-slate-800, body.light .bg-slate-800\/80, body.light .bg-slate-700{ background:rgba(255,255,255,.92)!important; }
+        body.light .text-slate-100{ color:#0f172a!important; }
+        body.light .text-slate-300, body.light .text-slate-400{ color:#475569!important; }
+        body.light .text-white{ color:#0f172a!important; }
+        body.light .border-slate-700, body.light .border-slate-600{ border-color:#c3ccd8!important; }
+
         /* Custom Dropdown Styling */
         select {
             appearance: none;
@@ -64,22 +83,30 @@
         }
     </style>
 </head>
-<body class="text-slate-100 h-screen flex flex-col font-sans">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="text-slate-100 h-screen flex flex-col">
+<script>
+    function toggleTheme(){
+        const light = !document.body.classList.contains('light');
+        document.body.classList.toggle('light', light);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${light?'moon':'sun'}" width="15" height="15"></i>`;
+        if(window.lucide) lucide.createIcons();
+    }
+</script>
 
     <!-- Header -->
     <header class="bg-slate-800 shadow-md py-4 px-6 flex justify-between items-center z-10">
         <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.6)]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-900" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
-                </svg>
-            </div>
-            <h1 id="app-title" class="text-xl md:text-2xl font-bold tracking-wide">量子角動量與駐波</h1>
+            <a href="../../physics.html" class="bp-btn" aria-label="返回索引 / Back to index">
+                <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+            </a>
+            <h1 id="app-title" class="text-xl md:text-2xl font-bold tracking-wide" style="font-family:'Noto Serif HK',serif">量子角動量與駐波</h1>
         </div>
-        
-        <!-- Language Toggle -->
+
+        <!-- Language + Theme Toggle -->
         <div class="flex items-center gap-2">
+            <button onclick="toggleTheme()" class="bp-btn mr-1" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+                <span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span>
+            </button>
             <span class="text-sm font-medium text-slate-400">EN</span>
             <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
                 <input type="checkbox" name="toggle-lang" id="toggle-lang" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
@@ -468,7 +495,7 @@
                 ctx.fillStyle = `rgba(239, 68, 68, ${1 - p * 2})`;
                 ctx.font = '10px sans-serif';
                 ctx.textAlign = 'left';
-                ctx.fillText('干涉點 Mismatch', errorX + 25, errorY);
+                ctx.fillText(state.lang === 'zh' ? '干涉點 Mismatch' : 'Mismatch', errorX + 25, errorY);
             }
 
             // 4. Draw Electron (Dot moving along the classical orbit conceptually)
@@ -583,6 +610,7 @@
         // --- Initialization ---
         resize();
         updateLanguage();
+        if(window.lucide) lucide.createIcons();
         requestAnimationFrame(animate);
 
     </script>
