@@ -16,9 +16,21 @@
     <!-- MathJax for formula rendering -->
   
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
-        body { margin: 0; overflow: hidden; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        :root{ --ac:#3b82f6; }
+        body { margin: 0; overflow: hidden; user-select: none; font-family: 'Noto Sans HK', sans-serif; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:9999px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        .dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        .dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
         canvas { display: block; }
         /* Custom Scrollbar for panels */
         ::-webkit-scrollbar { width: 6px; }
@@ -45,8 +57,7 @@
         #vectorToggle:checked ~ .toggle-dot { transform: translateX(100%); }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-colors duration-300">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="bg-slate-50 dark:bg-[#0a1626] text-slate-900 dark:text-white transition-colors duration-300">
 
     <!-- Main Canvas -->
     <canvas id="simCanvas"></canvas>
@@ -57,7 +68,10 @@
         <!-- Header -->
         <header class="flex justify-between items-center p-4 pointer-events-auto w-full z-20">
             <div class="flex items-center gap-3">
-                <h1 class="text-xl md:text-2xl font-bold tracking-wide text-slate-900 dark:text-white transition-colors" data-i18n="title">磁場中帶電粒子運動模擬器</h1>
+                <a href="../../physics.html" class="bp-btn" aria-label="返回索引 / Back to index">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>INDEX</span>
+                </a>
+                <h1 class="serif-font text-lg md:text-2xl font-bold tracking-wide text-slate-900 dark:text-white transition-colors" data-i18n="title">磁場中帶電粒子運動模擬器</h1>
                 <!-- Gear Button After Title -->
                 <button id="btn-gear" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition" onclick="togglePanel('control-panel')" title="Toggle Control Panel">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-transform hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
