@@ -8,177 +8,189 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {}
-            }
-        }
+        tailwind.config = { darkMode: 'class', theme: { extend: {} } }
     </script>
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Custom Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Fonts: Serif (CJK titles) · Sans (body) · Mono (technical labels) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
         :root { color-scheme: light dark; }
         html { scroll-behavior: smooth; }
         body {
             font-family: 'Noto Sans HK', sans-serif;
-            background-color: #f8fafc;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
         }
-        body.dark {
-            background-color: #0b1120;
-        }
         .serif-font { font-family: 'Noto Serif HK', serif; }
+        .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
 
-        /* Layered page backdrop — soft science rings + grid */
-        .page-bg {
+        /* ---- Blueprint / graph-paper surface -------------------------- */
+        .blueprint {
+            background-color: #eaeef3;
             background-image:
-                radial-gradient(60rem 60rem at 10% -10%, rgba(16, 185, 129, 0.10), transparent 60%),
-                radial-gradient(50rem 50rem at 100% 0%, rgba(99, 102, 241, 0.10), transparent 55%);
+                linear-gradient(rgba(37, 99, 235, .05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(37, 99, 235, .05) 1px, transparent 1px),
+                linear-gradient(rgba(37, 99, 235, .10) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(37, 99, 235, .10) 1px, transparent 1px);
+            background-size: 26px 26px, 26px 26px, 130px 130px, 130px 130px;
+            background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
         }
-        .dark .page-bg {
+        body.dark .blueprint {
+            background-color: #0a1626;
             background-image:
-                radial-gradient(60rem 60rem at 10% -10%, rgba(16, 185, 129, 0.14), transparent 60%),
-                radial-gradient(50rem 50rem at 100% 0%, rgba(99, 102, 241, 0.16), transparent 55%);
+                linear-gradient(rgba(56, 189, 248, .06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, .06) 1px, transparent 1px),
+                linear-gradient(rgba(56, 189, 248, .11) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, .11) 1px, transparent 1px);
+            background-size: 26px 26px, 26px 26px, 130px 130px, 130px 130px;
         }
 
-        /* Decorative hero aura (behind content, non-interactive) */
-        .hero-aura::before,
-        .hero-aura::after {
-            content: "";
-            position: absolute;
-            border-radius: 9999px;
-            filter: blur(72px);
-            pointer-events: none;
-            opacity: .55;
+        /* Soft blueprint glow behind the hero title block */
+        .hero-wash {
+            background:
+                radial-gradient(38rem 22rem at 50% -20%, rgba(37, 99, 235, .10), transparent 70%);
         }
-        .hero-aura::before {
-            width: 24rem; height: 24rem;
-            top: -8rem; left: 50%; margin-left: -20rem;
-            background: radial-gradient(circle, rgba(16,185,129,.45), transparent 70%);
-        }
-        .hero-aura::after {
-            width: 26rem; height: 26rem;
-            top: -6rem; left: 50%; margin-left: 2rem;
-            background: radial-gradient(circle, rgba(79,70,229,.38), transparent 70%);
-        }
-        .dark .hero-aura::before { opacity: .4; }
-        .dark .hero-aura::after  { opacity: .4; }
-
-        /* Faint concentric rings motif behind the slogan */
-        .hero-rings {
-            background-image: repeating-radial-gradient(circle at 50% 40%, rgba(100,116,139,.08) 0 1px, transparent 1px 46px);
-        }
-        .dark .hero-rings {
-            background-image: repeating-radial-gradient(circle at 50% 40%, rgba(148,163,184,.09) 0 1px, transparent 1px 46px);
+        body.dark .hero-wash {
+            background:
+                radial-gradient(38rem 22rem at 50% -20%, rgba(56, 189, 248, .12), transparent 70%);
         }
 
-        /* Staggered card entrance — only when motion is welcome */
+        /* ---- Technical-drawing card ---------------------------------- */
+        .bp-card {
+            position: relative;
+            border: 1px solid #c3ccd8;
+            border-radius: 3px;
+            background:
+                linear-gradient(rgba(255, 255, 255, .72), rgba(255, 255, 255, .72));
+            transition: border-color .25s, box-shadow .25s, transform .25s, background .25s;
+        }
+        body.dark .bp-card {
+            border-color: #2c3e57;
+            background:
+                linear-gradient(rgba(13, 25, 43, .55), rgba(13, 25, 43, .55));
+        }
+        .bp-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--ac);
+            box-shadow: 0 0 0 1px var(--ac), 0 18px 34px -18px rgba(2, 6, 23, .55);
+        }
+        .bp-card:focus-visible {
+            outline: none;
+            border-color: var(--ac);
+            box-shadow: 0 0 0 2px var(--ac);
+        }
+
+        /* Corner registration ticks (technical-drawing crop marks) */
+        .tk { position: absolute; width: 11px; height: 11px; color: var(--ac); opacity: .55;
+              transition: opacity .25s; pointer-events: none; }
+        .bp-card:hover .tk { opacity: 1; }
+        .tk.tl { top: 7px; left: 7px; border-top: 1.5px solid; border-left: 1.5px solid; }
+        .tk.tr { top: 7px; right: 7px; border-top: 1.5px solid; border-right: 1.5px solid; }
+        .tk.bl { bottom: 7px; left: 7px; border-bottom: 1.5px solid; border-left: 1.5px solid; }
+        .tk.br { bottom: 7px; right: 7px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
+
+        /* Outlined instrument-style icon frame */
+        .bp-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 3.25rem; height: 3.25rem; border: 1.5px solid var(--ac); border-radius: 5px;
+            color: var(--ac); background: color-mix(in srgb, var(--ac) 9%, transparent);
+            transition: background .25s;
+        }
+        .bp-card:hover .bp-icon { background: color-mix(in srgb, var(--ac) 16%, transparent); }
+
+        /* Card entrance — only when motion is welcome */
         @media (prefers-reduced-motion: no-preference) {
-            #cards-container > * {
-                opacity: 0;
-                animation: tileIn .55s cubic-bezier(.22,.68,.28,1) both;
-            }
-            #cards-container > *:nth-child(1) { animation-delay: .05s; }
-            #cards-container > *:nth-child(2) { animation-delay: .12s; }
-            #cards-container > *:nth-child(3) { animation-delay: .19s; }
-            #cards-container > *:nth-child(4) { animation-delay: .26s; }
-            #cards-container > *:nth-child(5) { animation-delay: .33s; }
+            #cards-container > * { opacity: 0; animation: tileIn .5s cubic-bezier(.22,.68,.28,1) both; }
+            #cards-container > *:nth-child(1){animation-delay:.05s}
+            #cards-container > *:nth-child(2){animation-delay:.12s}
+            #cards-container > *:nth-child(3){animation-delay:.19s}
+            #cards-container > *:nth-child(4){animation-delay:.26s}
+            #cards-container > *:nth-child(5){animation-delay:.33s}
         }
-        @keyframes tileIn {
-            from { opacity: 0; transform: translateY(14px); }
-            to   { opacity: 1; transform: none; }
-        }
+        @keyframes tileIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
-        /* Custom Scrollbar */
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 10px; }
-        ::-webkit-scrollbar-track { background: #eef2f7; }
-        .dark ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; border: 2px solid #eef2f7; }
-        .dark ::-webkit-scrollbar-thumb { background: #475569; border-color: #0f172a; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        ::-webkit-scrollbar-track { background: #dfe5ec; }
+        body.dark ::-webkit-scrollbar-track { background: #0b1626; }
+        ::-webkit-scrollbar-thumb { background: #9fb0c4; border-radius: 8px; border: 2px solid #dfe5ec; }
+        body.dark ::-webkit-scrollbar-thumb { background: #35506f; border-color: #0b1626; }
     </style>
 </head>
 <body class="dark">
     <div id="root">
-        <div class="min-h-screen page-bg flex flex-col text-slate-800 dark:text-slate-200 bg-transparent transition-colors duration-300">
+        <div class="min-h-screen blueprint flex flex-col text-slate-800 dark:text-slate-200 transition-colors duration-300">
 
             <!-- Navigation Bar -->
-            <nav class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-300">
+            <nav class="bg-white/75 dark:bg-[#0a1626]/80 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-300/70 dark:border-slate-700/70 transition-colors duration-300">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between items-center h-16">
                         <!-- Logo / School Name -->
                         <div id="logo-container" class="flex items-center gap-3 group cursor-pointer">
                             <div id="logo-wrapper" class="flex items-center justify-center transition-transform duration-300">
-                                <span style="display:inline-flex;background:#fff;border-radius:10px;padding:4px 6px;box-shadow:0 1px 4px rgba(0,0,0,.15)"><img src="assets/logo.png" alt="曾璧山(崇蘭)中學校徽" style="height:38px;width:auto;display:block"></span>
+                                <span style="display:inline-flex;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 4px rgba(0,0,0,.15)"><img src="assets/logo.png" alt="曾璧山(崇蘭)中學校徽" style="height:38px;width:auto;display:block"></span>
                             </div>
                             <div class="flex flex-col">
                                 <h1 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">
                                     <span class="lang-zh">曾璧山(崇蘭)中學</span>
                                     <span class="lang-en hidden">Tsang Pik Shan (Sung Lan) Secondary School</span>
                                 </h1>
-                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">
-                                    <span class="lang-zh">科學組 · 互動學習平台</span>
-                                    <span class="lang-en hidden">Science Panel · Interactive Learning</span>
+                                <span class="mono text-[11px] text-sky-700 dark:text-sky-400 font-medium tracking-[0.12em] uppercase">
+                                    Science Panel · Virtual Lab
                                 </span>
                             </div>
                         </div>
 
                         <!-- Controls -->
                         <div class="flex items-center gap-2">
-                            <button id="theme-btn" onclick="toggleTheme()" aria-label="切換深淺色模式" class="p-2.5 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors" title="切換深淺色模式">
+                            <button id="theme-btn" onclick="toggleTheme()" aria-label="切換深淺色模式" class="p-2.5 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 transition-colors" title="切換深淺色模式">
                                 <div id="theme-icon-wrapper">
                                     <i data-lucide="sun" width="20" height="20"></i>
                                 </div>
                             </button>
-                            <button onclick="toggleLang()" aria-label="切換語言 / Switch language" class="flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200">
-                                <i data-lucide="languages" width="16" height="16"></i>
-                                <span class="lang-zh">ENG</span>
-                                <span class="lang-en hidden">中文</span>
+                            <button onclick="toggleLang()" aria-label="切換語言 / Switch language" class="mono flex items-center gap-1.5 px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 transition-colors text-xs font-semibold tracking-wider text-slate-700 dark:text-slate-200">
+                                <i data-lucide="languages" width="15" height="15"></i>
+                                <span class="lang-zh">EN</span>
+                                <span class="lang-en hidden">中</span>
                             </button>
                         </div>
                     </div>
                 </div>
             </nav>
 
-            <!-- Hero Section -->
-            <header class="relative overflow-hidden pt-16 pb-14 sm:pt-20 sm:pb-16 px-4 sm:px-6 lg:px-8 text-center">
-                <div class="hero-aura absolute inset-0 -z-10" aria-hidden="true"></div>
-                <div class="hero-rings absolute inset-0 -z-10 opacity-70" aria-hidden="true"></div>
+            <!-- Hero: drawing title block -->
+            <header class="relative overflow-hidden pt-14 pb-12 sm:pt-20 sm:pb-16 px-4 sm:px-6 lg:px-8">
+                <div class="hero-wash absolute inset-0 -z-10" aria-hidden="true"></div>
 
-                <div class="max-w-4xl mx-auto relative">
-                    <div class="inline-flex items-center gap-2 mb-7 pl-2 pr-3 py-1.5 rounded-full border border-emerald-200/70 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/20 backdrop-blur-sm shadow-sm">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase rounded-full bg-emerald-600 text-white">
-                            <i data-lucide="sparkles" width="13" height="13"></i>
-                            <span class="lang-zh">探索求真</span>
-                            <span class="lang-en hidden">Explore</span>
-                        </span>
-                        <span class="text-xs font-medium text-emerald-800 dark:text-emerald-300">
-                            <span class="lang-zh">科學組虛擬實驗室</span>
-                            <span class="lang-en hidden">Science Virtual Laboratory</span>
-                        </span>
+                <div class="max-w-4xl mx-auto text-center">
+                    <div class="mono inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-sm border border-sky-400/50 dark:border-sky-500/40 bg-white/70 dark:bg-sky-950/30 text-[11px] font-bold tracking-[0.18em] uppercase text-sky-700 dark:text-sky-300">
+                        <i data-lucide="drafting-compass" width="14" height="14"></i>
+                        <span class="lang-zh">科學組虛擬實驗室</span>
+                        <span class="lang-en hidden">Science Virtual Laboratory</span>
                     </div>
 
-                    <h2 class="text-4xl sm:text-6xl font-bold text-slate-900 dark:text-white mb-6 serif-font tracking-tight leading-[1.15]">
+                    <h2 class="text-4xl sm:text-6xl font-bold text-slate-900 dark:text-white mb-5 serif-font tracking-tight leading-[1.15]">
                         <span class="lang-zh">探索 · 實驗 · 發現</span>
                         <span class="lang-en hidden">Explore · Experiment · Discover</span>
                     </h2>
-                    <p class="text-base sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+                    <p class="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
                         <span class="lang-zh">歡迎來到曾璧山(崇蘭)中學科學組虛擬實驗室。透過現代科技將抽象概念具象化，讓物理、化學與生物的奧秘觸手可及。</span>
-                        <span class="lang-en hidden">Welcome to the Virtual Laboratory of Tsang Pik Shan (Sung Lan) Secondary School. Visualizing abstract concepts through modern technology, making the mysteries of Physics, Chemistry, and Biology tangible.</span>
+                        <span class="lang-en hidden">Welcome to the Virtual Laboratory of Tsang Pik Shan (Sung Lan) Secondary School — visualizing abstract concepts through modern technology, making the mysteries of Physics, Chemistry, and Biology tangible.</span>
                     </p>
 
-                    <div class="mt-8 flex items-center justify-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                        <i data-lucide="mouse-pointer-click" width="16" height="16" class="text-emerald-500"></i>
-                        <span class="lang-zh">選擇下方學科，進入互動模擬器</span>
-                        <span class="lang-en hidden">Pick a subject below to open the simulators</span>
+                    <!-- Blueprint title-block strip -->
+                    <div class="mono mt-9 inline-flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 px-4 py-2 rounded-sm border border-slate-300 dark:border-slate-700 bg-white/55 dark:bg-slate-900/40 text-[10.5px] sm:text-[11px] tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+                        <span><span class="text-slate-400 dark:text-slate-600">SHEET</span> 00 · INDEX</span>
+                        <span class="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>
+                        <span><span class="text-slate-400 dark:text-slate-600">LABS</span> 05</span>
+                        <span class="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>
+                        <span><span class="text-slate-400 dark:text-slate-600">SCALE</span> 1:1</span>
+                        <span class="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>
+                        <span><span class="text-slate-400 dark:text-slate-600">REV</span> 2026.1</span>
                     </div>
                 </div>
             </header>
@@ -186,13 +198,11 @@
             <!-- Main Grid Content -->
             <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 w-full relative">
 
-                <div class="mb-6 flex items-center gap-3">
-                    <span class="h-px flex-grow bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-700 to-transparent"></span>
-                    <span class="text-xs font-semibold tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500">
-                        <span class="lang-zh">學科實驗室</span>
-                        <span class="lang-en hidden">Subject Labs</span>
-                    </span>
-                    <span class="h-px flex-grow bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-700 to-transparent"></span>
+                <div class="mono mb-6 flex items-center gap-3 text-[11px] font-semibold tracking-[0.22em] uppercase text-slate-400 dark:text-slate-500">
+                    <span class="text-sky-600 dark:text-sky-400">///</span>
+                    <span class="lang-zh">學科實驗室索引</span>
+                    <span class="lang-en hidden">Subject Lab Index</span>
+                    <span class="h-px flex-grow bg-slate-300 dark:bg-slate-700"></span>
                 </div>
 
                 <!-- 實驗室卡片容器 -->
@@ -200,16 +210,16 @@
                     <!-- 卡片將由 JavaScript 動態生成注入 -->
                 </div>
 
-                <!-- Additional Info Section -->
-                <div class="mt-16 bg-white dark:bg-slate-800/80 rounded-3xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <!-- Spec / instructions block -->
+                <div class="mt-16 rounded-sm border border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-900/40 p-7 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                     <div class="flex items-start gap-4">
-                        <span class="flex-shrink-0 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
+                        <span class="flex-shrink-0 flex h-11 w-11 items-center justify-center rounded-sm border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-300">
                             <i data-lucide="info" width="20" height="20"></i>
                         </span>
                         <div>
-                            <h4 class="text-base font-bold text-slate-800 dark:text-slate-100 mb-1.5">
-                                <span class="lang-zh">使用說明</span>
-                                <span class="lang-en hidden">Instructions</span>
+                            <h4 class="mono text-xs font-bold tracking-[0.16em] uppercase text-slate-500 dark:text-slate-400 mb-1.5">
+                                <span class="lang-zh">使用說明 · NOTES</span>
+                                <span class="lang-en hidden">Notes</span>
                             </h4>
                             <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed max-w-2xl">
                                 <span class="lang-zh">本平台所有模擬器均為互動式設計，支援平板電腦及手機操作。如遇到顯示問題，請嘗試使用最新版本的 Chrome 或 Safari 瀏覽器。</span>
@@ -218,7 +228,7 @@
                         </div>
                     </div>
                     <div class="flex-shrink-0">
-                        <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <span class="mono text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-sm border border-slate-300 dark:border-slate-700">
                             v2026.1.0
                         </span>
                     </div>
@@ -226,13 +236,12 @@
             </main>
 
             <!-- Footer -->
-            <footer class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 mt-auto py-8">
+            <footer class="bg-white/70 dark:bg-[#0a1626]/70 backdrop-blur-sm border-t border-slate-300 dark:border-slate-700 mt-auto py-8">
                 <div class="max-w-7xl mx-auto px-4 text-center">
-                    <p class="text-slate-500 dark:text-slate-400 text-sm">
+                    <p class="mono text-slate-500 dark:text-slate-400 text-xs tracking-wide">
                         &copy; <span id="current-year"></span>
                         曾璧山(崇蘭)中學 &nbsp;·&nbsp; Designed with cntang
                     </p>
-
                 </div>
             </footer>
         </div>
@@ -261,11 +270,8 @@
                 title_en: 'Physics Inquiry Lab',
                 desc_zh: 'DSE 力學、波動學、電磁學及現代物理互動模擬。',
                 desc_en: 'Interactive sims for Mechanics, Waves, E&M, and Modern Physics.',
-                color: 'text-emerald-600 dark:text-emerald-400',
-                bg: 'bg-emerald-50 dark:bg-emerald-900/30',
-                border: 'border-emerald-200 dark:border-emerald-800/50',
-                hover: 'hover:border-emerald-500 dark:hover:border-emerald-400',
-                btn: 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600',
+                code: 'mechanics · waves · e&m',
+                accent: '#10b981',
                 link: LAB_URLS.phy
             },
             {
@@ -275,11 +281,8 @@
                 title_en: 'Chemistry Inquiry Lab',
                 desc_zh: '微觀粒子、摩爾計算、酸鹼滴定及有機化學3D模型。',
                 desc_en: 'Microscopic particles, Mole calcs, Titration & Organic 3D models.',
-                color: 'text-blue-600 dark:text-blue-400',
-                bg: 'bg-blue-50 dark:bg-blue-900/30',
-                border: 'border-blue-200 dark:border-blue-800/50',
-                hover: 'hover:border-blue-500 dark:hover:border-blue-400',
-                btn: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600',
+                code: 'particles · mole · titration',
+                accent: '#3b82f6',
                 link: LAB_URLS.chem
             },
             {
@@ -289,11 +292,8 @@
                 title_en: 'Biology Inquiry Lab',
                 desc_zh: '細胞與生命分子、遺傳與進化、生物與環境模擬。',
                 desc_en: 'Cells & molecules of life, Genetics & evolution, Organisms & environment.',
-                color: 'text-teal-600 dark:text-teal-400',
-                bg: 'bg-teal-50 dark:bg-teal-900/30',
-                border: 'border-teal-200 dark:border-teal-800/50',
-                hover: 'hover:border-teal-500 dark:hover:border-teal-400',
-                btn: 'bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600',
+                code: 'cells · genetics · ecology',
+                accent: '#14b8a6',
                 link: LAB_URLS.bio
             },
             {
@@ -303,11 +303,8 @@
                 title_en: 'Integrated Science Inquiry Lab',
                 desc_zh: '基礎科學探究、能量轉換、物質粒子觀及生命科學入門。',
                 desc_en: 'Basic inquiry, Energy transfer, Particle theory & Life science intro.',
-                color: 'text-indigo-600 dark:text-indigo-400',
-                bg: 'bg-indigo-50 dark:bg-indigo-900/30',
-                border: 'border-indigo-200 dark:border-indigo-800/50',
-                hover: 'hover:border-indigo-500 dark:hover:border-indigo-400',
-                btn: 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600',
+                code: 'inquiry · energy · matter',
+                accent: '#6366f1',
                 link: LAB_URLS.sci
             },
             {
@@ -317,11 +314,8 @@
                 title_en: 'ICT',
                 desc_zh: '程式設計、數據處理、多媒體及計算思維互動學習。',
                 desc_en: 'Programming, data handling, multimedia & computational thinking.',
-                color: 'text-violet-600 dark:text-violet-400',
-                bg: 'bg-violet-50 dark:bg-violet-900/30',
-                border: 'border-violet-200 dark:border-violet-800/50',
-                hover: 'hover:border-violet-500 dark:hover:border-violet-400',
-                btn: 'bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600',
+                code: 'code · data · compute',
+                accent: '#8b5cf6',
                 link: LAB_URLS.ict
             }
         ];
@@ -334,40 +328,47 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('current-year').textContent = new Date().getFullYear();
 
-            // Render Cards (visible immediately — no intro animation)
+            // Render Cards
             const container = document.getElementById('cards-container');
-            container.innerHTML = subjects.map((sub) => `
-                <a href="${sub.link || '#'}" class="card-tile group relative flex flex-col rounded-3xl p-6 bg-white dark:bg-slate-800/90 border ${sub.border} ${sub.hover} shadow-sm hover:shadow-xl hover:-translate-y-1 active:translate-y-0 active:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 transition duration-300 cursor-pointer overflow-hidden">
-                    <span aria-hidden="true" class="absolute -top-10 -right-10 w-28 h-28 ${sub.bg} rounded-full opacity-60 blur-2xl group-hover:opacity-90 group-hover:scale-110 transition-all duration-500 pointer-events-none"></span>
+            container.innerHTML = subjects.map((sub, i) => {
+                const fig = 'FIG.' + String(i + 1).padStart(2, '0');
+                return `
+                <a href="${sub.link || '#'}" style="--ac:${sub.accent}" class="bp-card group flex flex-col p-6 pt-9 cursor-pointer">
+                    <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
 
-                    <div class="relative z-10 flex items-center justify-between mb-5">
-                        <span class="w-14 h-14 rounded-2xl ${sub.bg} ${sub.color} flex items-center justify-center shadow-sm ring-1 ring-inset ring-black/5 dark:ring-white/10 group-hover:scale-105 transition-transform duration-300">
-                            <i data-lucide="${sub.icon}" width="28" height="28"></i>
-                        </span>
-                        <i data-lucide="arrow-up-right" width="20" height="20" class="${sub.color} opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300"></i>
+                    <div class="flex items-center justify-between mb-5">
+                        <span class="mono text-[11px] font-bold tracking-[0.18em]" style="color:${sub.accent}">${fig}</span>
+                        <i data-lucide="arrow-up-right" width="18" height="18" class="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" style="color:${sub.accent}"></i>
                     </div>
 
-                    <h3 class="relative z-10 text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2 serif-font">
+                    <span class="bp-icon mb-5">
+                        <i data-lucide="${sub.icon}" width="28" height="28"></i>
+                    </span>
+
+                    <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-1.5 serif-font leading-snug">
                         <span class="lang-zh">${sub.title_zh}</span>
                         <span class="lang-en hidden">${sub.title_en}</span>
                     </h3>
 
-                    <p class="relative z-10 text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6 flex-grow">
+                    <p class="mono text-[11px] tracking-wide text-sky-600/90 dark:text-sky-400/90 mb-3">&gt; ${sub.code}</p>
+
+                    <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6 flex-grow">
                         <span class="lang-zh">${sub.desc_zh}</span>
                         <span class="lang-en hidden">${sub.desc_en}</span>
                     </p>
 
-                    <span class="relative z-10 mt-auto inline-flex items-center gap-2 text-sm font-semibold ${sub.color}">
-                        <span class="lang-zh">進入實驗室</span>
-                        <span class="lang-en hidden">Enter Lab</span>
-                        <i data-lucide="arrow-right" width="16" height="16" class="group-hover:translate-x-1 transition-transform duration-300"></i>
+                    <span class="mono mt-auto inline-flex items-center gap-1.5 text-xs font-bold tracking-[0.14em] uppercase" style="color:${sub.accent}">
+                        <span class="lang-zh">進入</span>
+                        <span class="lang-en hidden">Enter</span>
+                        <span>ENTER</span>
+                        <i data-lucide="chevron-right" width="15" height="15" class="group-hover:translate-x-1 transition-transform duration-300"></i>
                     </span>
-                </a>
-            `).join('');
+                </a>`;
+            }).join('');
 
             lucide.createIcons();
 
-            // Optional: gentle logo spin on hover (not an intro animation)
+            // Gentle logo scale on hover (no intro animation, no flip — crest kept upright)
             const logoContainer = document.getElementById('logo-container');
             const logoWrapper = document.getElementById('logo-wrapper');
             logoContainer.addEventListener('mouseenter', () => logoWrapper.style.transform = 'scale(1.06)');

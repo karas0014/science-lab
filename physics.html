@@ -7,15 +7,40 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
  :root{color-scheme:light dark}
  html{scroll-behavior:smooth}
- body{font-family:'Noto Sans HK',sans-serif;background:#f8fafc;line-height:1.6;-webkit-font-smoothing:antialiased}
- body.dark{background:#0b1120}
+ body{font-family:'Noto Sans HK',sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
  .serif-font{font-family:'Noto Serif HK',serif}
- .page-bg{background-image:radial-gradient(55rem 55rem at 12% -10%, rgba(16,185,129,.10), transparent 60%),radial-gradient(45rem 45rem at 100% 0%, rgba(15,23,42,.05), transparent 55%)}
- .dark .page-bg{background-image:radial-gradient(55rem 55rem at 12% -10%, rgba(16,185,129,.16), transparent 60%),radial-gradient(45rem 45rem at 100% 0%, rgba(255,255,255,.04), transparent 55%)}
+ .mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+
+ .blueprint{background-color:#eaeef3;
+   background-image:
+     linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),
+     linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),
+     linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),
+     linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+   background-size:26px 26px,26px 26px,130px 130px,130px 130px}
+ body.dark .blueprint{background-color:#0a1626;
+   background-image:
+     linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+     linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+     linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+     linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+   background-size:26px 26px,26px 26px,130px 130px,130px 130px}
+
+ .bp-row{position:relative;border:1px solid #c3ccd8;border-radius:3px;
+   background:linear-gradient(rgba(255,255,255,.72),rgba(255,255,255,.72));
+   transition:border-color .25s,box-shadow .25s,transform .25s,background .25s}
+ body.dark .bp-row{border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.55),rgba(13,25,43,.55))}
+ .bp-row:hover{transform:translateY(-2px);border-color:var(--ac);box-shadow:0 0 0 1px var(--ac),0 14px 26px -16px rgba(2,6,23,.55)}
+ .bp-row:focus-visible{outline:none;border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
+ .bp-rail{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac);opacity:0;border-radius:3px 0 0 3px;transition:opacity .25s}
+ .bp-row:hover .bp-rail{opacity:1}
+ .bp-icon-sm{display:inline-flex;align-items:center;justify-content:center;width:2.6rem;height:2.6rem;
+   border:1.5px solid var(--ac);border-radius:4px;color:var(--ac);background:color-mix(in srgb,var(--ac) 9%,transparent)}
+
  @media (prefers-reduced-motion: no-preference){
    #grid>*{opacity:0;animation:tileIn .5s cubic-bezier(.22,.68,.28,1) both}
    #grid>*:nth-child(1){animation-delay:.04s}#grid>*:nth-child(2){animation-delay:.08s}
@@ -25,8 +50,8 @@
  }
  @keyframes tileIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
  ::-webkit-scrollbar{width:10px}
- ::-webkit-scrollbar-track{background:#eef2f7}.dark ::-webkit-scrollbar-track{background:#0f172a}
- ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px;border:2px solid #eef2f7}.dark ::-webkit-scrollbar-thumb{background:#475569;border-color:#0f172a}
+ ::-webkit-scrollbar-track{background:#dfe5ec}body.dark ::-webkit-scrollbar-track{background:#0b1626}
+ ::-webkit-scrollbar-thumb{background:#9fb0c4;border-radius:8px;border:2px solid #dfe5ec}body.dark ::-webkit-scrollbar-thumb{background:#35506f;border-color:#0b1626}
 </style>
 </head>
 <body class="dark">
@@ -83,21 +108,21 @@
  ];
 </script>
 
-<div class="min-h-screen page-bg flex flex-col text-slate-800 dark:text-slate-200 transition-colors duration-300">
-  <nav class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-200/80 dark:border-slate-800/80">
+<div id="root-wrap" class="min-h-screen blueprint flex flex-col text-slate-800 dark:text-slate-200 transition-colors duration-300">
+  <nav class="bg-white/75 dark:bg-[#0a1626]/80 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-300/70 dark:border-slate-700/70">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="flex justify-between items-center h-16">
       <div class="flex items-center gap-3">
-        <span style="display:inline-flex;background:#fff;border-radius:10px;padding:4px 6px;box-shadow:0 1px 4px rgba(0,0,0,.15)"><img src="assets/logo.png" alt="曾璧山(崇蘭)中學校徽" style="height:38px;width:auto;display:block"></span>
+        <span style="display:inline-flex;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 4px rgba(0,0,0,.15)"><img src="assets/logo.png" alt="曾璧山(崇蘭)中學校徽" style="height:38px;width:auto;display:block"></span>
         <div class="flex flex-col">
           <h1 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">曾璧山(崇蘭)中學</h1>
-          <span class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold tracking-wide">物理探究實驗室</span>
+          <span id="nav-sub" class="mono text-[11px] font-medium tracking-[0.12em] uppercase" style="color:var(--ac)"></span>
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <a href="index.html" aria-label="返回主頁" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-          <i data-lucide="home" width="16" height="16"></i><span>主頁</span>
+        <a href="index.html" aria-label="返回主頁" class="mono inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 text-xs font-semibold tracking-wider text-slate-700 dark:text-slate-200 transition-colors">
+          <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
         </a>
-        <button onclick="toggleTheme()" aria-label="切換深淺色模式" class="p-2.5 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors" title="切換深淺色模式">
+        <button onclick="toggleTheme()" aria-label="切換深淺色模式" class="p-2.5 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 transition-colors" title="切換深淺色模式">
           <span id="tw"><i data-lucide="sun" width="20" height="20"></i></span>
         </button>
       </div>
@@ -105,33 +130,40 @@
   </nav>
 
   <header class="relative overflow-hidden pt-12 pb-10 px-4 text-center">
-    <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 -top-24 -z-10 flex justify-center">
-      <div class="h-72 w-[42rem] max-w-full rounded-full bg-emerald-400/20 dark:bg-emerald-500/12 blur-3xl"></div>
-    </div>
+    <div id="hero-aura" aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10"></div>
     <div class="max-w-3xl mx-auto">
-      <div class="inline-flex items-center gap-2 mb-5 px-3 py-1.5 rounded-full border border-emerald-200/70 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/20 backdrop-blur-sm text-emerald-700 dark:text-emerald-300 text-xs font-bold tracking-wider uppercase shadow-sm">
-        <i data-lucide="atom" width="15" height="15"></i>Physics Inquiry Lab
+      <div class="mono inline-flex items-center gap-2 mb-5 px-3 py-1.5 rounded-sm border border-sky-400/50 dark:border-sky-500/40 bg-white/70 dark:bg-sky-950/30 text-[11px] font-bold tracking-[0.16em] uppercase text-sky-700 dark:text-sky-300">
+        <span id="hd-badge-icon" class="inline-flex"></span><span id="hd-en"></span>
       </div>
-      <h2 class="text-3xl sm:text-5xl font-bold text-slate-900 dark:text-white serif-font mb-4 tracking-tight leading-[1.15]">物理探究實驗室</h2>
-      <p class="text-slate-600 dark:text-slate-300 text-sm sm:text-base" id="subtitle"></p>
+      <h2 id="hd-title" class="text-3xl sm:text-5xl font-bold text-slate-900 dark:text-white serif-font mb-4 tracking-tight leading-[1.15]"></h2>
+      <p id="subtitle" class="text-slate-600 dark:text-slate-300 text-sm sm:text-base"></p>
+      <div id="meta" class="mono mt-6 inline-flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 px-4 py-2 rounded-sm border border-slate-300 dark:border-slate-700 bg-white/55 dark:bg-slate-900/40 text-[10.5px] sm:text-[11px] tracking-wider text-slate-500 dark:text-slate-400 uppercase"></div>
     </div>
   </header>
 
   <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 w-full">
+    <div class="mono mb-6 flex items-center gap-3 text-[11px] font-semibold tracking-[0.22em] uppercase text-slate-400 dark:text-slate-500">
+      <span class="text-sky-600 dark:text-sky-400">///</span>
+      <span>模擬器索引 · Sim Index</span>
+      <span class="h-px flex-grow bg-slate-300 dark:bg-slate-700"></span>
+    </div>
     <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </main>
 
-  <footer class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 mt-auto py-6">
+  <footer class="bg-white/70 dark:bg-[#0a1626]/70 backdrop-blur-sm border-t border-slate-300 dark:border-slate-700 mt-auto py-6">
     <div class="max-w-7xl mx-auto px-4 text-center">
-      <p class="text-slate-500 dark:text-slate-400 text-sm">&copy; <span id="yr"></span> 曾璧山(崇蘭)中學 &nbsp;·&nbsp; Designed with cntang</p>
+      <p class="mono text-slate-500 dark:text-slate-400 text-xs tracking-wide">&copy; <span id="yr"></span> 曾璧山(崇蘭)中學 &nbsp;·&nbsp; Designed with cntang</p>
     </div>
   </footer>
 </div>
 
 <script>
  let isDark=true;
- const A=SUBJECT.accent;
+ const ACCENT_HEX={emerald:'#10b981',blue:'#3b82f6',teal:'#14b8a6',indigo:'#6366f1',violet:'#8b5cf6',sky:'#0ea5e9',amber:'#f59e0b',rose:'#f43f5e'};
+ const AC = ACCENT_HEX[SUBJECT.accent] || '#0ea5e9';
  const DEFAULT_ICON = SUBJECT.icon;
+ document.getElementById('root-wrap').style.setProperty('--ac', AC);
+
  function pickIcon(t){
    const map=[
      // ---- 物理：電磁 ----
@@ -170,23 +202,51 @@
    for(const [k,ic] of map){ if(s.includes(k.toLowerCase())) return ic; }
    return DEFAULT_ICON;
  }
+
+ // Fill SUBJECT-driven chrome
+ document.getElementById('nav-sub').textContent = SUBJECT.zh;
+ document.getElementById('hd-en').textContent = SUBJECT.en + ' Inquiry Lab';
+ document.getElementById('hd-title').textContent = SUBJECT.zh;
+ document.getElementById('hd-badge-icon').innerHTML = `<i data-lucide="${SUBJECT.icon}" width="15" height="15"></i>`;
+ document.getElementById('hero-aura').style.background =
+   `radial-gradient(34rem 18rem at 50% -25%, ${AC}22, transparent 70%)`;
+
  const grid=document.getElementById('grid');
  const done=pages.filter(p=>p.url && p.url.trim()).length;
  document.getElementById('subtitle').textContent=`共 ${pages.length} 個互動模擬器 · 已設定 ${done} 個`;
- grid.innerHTML=pages.map(p=>{
-   const has=p.url && p.url.trim();
-   const t=p.t.replace(/</g,'&lt;');
-   if(has){
-     return `<a href="${p.url}" class="group relative flex items-center gap-4 rounded-2xl p-4 min-h-[4.25rem] bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/70 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-${A}-400 dark:hover:border-${A}-500 active:translate-y-0 active:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-${A}-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 transition duration-300 cursor-pointer">
-       <span class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-${A}-50 dark:bg-${A}-900/40 text-${A}-600 dark:text-${A}-300 ring-1 ring-inset ring-${A}-500/10 group-hover:scale-105 transition-transform duration-300"><i data-lucide="${pickIcon(p.t)}" width="22" height="22"></i></span>
-       <span class="flex-grow text-sm sm:text-[15px] font-semibold text-slate-800 dark:text-slate-100 leading-snug">${t}</span>
-       <i data-lucide="arrow-right" width="18" height="18" class="flex-shrink-0 text-slate-300 dark:text-slate-500 group-hover:text-${A}-500 dark:group-hover:text-${A}-400 group-hover:translate-x-0.5 transition duration-300"></i></a>`;
-   }
-   return `<div class="relative flex items-center gap-4 rounded-2xl p-4 min-h-[4.25rem] bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-300 dark:border-slate-700 opacity-70">
-       <span class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-400"><i data-lucide="link-2-off" width="20" height="20"></i></span>
-       <span class="flex-grow text-sm font-medium text-slate-500 dark:text-slate-400 leading-snug">${t}</span>
-       <span class="flex-shrink-0 text-[11px] font-medium text-slate-500 dark:text-slate-400 px-2 py-1 rounded-full bg-slate-200/80 dark:bg-slate-700/80">尚未設定連結</span></div>`;
- }).join('');
+ document.getElementById('meta').innerHTML =
+   `<span><span class="text-slate-400 dark:text-slate-600">SIMS</span> ${String(pages.length).padStart(2,'0')}</span>`+
+   `<span class="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>`+
+   `<span><span class="text-slate-400 dark:text-slate-600">SET</span> ${String(done).padStart(2,'0')}</span>`+
+   `<span class="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>`+
+   `<span><span class="text-slate-400 dark:text-slate-600">REV</span> 2026.1</span>`;
+
+ if(pages.length===0){
+   grid.innerHTML = `<div class="sm:col-span-2 lg:col-span-3 flex flex-col items-center justify-center text-center rounded-sm border border-dashed border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-900/30 py-16 px-6">
+       <span class="bp-icon-sm mb-4" style="--ac:${AC};width:3.25rem;height:3.25rem"><i data-lucide="hammer" width="24" height="24"></i></span>
+       <p class="serif-font text-lg font-bold text-slate-700 dark:text-slate-200 mb-1">內容建置中</p>
+       <p class="mono text-xs tracking-wider uppercase text-slate-400 dark:text-slate-500">Under construction · coming soon</p>
+     </div>`;
+ } else {
+   grid.innerHTML=pages.map((p,i)=>{
+     const has=p.url && p.url.trim();
+     const t=p.t.replace(/</g,'&lt;');
+     const idx=String(i+1).padStart(2,'0');
+     if(has){
+       return `<a href="${p.url}" style="--ac:${AC}" class="bp-row group flex items-center gap-3 sm:gap-4 p-4 pl-4 min-h-[4.5rem] cursor-pointer">
+         <span class="bp-rail"></span>
+         <span class="mono text-[11px] font-bold w-6 flex-shrink-0 text-center" style="color:${AC}">${idx}</span>
+         <span class="bp-icon-sm flex-shrink-0"><i data-lucide="${pickIcon(p.t)}" width="20" height="20"></i></span>
+         <span class="flex-grow text-sm sm:text-[15px] font-semibold text-slate-800 dark:text-slate-100 leading-snug">${t}</span>
+         <i data-lucide="chevron-right" width="18" height="18" class="flex-shrink-0 text-slate-300 dark:text-slate-500 group-hover:translate-x-0.5 transition duration-300" style="color:${AC}"></i></a>`;
+     }
+     return `<div class="relative flex items-center gap-3 sm:gap-4 p-4 min-h-[4.5rem] rounded-sm border border-dashed border-slate-300 dark:border-slate-700 bg-slate-100/50 dark:bg-slate-800/30 opacity-70">
+         <span class="mono text-[11px] w-6 flex-shrink-0 text-center text-slate-400">${idx}</span>
+         <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-slate-300 dark:border-slate-600 text-slate-400"><i data-lucide="link-2-off" width="18" height="18"></i></span>
+         <span class="flex-grow text-sm font-medium text-slate-500 dark:text-slate-400 leading-snug">${t}</span>
+         <span class="mono flex-shrink-0 text-[10px] tracking-wider uppercase text-slate-400 border border-slate-300 dark:border-slate-600 px-2 py-1 rounded-sm">No Link</span></div>`;
+   }).join('');
+ }
  document.getElementById('yr').textContent=new Date().getFullYear();
  lucide.createIcons();
  function toggleTheme(){isDark=!isDark;document.body.classList.toggle('dark',isDark);

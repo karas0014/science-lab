@@ -6,88 +6,133 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>庫倫定律模擬器</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <!-- Fonts: Serif (CJK titles) · Sans (body) · Mono (technical labels) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* 自定義滑桿樣式 */
-        input[type=range] {
-            -webkit-appearance: none; 
-            width: 100%; 
-            background: transparent; 
+        /* ============================================================
+           BLUEPRINT SKIN — shared across all Science-Panel simulators
+           (surface · panels · fonts · technical labels · accent)
+           ============================================================ */
+        :root{ color-scheme: light dark; --ac:#10b981; }
+        body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+
+        /* Graph-paper surface */
+        .bp-surface{
+            background-color:#eaeef3;
+            background-image:
+                linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),
+                linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
         }
-        
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 20px;
-            width: 20px;
-            border-radius: 50%;
-            background: #ffffff;
-            border: 2px solid #555;
-            cursor: pointer;
-            margin-top: -8px; 
-            box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+        body.dark .bp-surface{
+            background-color:#0a1626;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
         }
 
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 4px;
-            cursor: pointer;
-            background: #ddd;
-            border-radius: 1.3px;
+        /* Technical-drawing panel */
+        .bp-panel{
+            position:relative;border:1px solid #c3ccd8;border-radius:3px;
+            background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78));
         }
+        body.dark .bp-panel{ border-color:#2c3e57; background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
 
-        /* Q1 滑桿特定顏色 (紅色) */
-        #q1-slider::-webkit-slider-thumb { border-color: #ef4444; }
-        #q1-slider::-webkit-slider-runnable-track { background: #fee2e2; }
+        /* Corner registration ticks (technical crop-marks) */
+        .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+        .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; }
+        .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+        .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; }
+        .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
 
-        /* Q2 滑桿特定顏色 (藍色) */
-        #q2-slider::-webkit-slider-thumb { border-color: #3b82f6; }
-        #q2-slider::-webkit-slider-runnable-track { background: #dbeafe; }
-
-        /* 距離滑桿 (綠色) */
-        #r-slider::-webkit-slider-thumb { border-color: #10b981; }
-        #r-slider::-webkit-slider-runnable-track { background: #d1fae5; }
-
-        .math-font {
-            font-family: 'Times New Roman', Times, serif;
-            font-style: italic;
+        /* Blueprint back-link (matches hub nav buttons) */
+        .bp-back{
+            position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:7px;
+            padding:8px 14px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);
+            color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;
+            letter-spacing:.08em;text-decoration:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+            box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s;
         }
+        .bp-back:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-back{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-back:hover{ border-color:var(--ac);color:#fff; }
+
+        /* Reading chip (result readout) */
+        .bp-chip{
+            font-family:'JetBrains Mono',ui-monospace,monospace;
+            border:1px solid #c3ccd8;border-radius:4px;background:rgba(255,255,255,.7);
+        }
+        body.dark .bp-chip{ border-color:#2c3e57;background:rgba(13,25,43,.5); }
+
+        /* ---- Sliders (blueprint-reskinned, per-charge accents kept) ---- */
+        input[type=range]{ -webkit-appearance:none;width:100%;background:transparent; }
+        input[type=range]::-webkit-slider-thumb{
+            -webkit-appearance:none;height:18px;width:18px;border-radius:3px;background:#fff;
+            border:2px solid #64748b;cursor:pointer;margin-top:-7px;box-shadow:0 1px 3px rgba(2,6,23,.35);
+        }
+        input[type=range]::-webkit-slider-runnable-track{
+            width:100%;height:4px;cursor:pointer;background:#c3ccd8;border-radius:2px;
+        }
+        body.dark input[type=range]::-webkit-slider-runnable-track{ background:#2c3e57; }
+        #q1-slider::-webkit-slider-thumb{ border-color:#ef4444; }
+        #q1-slider::-webkit-slider-runnable-track{ background:#fecaca; }
+        #q2-slider::-webkit-slider-thumb{ border-color:#3b82f6; }
+        #q2-slider::-webkit-slider-runnable-track{ background:#bfdbfe; }
+        #r-slider::-webkit-slider-thumb{ border-color:#10b981; }
+        #r-slider::-webkit-slider-runnable-track{ background:#a7f3d0; }
+
+        .math-font{ font-family:'Times New Roman',Times,serif;font-style:italic; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans p-4 select-none">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+<a id="__backlink" href="../../physics.html" class="bp-back">← <span>INDEX</span></a>
 
-    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
-        
-        <!-- Header -->
-        <div class="bg-slate-800 text-white p-4 border-b border-slate-700">
-            <h1 class="text-2xl font-bold text-center">高中物理：庫倫定律模擬器</h1>
+    <div class="max-w-6xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-2">
+        <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+
+        <!-- Header: drawing title block -->
+        <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.10</span>
+                <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">庫倫定律模擬器</h1>
+            </div>
+            <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">PHY · Coulomb's Law</span>
         </div>
 
         <div class="flex flex-col md:flex-row">
-            
+
             <!-- 左側：視覺化區域 (SVG) -->
-            <div class="w-full md:w-3/4 bg-slate-100 relative min-h-[450px] flex items-center justify-center border-b md:border-b-0 md:border-r border-slate-200 overflow-hidden">
-                
+            <div class="w-full md:w-3/4 relative min-h-[450px] flex items-center justify-center border-b md:border-b-0 md:border-r border-slate-300 dark:border-slate-700 overflow-hidden bg-white/40 dark:bg-slate-900/30">
+
                 <!-- 公式顯示 (移至左側右上角) -->
-                <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow border border-slate-300 z-10 max-w-[200px] md:max-w-xs">
-                    <h3 class="font-bold text-slate-800 mb-1 border-b border-slate-300 pb-1 text-sm text-center">庫倫定律</h3>
-                    <div class="text-center text-lg my-1 math-font text-slate-900">
-                        F = k <span class="text-xl">|</span><div class="inline-block align-middle text-center"><span class="border-b border-black block px-1 leading-tight">Q<sub>1</sub> Q<sub>2</sub></span><span class="block leading-tight">r<sup>2</sup></span></div><span class="text-xl">|</span>
+                <div class="absolute top-4 right-4 bp-chip p-4 z-10 max-w-[200px] md:max-w-xs">
+                    <h3 class="mono font-bold text-slate-500 dark:text-slate-400 mb-1 border-b border-slate-300 dark:border-slate-600 pb-1 text-[11px] tracking-[0.14em] uppercase text-center">庫倫定律</h3>
+                    <div class="text-center text-lg my-1 math-font text-slate-900 dark:text-slate-100">
+                        F = k <span class="text-xl">|</span><div class="inline-block align-middle text-center"><span class="border-b border-current block px-1 leading-tight">Q<sub>1</sub> Q<sub>2</sub></span><span class="block leading-tight">r<sup>2</sup></span></div><span class="text-xl">|</span>
                     </div>
-                    <div class="text-[10px] text-slate-600 mt-1 leading-tight">
+                    <div class="mono text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-tight">
                         k ≈ 9.0 × 10<sup>9</sup> N·m<sup>2</sup>/C<sup>2</sup>
                     </div>
                 </div>
 
                 <!-- 作用力狀態標籤 -->
-                <div id="force-type-label" class="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-lg shadow border border-slate-200 font-bold text-base text-slate-700 z-10">
-                    狀態: <span class="text-purple-600">相吸</span>
+                <div id="force-type-label" class="absolute top-4 left-4 bp-chip px-3 py-1 mono font-bold text-sm text-slate-600 dark:text-slate-300 z-10">
+                    狀態: <span class="text-purple-600 dark:text-purple-400">相吸</span>
                 </div>
 
                 <svg id="sim-canvas" width="100%" height="450" viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" class="z-0">
                     <!-- 背景網格 -->
                     <defs>
                         <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(37,99,235,.14)" stroke-width="1"/>
                         </pattern>
                         <!-- 定義箭頭 (marker) -->
                         <!-- 關鍵修改: refX="0"。這確保箭頭的"底部"對齊線條的終點，實現不重疊。 -->
@@ -106,7 +151,7 @@
                         <line id="dist-line" x1="150" y1="0" x2="450" y2="0" stroke="#64748b" stroke-width="2" stroke-dasharray="5,5"/>
                         <line id="dist-tick-1" x1="150" y1="-5" x2="150" y2="5" stroke="#64748b" stroke-width="2"/>
                         <line id="dist-tick-2" x1="450" y1="-5" x2="450" y2="5" stroke="#64748b" stroke-width="2"/>
-                        <text id="dist-text" x="300" y="25" text-anchor="middle" fill="#475569" font-size="16" font-weight="bold">r = 3.0 m</text>
+                        <text id="dist-text" x="300" y="25" text-anchor="middle" fill="#475569" font-size="16" font-weight="bold" font-family="'JetBrains Mono',monospace">r = 3.0 m</text>
                     </g>
 
                     <!-- 力向量 (Arrows) -->
@@ -128,7 +173,7 @@
                         <text x="0" y="8" text-anchor="middle" fill="white" font-weight="bold" font-size="22" font-family="serif">
                             Q<tspan dy="8" font-size="14">1</tspan>
                         </text>
-                        <text id="q1-val-svg" x="0" y="55" text-anchor="middle" fill="#ef4444" font-weight="bold" font-size="14">+4 µC</text>
+                        <text id="q1-val-svg" x="0" y="55" text-anchor="middle" fill="#ef4444" font-weight="bold" font-size="14" font-family="'JetBrains Mono',monospace">+4 µC</text>
                     </g>
 
                     <!-- 球體 Q2 (移動位置) -->
@@ -137,26 +182,30 @@
                         <text x="0" y="8" text-anchor="middle" fill="white" font-weight="bold" font-size="22" font-family="serif">
                             Q<tspan dy="8" font-size="14">2</tspan>
                         </text>
-                        <text id="q2-val-svg" x="0" y="55" text-anchor="middle" fill="#3b82f6" font-weight="bold" font-size="14">-4 µC</text>
+                        <text id="q2-val-svg" x="0" y="55" text-anchor="middle" fill="#3b82f6" font-weight="bold" font-size="14" font-family="'JetBrains Mono',monospace">-4 µC</text>
                     </g>
                 </svg>
             </div>
 
             <!-- 右側：控制面板與數據 -->
-            <div class="w-full md:w-1/4 p-4 bg-white flex flex-col gap-5 overflow-y-auto max-h-[600px] border-l border-slate-200">
-                
+            <div class="w-full md:w-1/4 p-4 flex flex-col gap-5 overflow-y-auto max-h-[600px]">
+
+                <div class="mono text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500 flex items-center gap-2">
+                    <span style="color:var(--ac)">///</span> 控制 · Controls
+                </div>
+
                 <!-- 控制項 -->
-                <div class="space-y-6 pt-2">
+                <div class="space-y-6 pt-1">
                     <!-- Q1 控制 -->
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <label class="font-bold text-red-600 flex items-center">
-                                Q<sub>1</sub> 電荷 <span class="text-xs ml-1 font-normal text-gray-500">(µC)</span>
+                            <label class="font-bold text-red-600 dark:text-red-400 flex items-center">
+                                Q<sub>1</sub> 電荷 <span class="mono text-xs ml-1 font-normal text-slate-400">(µC)</span>
                             </label>
-                            <span id="q1-display" class="bg-red-100 text-red-800 px-2 py-0.5 rounded font-mono text-sm">+4</span>
+                            <span id="q1-display" class="mono bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 px-2 py-0.5 rounded text-sm">+4</span>
                         </div>
                         <input type="range" id="q1-slider" min="-10" max="10" step="1" value="4">
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
+                        <div class="mono flex justify-between text-[10px] text-slate-400 mt-1">
                             <span>-10</span>
                             <span>0</span>
                             <span>+10</span>
@@ -166,13 +215,13 @@
                     <!-- Q2 控制 -->
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <label class="font-bold text-blue-600 flex items-center">
-                                Q<sub>2</sub> 電荷 <span class="text-xs ml-1 font-normal text-gray-500">(µC)</span>
+                            <label class="font-bold text-blue-600 dark:text-blue-400 flex items-center">
+                                Q<sub>2</sub> 電荷 <span class="mono text-xs ml-1 font-normal text-slate-400">(µC)</span>
                             </label>
-                            <span id="q2-display" class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono text-sm">-4</span>
+                            <span id="q2-display" class="mono bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-sm">-4</span>
                         </div>
                         <input type="range" id="q2-slider" min="-10" max="10" step="1" value="-4">
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
+                        <div class="mono flex justify-between text-[10px] text-slate-400 mt-1">
                             <span>-10</span>
                             <span>0</span>
                             <span>+10</span>
@@ -182,13 +231,13 @@
                     <!-- 距離 r 控制 -->
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <label class="font-bold text-green-600 flex items-center">
-                                r 距離 <span class="text-xs ml-1 font-normal text-gray-500">(m)</span>
+                            <label class="font-bold text-emerald-600 dark:text-emerald-400 flex items-center">
+                                r 距離 <span class="mono text-xs ml-1 font-normal text-slate-400">(m)</span>
                             </label>
-                            <span id="r-display" class="bg-green-100 text-green-800 px-2 py-0.5 rounded font-mono text-sm">3.0</span>
+                            <span id="r-display" class="mono bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded text-sm">3.0</span>
                         </div>
                         <input type="range" id="r-slider" min="1" max="10" step="0.1" value="3.0">
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
+                        <div class="mono flex justify-between text-[10px] text-slate-400 mt-1">
                             <span>1m</span>
                             <span>10m</span>
                         </div>
@@ -196,18 +245,18 @@
                 </div>
 
                 <!-- 計算過程與結果 -->
-                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mt-auto">
-                    <h3 class="font-bold text-slate-700 mb-2 text-sm">數值代入</h3>
-                    
+                <div class="bp-chip p-3 mt-auto">
+                    <h3 class="mono font-bold text-slate-500 dark:text-slate-400 mb-2 text-[11px] tracking-[0.14em] uppercase">數值代入</h3>
+
                     <!-- 代入式 (使用 Flexbox 進行整齊排版) -->
-                    <div class="flex items-center justify-center text-xs md:text-sm text-slate-800 font-mono bg-white p-3 rounded border border-slate-100 overflow-x-auto shadow-sm">
-                        <span class="mr-1 italic font-serif text-slate-600">F</span>
+                    <div class="flex items-center justify-center text-xs md:text-sm text-slate-800 dark:text-slate-100 font-mono bg-white/70 dark:bg-slate-900/50 p-3 rounded border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                        <span class="mr-1 italic font-serif text-slate-600 dark:text-slate-300">F</span>
                         <span class="mr-1 text-slate-400">=</span>
-                        <span class="mr-1 text-slate-600">9×10<sup>9</sup></span>
+                        <span class="mr-1 text-slate-600 dark:text-slate-300">9×10<sup>9</sup></span>
                         <span class="mr-2 text-slate-400">×</span>
-                        
+
                         <div class="flex flex-col items-center">
-                            <div id="calc-formula-top" class="border-b border-slate-800 px-1 pb-0.5 mb-0.5 text-center whitespace-nowrap">
+                            <div id="calc-formula-top" class="border-b border-slate-800 dark:border-slate-200 px-1 pb-0.5 mb-0.5 text-center whitespace-nowrap">
                                 <!-- 分子內容由 JS 插入 -->
                             </div>
                             <div id="calc-formula-bot" class="text-center">
@@ -216,9 +265,9 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-col items-end border-t pt-3 mt-3 border-slate-200">
-                        <span class="text-slate-500 text-xs font-bold self-start">靜電力大小 F:</span>
-                        <span id="result-force" class="text-2xl font-bold text-purple-600">0.016 N</span>
+                    <div class="flex flex-col items-end border-t pt-3 mt-3 border-slate-200 dark:border-slate-700">
+                        <span class="mono text-slate-500 dark:text-slate-400 text-[11px] font-bold self-start tracking-wide uppercase">靜電力大小 F:</span>
+                        <span id="result-force" class="mono text-2xl font-bold text-purple-600 dark:text-purple-400">0.016 N</span>
                     </div>
                 </div>
 
@@ -240,26 +289,26 @@
             const q1Slider = document.getElementById('q1-slider');
             const q2Slider = document.getElementById('q2-slider');
             const rSlider = document.getElementById('r-slider');
-            
+
             const q1Display = document.getElementById('q1-display');
             const q2Display = document.getElementById('q2-display');
             const rDisplay = document.getElementById('r-display');
-            
+
             const q1ValSvg = document.getElementById('q1-val-svg');
             const q2ValSvg = document.getElementById('q2-val-svg');
-            
+
             const sphereQ1 = document.getElementById('sphere-q1');
             const sphereQ2 = document.getElementById('sphere-q2');
-            
+
             const forceArrowQ1 = document.getElementById('force-arrow-q1');
             const forceArrowQ2 = document.getElementById('force-arrow-q2');
             const forceLabelQ1 = document.getElementById('force-label-q1');
             const forceLabelQ2 = document.getElementById('force-label-q2');
-            
+
             const distLine = document.getElementById('dist-line');
             const distTick2 = document.getElementById('dist-tick-2');
             const distText = document.getElementById('dist-text');
-            
+
             const calcTop = document.getElementById('calc-formula-top');
             const calcBot = document.getElementById('calc-formula-bot');
             const resultForce = document.getElementById('result-force');
@@ -274,10 +323,10 @@
                 // 2. 物理計算 (將微庫倫轉換為庫倫: 10^-6)
                 const q1 = q1_micro * 1e-6;
                 const q2 = q2_micro * 1e-6;
-                
+
                 // 計算力的大小 (N)
                 const force = (K * Math.abs(q1 * q2)) / (r_meters * r_meters);
-                
+
                 // 判斷方向 (同號相斥，異號相吸)
                 const isRepulsive = (q1_micro * q2_micro) > 0;
                 const isNeutral = q1_micro === 0 || q2_micro === 0;
@@ -286,16 +335,16 @@
                 q1Display.textContent = (q1_micro > 0 ? "+" : "") + q1_micro;
                 q2Display.textContent = (q2_micro > 0 ? "+" : "") + q2_micro;
                 rDisplay.textContent = r_meters.toFixed(1);
-                
+
                 q1ValSvg.textContent = q1Display.textContent + " µC";
                 q2ValSvg.textContent = q2Display.textContent + " µC";
 
                 // 4. 更新 SVG 位置 (距離 r)
-                const currentDistPixels = r_meters * PIXELS_PER_METER; 
+                const currentDistPixels = r_meters * PIXELS_PER_METER;
                 const q2_x = Q1_X + currentDistPixels;
-                
+
                 sphereQ2.setAttribute('transform', `translate(${q2_x}, ${CENTER_Y})`);
-                
+
                 // 更新距離標示
                 distLine.setAttribute('x2', q2_x);
                 distTick2.setAttribute('x1', q2_x);
@@ -309,7 +358,7 @@
                     forceArrowQ2.setAttribute('opacity', 0);
                     forceLabelQ1.setAttribute('opacity', 0);
                     forceLabelQ2.setAttribute('opacity', 0);
-                    forceTypeLabel.innerHTML = '狀態: <span class="text-gray-500">無作用力</span>';
+                    forceTypeLabel.innerHTML = '狀態: <span class="text-slate-500 dark:text-slate-400">無作用力</span>';
                     resultForce.textContent = "0 N";
                 } else {
                     forceArrowQ1.setAttribute('opacity', 1);
@@ -319,38 +368,38 @@
 
                     // 計算箭頭長度 (視覺化處理，限制最大最小長度)
                     // 力越大箭頭越長，但為了不讓箭頭無限長，使用對數或範圍限制
-                    
+
                     // 箭頭尖端像素長度 = stroke-width(6) * markerWidth(6) = 36px
                     const ARROW_HEAD_PIXELS = 36;
-                    
+
                     let baseArrowLength = 0;
                     if (force > 0) {
                         // 增加最小長度，確保至少能顯示大於箭頭尖端的長度
                         // 當力很小時，箭桿會消失，只剩下箭頭尖端在電荷表面，這樣符合物理直覺
-                        baseArrowLength = Math.min(150, Math.max(55, force * 2000)); 
+                        baseArrowLength = Math.min(150, Math.max(55, force * 2000));
                     }
                     const totalVisualLength = baseArrowLength * 0.7; // 縮放至 70%
 
                     // 計算 rod (箭桿) 長度 = 總視覺長 - 箭頭尖端長度
                     // 這樣 rod 繪製到此長度後，marker 會剛好接續下去，不會重疊
                     const rodLength = Math.max(0, totalVisualLength - ARROW_HEAD_PIXELS);
-                    
+
                     // 設定方向
                     if (isRepulsive) {
                         // 斥力：箭頭背向
                         // Q1 箭頭向左
-                        forceArrowQ1.setAttribute('x1', Q1_X - 35); 
+                        forceArrowQ1.setAttribute('x1', Q1_X - 35);
                         // x2 是箭桿的終點 (箭頭的起點)
                         forceArrowQ1.setAttribute('x2', Q1_X - 35 - rodLength);
                         // 標籤位置參考總長度
                         forceLabelQ1.setAttribute('x', Q1_X - 35 - totalVisualLength - 25);
-                        
+
                         // Q2 箭頭向右
                         forceArrowQ2.setAttribute('x1', q2_x + 35);
                         forceArrowQ2.setAttribute('x2', q2_x + 35 + rodLength);
                         forceLabelQ2.setAttribute('x', q2_x + 35 + totalVisualLength + 25);
 
-                        forceTypeLabel.innerHTML = '狀態: <span class="text-red-600">相斥 (Repulsion)</span>';
+                        forceTypeLabel.innerHTML = '狀態: <span class="text-red-600 dark:text-red-400">相斥 (Repulsion)</span>';
                     } else {
                         // 吸力：箭頭相向
                         // Q1 箭頭向右 (指向 Q2)
@@ -363,7 +412,7 @@
                         forceArrowQ2.setAttribute('x2', q2_x - 35 - rodLength);
                         forceLabelQ2.setAttribute('x', q2_x - 35 - totalVisualLength - 20);
 
-                        forceTypeLabel.innerHTML = '狀態: <span class="text-purple-600">相吸 (Attraction)</span>';
+                        forceTypeLabel.innerHTML = '狀態: <span class="text-purple-600 dark:text-purple-400">相吸 (Attraction)</span>';
                     }
 
                     // 更新數值計算顯示
@@ -380,9 +429,9 @@
                 const q1Text = Math.abs(q1_micro);
                 const q2Text = Math.abs(q2_micro);
                 // 使用更清晰的顏色標示
-                calcTop.innerHTML = `<span class="text-red-700">|${q1Text}|</span> × <span class="text-blue-700">|${q2Text}|</span> × 10<sup>-12</sup>`; 
+                calcTop.innerHTML = `<span class="text-red-700 dark:text-red-400">|${q1Text}|</span> × <span class="text-blue-700 dark:text-blue-400">|${q2Text}|</span> × 10<sup>-12</sup>`;
                 calcBot.innerHTML = `(${r_meters.toFixed(1)})<sup>2</sup>`;
-                
+
                 // 更新球體顏色透明度
                 const opacity1 = 0.3 + (Math.abs(q1_micro) / 10) * 0.7;
                 const opacity2 = 0.3 + (Math.abs(q2_micro) / 10) * 0.7;
