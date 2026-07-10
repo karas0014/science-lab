@@ -9,7 +9,10 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
     <!-- React & Three.js Dependencies -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -32,10 +35,31 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Roboto:ital,wght@0,400;0,700;1,400&display=swap');
 
         body {
-            font-family: 'Noto Sans TC', sans-serif;
+            font-family: 'Noto Sans HK', sans-serif;
             overflow: hidden;
             background-color: #f8fafc; /* Slate 50 */
         }
+        body.dark { background-color: #0a1626; }
+        :root{ --ac:#0ea5e9; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-btn{
+            position:fixed;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        /* Dark-mode panel re-skin */
+        body.dark .interactive-panel{ background-color:rgba(13,25,43,.85)!important; border-color:#2c3e57!important; }
+        body.dark .text-slate-800, body.dark .text-slate-700, body.dark .text-slate-600, body.dark .text-slate-500{ color:#cbd5e1!important; }
+        body.dark .bg-slate-100, body.dark .bg-slate-200{ background-color:#1e293b!important; }
+        body.dark .bg-white\/90{ background-color:rgba(13,25,43,.9)!important; }
+        body.dark .bg-slate-50\/50{ background-color:rgba(30,41,59,.5)!important; }
+        body.dark .ios-toggle-label{ background-color:#334155; }
+        body.dark .border-slate-100, body.dark .border-slate-200, body.dark .border-slate-300{ border-color:#2c3e57!important; }
+        body.dark .hover\:bg-slate-100:hover{ background-color:#1e293b!important; }
         
         /* Physics Variables - Times New Roman Italic */
         .math-var {
@@ -149,8 +173,26 @@
         }
     </style>
 </head>
-<body>
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark">
+<a href="../../physics.html" class="bp-btn" style="bottom:12px;left:12px" aria-label="返回索引 / Back to index">
+    <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
+</a>
+<button onclick="toggleTheme()" class="bp-btn" style="bottom:12px;left:118px" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+    <span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span>
+</button>
+<script>
+    function toggleTheme(){
+        const dark = !document.body.classList.contains('dark');
+        document.body.classList.toggle('dark', dark);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="16" height="16"></i>`;
+        if(window.__setSceneTheme) window.__setSceneTheme(dark);
+        if(window.lucide) lucide.createIcons();
+    }
+    window.__setSceneTheme = function(dark){
+        if(window.__scene && window.__THREE) window.__scene.background = new window.__THREE.Color(dark ? '#0a1626' : '#f8fafc');
+    };
+    window.addEventListener('load', ()=>{ if(window.lucide) lucide.createIcons(); });
+</script>
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
@@ -254,8 +296,9 @@
                 if (!mountRef.current) return;
 
                 const scene = new THREE.Scene();
-                scene.background = new THREE.Color('#f8fafc'); 
+                scene.background = new THREE.Color(document.body.classList.contains('dark') ? '#0a1626' : '#f8fafc');
                 sceneRef.current = scene;
+                window.__scene = scene; window.__THREE = THREE;
 
                 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
                 camera.position.set(12, 9, 12);
@@ -622,7 +665,7 @@
                         
                         {/* 1. Header */}
                         <div className="absolute top-4 left-4 pointer-events-auto interactive-panel p-4 rounded-xl shadow-lg z-20">
-                             <h1 className="text-xl font-bold text-slate-800 mb-1 leading-tight">
+                             <h1 className="serif-font text-xl font-bold text-slate-800 mb-1 leading-tight">
                                 {t.title}
                             </h1>
                             <div className="flex justify-between items-center">
