@@ -6,23 +6,49 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kinetic Theory Simulator - DSE Physics</title>
+    <title>氣體分子模擬 · Kinetic Theory Simulator</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root{ --ac:#38bdf8; }
         /* Modern Reset & Base Styles */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Noto Sans HK', sans-serif;
         }
 
         body {
-            background-color: #0f172a;
+            background-color: #0a1626;
             color: #f8fafc;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
         }
+        body.light { background-color: #eaeef3; }
+        .bp-btn{
+            position:fixed;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;
+            border:1px solid #2c3e57;background:rgba(10,22,38,.8);color:#cbd5e1;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+            box-shadow:0 2px 10px rgba(2,6,23,.3);transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        body.light .bp-btn{ background:rgba(255,255,255,.9);border-color:#c3ccd8;color:#334155; }
+        body.light .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        /* Light-mode panel re-skin */
+        body.light .controls{ background:rgba(255,255,255,.92); border-color:#c3ccd8; }
+        body.light label{ color:#475569; }
+        body.light .value-display{ color:#0f172a; }
+        body.light .info-text{ color:#64748b; border-color:#c3ccd8; }
+        body.light .switch-container{ color:#64748b; }
+        body.light #lang-label-zh{ color:#0f172a !important; }
+        body.light .ke-pill{ background:rgba(15,23,42,.06); border-color:#c3ccd8; color:#334155; }
+        body.light .chart-container{ background:rgba(15,23,42,.04); border-color:#c3ccd8; }
+        body.light .math-sub{ color:#64748b; }
+        body.light h2{ color:#0369a1; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
 
         #canvas-container {
             position: absolute;
@@ -254,7 +280,20 @@
     </style>
 </head>
 <body>
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<a href="../../physics.html" class="bp-btn" style="top:12px;left:12px" aria-label="返回索引 / Back to index">
+    <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
+</a>
+<button onclick="toggleTheme()" class="bp-btn" style="top:12px;left:118px" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+    <span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span>
+</button>
+<script>
+    function toggleTheme(){
+        const light = !document.body.classList.contains('light');
+        document.body.classList.toggle('light', light);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${light?'moon':'sun'}" width="16" height="16"></i>`;
+        if(window.lucide) lucide.createIcons();
+    }
+</script>
 
     <div id="canvas-container">
         <canvas id="simCanvas"></canvas>
@@ -593,6 +632,7 @@
         init();
         animate();
         updateLanguage(); // Initial render
+        if(window.lucide) lucide.createIcons();
 
     </script>
 </body>
