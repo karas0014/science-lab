@@ -7,15 +7,30 @@
     <title>放射性衰變模擬器</title>
     <!-- Tailwind CSS for Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Chart.js for Graph -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Babylon.js Core -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <!-- Babylon.js Loaders (optional, but good practice) -->
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    
+
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        :root{ --ac:#3b82f6; }
+        body { font-family: 'Noto Sans HK', sans-serif; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
         /* Prevent bounce scroll on mobile but allow internal scrolling */
         html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
         
@@ -44,23 +59,40 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 flex flex-col h-full">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bg-slate-100 dark:bg-[#0a1626] text-slate-800 dark:text-slate-200 flex flex-col h-full">
 
     <!-- Header -->
-    <header class="bg-white shadow-sm p-3 sm:p-4 z-10 flex-shrink-0 overflow-y-auto max-h-[30vh]">
+    <header class="bg-white dark:bg-[#0d192b] shadow-sm p-3 sm:p-4 z-10 flex-shrink-0 overflow-y-auto max-h-[34vh] border-b border-transparent dark:border-slate-700">
+        <div class="container mx-auto flex items-center justify-between mb-2">
+            <a href="../../physics.html" class="bp-btn" aria-label="返回索引 / Back to index">
+                <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+                    <span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span>
+                </button>
+                <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language">
+                    <i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span>
+                </button>
+            </div>
+        </div>
         <div class="container mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="text-center lg:text-left">
-                <h1 class="text-xl sm:text-2xl font-bold text-blue-900 leading-tight">放射性衰變模擬器</h1>
-                <p class="text-xs sm:text-sm text-slate-500">香港高中物理 - 原子核物理模擬(由陳淳義老師使用AI製成)</p>
+                <h1 class="serif-font text-xl sm:text-2xl font-bold text-blue-900 dark:text-blue-300 leading-tight">
+                    <span class="lang-zh">放射性衰變模擬器</span><span class="lang-en hidden">Radioactive Decay Simulator</span>
+                </h1>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                    <span class="lang-zh">香港高中物理 - 原子核物理模擬 (由陳淳義老師使用 AI 製成)</span>
+                    <span class="lang-en hidden">HKDSE Physics · Nuclear Physics simulation (created with AI by Mr. Chan)</span>
+                </p>
             </div>
             
             <!-- Controls -->
-            <div class="flex flex-wrap gap-3 items-center justify-center bg-slate-50 p-2 sm:p-3 rounded-lg border border-slate-200 w-full lg:w-auto">
+            <div class="flex flex-wrap gap-3 items-center justify-center bg-slate-50 dark:bg-slate-800/40 p-2 sm:p-3 rounded-lg border border-slate-200 dark:border-slate-700 w-full lg:w-auto">
                 <!-- N0 Selection -->
                 <div class="flex flex-col items-center sm:items-start">
-                    <label class="text-[10px] sm:text-xs font-semibold text-slate-600 mb-1">骰子數量 (N)</label>
-                    <select id="diceCount" class="text-xs sm:text-sm border rounded p-1 w-20 sm:w-24 bg-white">
+                    <label class="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1"><span class="lang-zh">骰子數量 (N)</span><span class="lang-en hidden">Dice count (N)</span></label>
+                    <select id="diceCount" class="text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded p-1 w-20 sm:w-24 bg-white dark:bg-slate-800 dark:text-slate-100">
                         <option value="100">100</option>
                         <option value="1000" selected>1000</option>
                         <option value="10000">10000</option>
@@ -69,46 +101,46 @@
 
                 <!-- Decay Conditions -->
                 <div class="flex flex-col items-center sm:items-start">
-                    <label class="text-[10px] sm:text-xs font-semibold text-slate-600 mb-1">衰變點數 (Decay condition)</label>
+                    <label class="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1"><span class="lang-zh">衰變點數 (Decay condition)</span><span class="lang-en hidden">Decay faces</span></label>
                     <div class="flex gap-1">
                         <!-- Loop for 1-6 checkboxes -->
                         <label class="cursor-pointer checkbox-wrapper">
                             <input type="checkbox" class="hidden decay-option" value="1" checked>
-                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">1</div>
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 dark:text-slate-100 text-xs font-bold transition select-none">1</div>
                         </label>
                         <label class="cursor-pointer checkbox-wrapper">
                             <input type="checkbox" class="hidden decay-option" value="2">
-                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">2</div>
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 dark:text-slate-100 text-xs font-bold transition select-none">2</div>
                         </label>
                         <label class="cursor-pointer checkbox-wrapper">
                             <input type="checkbox" class="hidden decay-option" value="3">
-                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">3</div>
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 dark:text-slate-100 text-xs font-bold transition select-none">3</div>
                         </label>
                         <label class="cursor-pointer checkbox-wrapper">
                             <input type="checkbox" class="hidden decay-option" value="4">
-                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">4</div>
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 dark:text-slate-100 text-xs font-bold transition select-none">4</div>
                         </label>
                         <label class="cursor-pointer checkbox-wrapper">
                             <input type="checkbox" class="hidden decay-option" value="5">
-                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">5</div>
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 dark:text-slate-100 text-xs font-bold transition select-none">5</div>
                         </label>
                         <label class="cursor-pointer checkbox-wrapper">
                             <input type="checkbox" class="hidden decay-option" value="6">
-                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border rounded bg-white text-xs font-bold transition select-none">6</div>
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 dark:text-slate-100 text-xs font-bold transition select-none">6</div>
                         </label>
                     </div>
                 </div>
 
                 <!-- Interval Slider -->
                 <div class="flex flex-col w-24 sm:w-32 items-center sm:items-start">
-                    <label class="text-[10px] sm:text-xs font-semibold text-slate-600 mb-1">速度: <span id="intervalDisplay">1.0</span>s</label>
-                    <input type="range" id="intervalSlider" min="0.2" max="2" step="0.1" value="1.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <label class="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1"><span class="lang-zh">速度:</span><span class="lang-en hidden">Speed:</span> <span id="intervalDisplay">1.0</span>s</label>
+                    <input type="range" id="intervalSlider" min="0.2" max="2" step="0.1" value="1.0" class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex gap-2 w-full sm:w-auto justify-center mt-1 sm:mt-0">
                     <button id="startBtn" class="flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm sm:text-base font-bold shadow transition whitespace-nowrap">開始</button>
-                    <button id="resetBtn" class="flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-500 hover:bg-slate-600 text-white rounded text-sm sm:text-base font-bold shadow transition whitespace-nowrap">重置</button>
+                    <button id="resetBtn" class="flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-500 hover:bg-slate-600 text-white rounded text-sm sm:text-base font-bold shadow transition whitespace-nowrap"><span class="lang-zh">重置</span><span class="lang-en hidden">Reset</span></button>
                 </div>
             </div>
         </div>
@@ -124,13 +156,13 @@
         <!-- Desktop: Full Height (h-full) -->
         <div class="w-full md:w-1/2 flex flex-col gap-2 flex-shrink-0 h-[45vh] min-h-[300px] md:h-full">
             <div class="flex justify-between items-end px-1">
-                <h2 class="text-base sm:text-lg font-bold text-slate-700">模擬過程</h2>
+                <h2 class="text-base sm:text-lg font-bold text-slate-700 dark:text-slate-200"><span class="lang-zh">模擬過程</span><span class="lang-en hidden">Simulation</span></h2>
                 <div class="text-[10px] sm:text-xs text-slate-500">
                     <span class="inline-block w-2 h-2 sm:w-3 sm:h-3 bg-green-500 mr-1 rounded-sm"></span>Parent
                     <span class="inline-block w-2 h-2 sm:w-3 sm:h-3 bg-gray-700 ml-2 mr-1 rounded-sm"></span>Daughter
                 </div>
             </div>
-            <div id="canvas-container" class="flex-grow shadow-inner border border-slate-300">
+            <div id="canvas-container" class="flex-grow shadow-inner border border-slate-300 dark:border-slate-700">
                 <canvas id="renderCanvas"></canvas>
             </div>
         </div>
@@ -138,13 +170,13 @@
         <!-- Right Side: Graph & Stats -->
         <!-- Mobile: Auto height (expands with content) -->
         <!-- Desktop: Full height, internal scroll (md:h-full md:overflow-y-auto) -->
-        <div class="w-full md:w-1/2 flex flex-col gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-lg shadow-sm border border-slate-200 h-auto md:h-full md:overflow-y-auto">
+        <div class="w-full md:w-1/2 flex flex-col gap-3 sm:gap-4 bg-white dark:bg-[#0d192b] p-3 sm:p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 h-auto md:h-full md:overflow-y-auto">
             
-            <div class="flex justify-between items-center border-b pb-2">
-                <h2 class="text-base sm:text-lg font-bold text-slate-700">衰變曲線 (Decay Curve)</h2>
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2">
+                <h2 class="text-base sm:text-lg font-bold text-slate-700 dark:text-slate-200"><span class="lang-zh">衰變曲線 (Decay Curve)</span><span class="lang-en hidden">Decay Curve</span></h2>
                 <div class="text-right">
                     <div class="text-xl sm:text-2xl font-mono font-bold text-blue-600" id="currentN">N: 0</div>
-                    <div class="text-[10px] sm:text-xs text-slate-500">Remaining Nuclei</div>
+                    <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">Remaining Nuclei</div>
                 </div>
             </div>
 
@@ -154,36 +186,59 @@
             </div>
 
             <!-- Statistics Panel -->
-            <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded border border-slate-100">
+            <div class="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/40 p-3 rounded border border-slate-100 dark:border-slate-700">
                 <div>
-                    <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">次數 (Throws)</p>
-                    <p class="text-lg sm:text-xl font-mono text-slate-800" id="timeElapsed">0</p>
+                    <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase font-bold"><span class="lang-zh">次數 (Throws)</span><span class="lang-en hidden">Throws</span></p>
+                    <p class="text-lg sm:text-xl font-mono text-slate-800 dark:text-slate-100" id="timeElapsed">0</p>
                 </div>
                 <div>
-                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold">衰變常數 (k)</p>
-                    <p class="text-lg sm:text-xl font-mono text-slate-800" id="decayConstant">-</p>
+                    <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold"><span class="lang-zh">衰變常數 (k)</span><span class="lang-en hidden">Decay constant (k)</span></p>
+                    <p class="text-lg sm:text-xl font-mono text-slate-800 dark:text-slate-100" id="decayConstant">-</p>
                     <p class="text-[10px] text-slate-400 leading-tight">k ≈ P(decay)</p>
                 </div>
                 <div>
-                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold">理論半衰期 (t<sub>1/2</sub>)</p>
-                    <p class="text-lg sm:text-xl font-mono text-slate-800" id="halfLifeTheoretical">-</p>
+                    <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold"><span class="lang-zh">理論半衰期 (t<sub>1/2</sub>)</span><span class="lang-en hidden">Half-life (t<sub>1/2</sub>)</span></p>
+                    <p class="text-lg sm:text-xl font-mono text-slate-800 dark:text-slate-100" id="halfLifeTheoretical">-</p>
                 </div>
                 <div>
-                    <p class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold">剩餘 %</p>
-                    <p class="text-lg sm:text-xl font-mono text-slate-800" id="percentageLeft">100%</p>
+                    <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase font-bold"><span class="lang-zh">剩餘 %</span><span class="lang-en hidden">Remaining %</span></p>
+                    <p class="text-lg sm:text-xl font-mono text-slate-800 dark:text-slate-100" id="percentageLeft">100%</p>
                 </div>
             </div>
 
-            <div class="text-[10px] sm:text-xs text-slate-400 mt-2 md:mt-auto bg-yellow-50 p-2 rounded border border-yellow-100">
-                <p><strong>物理筆記:</strong></p>
-                <p class="mb-1">放射性衰變是隨機過程。未衰變數量 N 隨時間 t 呈指數下降：N = N<sub>0</sub> e<sup>-kt</sup>。</p>
-                <p>在此模擬中，每次投擲代表一個時間單位。半衰期是指 N 降至 N<sub>0</sub>/2 所需的平均次數。</p>
+            <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-300 mt-2 md:mt-auto bg-yellow-50 dark:bg-amber-500/10 p-2 rounded border border-yellow-100 dark:border-amber-500/30">
+                <p><strong><span class="lang-zh">物理筆記:</span><span class="lang-en hidden">Physics notes:</span></strong></p>
+                <p class="mb-1"><span class="lang-zh">放射性衰變是隨機過程。未衰變數量 N 隨時間 t 呈指數下降：N = N<sub>0</sub> e<sup>-kt</sup>。</span><span class="lang-en hidden">Radioactive decay is random. Undecayed nuclei N fall exponentially with time t: N = N<sub>0</sub> e<sup>-kt</sup>.</span></p>
+                <p><span class="lang-zh">在此模擬中，每次投擲代表一個時間單位。半衰期是指 N 降至 N<sub>0</sub>/2 所需的平均次數。</span><span class="lang-en hidden">Here each throw is one time unit; the half-life is the average number of throws for N to fall to N<sub>0</sub>/2.</span></p>
             </div>
             
             <!-- Spacer for mobile scrolling comfort -->
             <div class="h-4 md:hidden"></div>
         </div>
     </main>
+
+    <script>
+        // --- Blueprint chrome: theme + language ---
+        window.__lang = 'zh';
+        function applyLang(){
+            document.querySelectorAll('.lang-zh').forEach(el=>el.classList.toggle('hidden', window.__lang!=='zh'));
+            document.querySelectorAll('.lang-en').forEach(el=>el.classList.toggle('hidden', window.__lang!=='en'));
+        }
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.__themeChart) window.__themeChart();
+            if(window.lucide) lucide.createIcons();
+        }
+        function toggleLang(){
+            window.__lang = window.__lang==='zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = window.__lang==='zh' ? 'EN' : '中';
+            applyLang();
+            if(window.__onLangChange) window.__onLangChange();
+        }
+        function tt(pair){ return (window.__lang||'zh')==='zh' ? pair[0] : pair[1]; }
+    </script>
 
     <script>
         // --- Configuration & State ---
@@ -212,6 +267,33 @@
 
         // --- Chart.js Variables ---
         let decayChart;
+
+        // --- Blueprint: bilingual button + chart helpers ---
+        const BTN = { start:['開始','Start'], pause:['暫停','Pause'], resume:['繼續','Resume'], done:['完成','Done'] };
+        let btnKey = 'start';
+        function setStartBtn(key){ btnKey = key; document.getElementById('startBtn').innerText = tt(BTN[key]); }
+        function relabelChart(){
+            if(!decayChart) return;
+            decayChart.data.datasets[0].label = tt(['未衰變 (N)','Remaining (N)']);
+            decayChart.data.datasets[1].label = tt(['理論值','Theoretical']);
+            decayChart.options.scales.x.title.text = tt(['次數 (Time)','Throws (Time)']);
+            decayChart.options.scales.y.title.text = tt(['數量 N','Count N']);
+            decayChart.update();
+        }
+        window.__themeChart = function(){
+            if(!decayChart) return;
+            const dark = document.body.classList.contains('dark');
+            const tick = dark ? '#94a3b8' : '#475569';
+            const gridC = dark ? 'rgba(148,163,184,0.15)' : 'rgba(0,0,0,0.08)';
+            ['x','y'].forEach(ax=>{
+                const sc = decayChart.options.scales[ax];
+                sc.title.color = tick; sc.ticks = sc.ticks||{}; sc.ticks.color = tick;
+                sc.grid = sc.grid||{}; sc.grid.color = gridC;
+            });
+            decayChart.options.plugins.legend.labels.color = tick;
+            decayChart.update();
+        };
+        window.__onLangChange = function(){ setStartBtn(btnKey); relabelChart(); };
 
         // --- Initialization ---
         window.onload = function() {
@@ -248,6 +330,8 @@
             });
 
             updateMathStats();
+            setStartBtn('start'); relabelChart(); window.__themeChart(); applyLang();
+            if(window.lucide) lucide.createIcons();
             
             // Robust resize handler
             window.addEventListener('resize', () => {
@@ -482,7 +566,7 @@
             if (state.isPlaying) {
                 clearInterval(timer);
                 state.isPlaying = false;
-                btn.innerText = "繼續";
+                setStartBtn('resume');
                 btn.classList.replace('bg-yellow-500', 'bg-green-600');
                 btn.classList.replace('hover:bg-yellow-600', 'hover:bg-green-700');
             } else {
@@ -494,7 +578,7 @@
                 if (state.throwCount === 0) resetSimulationData();
 
                 state.isPlaying = true;
-                btn.innerText = "暫停";
+                setStartBtn('pause');
                 btn.classList.replace('bg-green-600', 'bg-yellow-500');
                 btn.classList.replace('hover:bg-green-700', 'hover:bg-yellow-600');
                 
@@ -507,7 +591,7 @@
             state.isPlaying = false;
             
             const btn = document.getElementById('startBtn');
-            btn.innerText = "開始";
+            setStartBtn('start');
             btn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
             btn.classList.add('bg-green-600', 'hover:bg-green-700');
 
@@ -529,7 +613,7 @@
             if (state.currentDice === 0) {
                 clearInterval(timer);
                 state.isPlaying = false;
-                document.getElementById('startBtn').innerText = "完成";
+                setStartBtn('done');
                 return;
             }
 
