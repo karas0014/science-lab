@@ -111,9 +111,19 @@
     .panel-mobile-w { width: calc(100vw - 24px) !important; max-width: 300px; }
   }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{ --ac:#3b82f6; }
+body{ font-family:'Noto Sans HK', sans-serif !important; }
+.serif-font{ font-family:'Noto Serif HK',serif !important; }
+.bp-btn{ position:fixed;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:9999px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.88);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(2,6,23,.15);transition:border-color .2s,color .2s; }
+.bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+.dark .bp-btn:hover{ color:#fff; }
+</style>
 </head>
 <body data-theme="dark">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<a href="../../physics.html" class="bp-btn" style="bottom:14px;left:14px" aria-label="返回索引 / Back to index"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>INDEX</span></a>
 
 <div class="fixed inset-0 flex flex-col">
   <!-- Header -->
@@ -123,7 +133,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-sky-400">
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
         </svg>
-        <h1 id="title" class="text-sm sm:text-base font-semibold">
+        <h1 id="title" class="serif-font text-sm sm:text-base font-semibold">
           <span id="titleText">電場互動模擬器</span>
         </h1>
       </div>
