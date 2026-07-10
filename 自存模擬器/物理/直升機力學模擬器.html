@@ -4,15 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>直升機力學模擬器</title>
-    <!-- 僅保留 Tailwind CSS，移除 React 與 Babel，確保在 Google Site 完美相容 -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root{ --ac:#10b981; }
+        body{ font-family:'Noto Sans HK',sans-serif; }
+        .bp-btn{
+            position:fixed;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+            box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+    </style>
 </head>
-<body class="m-0 p-0 overflow-hidden font-sans text-slate-800">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
-    <div class="h-screen w-full bg-slate-50 flex flex-col md:flex-row">
+<body class="dark m-0 p-0 overflow-hidden text-slate-800 dark:text-slate-200">
+<a href="../../physics.html" class="bp-btn" style="top:12px;left:12px" aria-label="返回索引 / Back to index">
+    <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
+</a>
+<button onclick="toggleTheme()" class="bp-btn" style="top:12px;left:118px" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+    <span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span>
+</button>
+<script>
+    function toggleTheme(){
+        const dark = !document.body.classList.contains('dark');
+        document.body.classList.toggle('dark', dark);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="16" height="16"></i>`;
+        if(window.lucide) lucide.createIcons();
+    }
+</script>
+    <div class="h-screen w-full bg-slate-50 dark:bg-[#0a1626] flex flex-col md:flex-row">
         
         <!-- 左側：主模擬區域 -->
-        <div class="relative w-full h-[45vh] md:h-auto md:flex-1 bg-[#CBEAFB] overflow-hidden flex items-center justify-center shrink-0">
+        <div class="relative w-full h-[45vh] md:h-auto md:flex-1 bg-[#CBEAFB] dark:bg-[#0c1f38] overflow-hidden flex items-center justify-center shrink-0">
             <!-- 背景裝飾：移動的雲朵層 -->
             <div class="absolute inset-0 pointer-events-none">
                 <div id="clouds-layer" class="absolute inset-0">
@@ -38,7 +67,7 @@
             </div>
 
             <!-- 語言切換 -->
-            <div class="absolute top-4 right-4 md:top-6 md:right-6 bg-white/80 backdrop-blur-sm rounded-full p-1 flex shadow-sm z-10">
+            <div class="absolute top-4 right-4 md:top-6 md:right-6 bg-white/80 dark:bg-[#0a1626]/80 border border-transparent dark:border-slate-700 backdrop-blur-sm rounded-full p-1 flex shadow-sm z-10">
                 <button id="btn-zh" class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors">中文</button>
                 <button id="btn-en" class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors">EN</button>
             </div>
@@ -80,9 +109,9 @@
         </div>
 
         <!-- 右側：控制面板 -->
-        <div class="w-full md:w-[450px] bg-white border-t md:border-t-0 md:border-l border-slate-200 p-5 md:p-8 pb-10 flex flex-col shadow-xl z-20 overflow-y-auto flex-1 md:shrink-0">
-            <h1 data-i18n="title" class="text-xl md:text-2xl font-bold tracking-tight mb-1"></h1>
-            <p data-i18n="subtitle" class="text-sm text-slate-400 mb-6 md:mb-8"></p>
+        <div class="w-full md:w-[450px] bg-white dark:bg-[#0d192b] border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-700 p-5 md:p-8 pb-10 flex flex-col shadow-xl z-20 overflow-y-auto flex-1 md:shrink-0">
+            <h1 data-i18n="title" class="text-xl md:text-2xl font-bold tracking-tight mb-1 text-slate-900 dark:text-white" style="font-family:'Noto Serif HK',serif"></h1>
+            <p data-i18n="subtitle" class="text-sm text-slate-400 dark:text-slate-500 mb-6 md:mb-8"></p>
 
             <div class="space-y-8">
                 <!-- 角度滑桿 -->
@@ -104,7 +133,7 @@
                 </div>
 
                 <!-- Toggles -->
-                <div class="space-y-4 bg-slate-50 p-5 rounded-xl border border-slate-100">
+                <div class="space-y-4 bg-slate-50 dark:bg-slate-800/40 p-5 rounded-xl border border-slate-100 dark:border-slate-700">
                     <div class="flex justify-between items-center">
                         <span data-i18n="lockHorizontal" class="text-sm font-medium flex items-center gap-1"></span>
                         <button id="toggle-lock" type="button" role="switch" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">
@@ -514,6 +543,7 @@
         // Initialize App
         updateUI();
         requestAnimationFrame(animate);
+        if(window.lucide) lucide.createIcons();
 
     </script>
 </body>
