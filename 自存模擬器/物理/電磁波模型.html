@@ -15,7 +15,10 @@
     
     <!-- Tailwind CSS (Defer loading to not block UI) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
     <!-- MathJax for Physics Equations -->
     <!-- Removed deprecated polyfill.io to improve speed & security -->
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -84,8 +87,20 @@
 
         body {
             overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+            font-family: 'Noto Sans HK', sans-serif;
         }
-        
+        :root{ --ac:#3b82f6; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
         #canvas-container {
             cursor: grab;
         }
@@ -94,27 +109,35 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 h-screen w-screen overflow-hidden flex flex-col md:flex-row font-sans">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bg-gray-50 dark:bg-[#0a1626] text-gray-800 dark:text-slate-200 h-screen w-screen overflow-hidden flex flex-col md:flex-row">
+<script>
+    function toggleTheme(){
+        const dark = !document.body.classList.contains('dark');
+        document.body.classList.toggle('dark', dark);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+        if(window.__setSceneTheme) window.__setSceneTheme(dark);
+        if(window.lucide) lucide.createIcons();
+    }
+</script>
 
     <!-- 3D Canvas Area -->
     <div id="canvas-container" class="flex-1 relative h-[50vh] md:h-screen w-full">
         <!-- Floating Labels -->
-        <div class="absolute top-4 left-4 bg-white/80 backdrop-blur-md px-4 py-2 rounded-xl shadow-sm border border-gray-100 z-10">
-            <h1 class="text-lg font-bold text-gray-800" id="title-text">3D 電磁波模擬器</h1>
-            <p class="text-sm text-gray-500" id="subtitle-text">拖曳旋轉視角 | 滾動縮放</p>
+        <div class="absolute top-4 left-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 z-10">
+            <h1 class="serif-font text-lg font-bold text-gray-800 dark:text-white" id="title-text">3D 電磁波模擬器</h1>
+            <p class="text-sm text-gray-500 dark:text-slate-400" id="subtitle-text">拖曳旋轉視角 | 滾動縮放</p>
         </div>
         
         <div class="absolute bottom-4 left-4 flex gap-3 z-10">
-            <div class="flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-lg shadow-sm">
+            <div class="flex items-center gap-2 bg-white/90 dark:bg-slate-900/80 border border-transparent dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-sm">
                 <div class="w-3 h-3 rounded-full bg-blue-500"></div>
                 <span class="text-sm font-medium" id="label-e">電場 (<span class="var">E</span>)</span>
             </div>
-            <div class="flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-lg shadow-sm">
+            <div class="flex items-center gap-2 bg-white/90 dark:bg-slate-900/80 border border-transparent dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-sm">
                 <div class="w-3 h-3 rounded-full bg-red-500"></div>
                 <span class="text-sm font-medium" id="label-b">磁場 (<span class="var">B</span>)</span>
             </div>
-            <div class="flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-lg shadow-sm">
+            <div class="flex items-center gap-2 bg-white/90 dark:bg-slate-900/80 border border-transparent dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-sm">
                 <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
                 <span class="text-sm font-medium" id="label-c">移動方向 (<span class="var">c</span>)</span>
             </div>
@@ -122,17 +145,25 @@
     </div>
 
     <!-- Control Panel -->
-    <div class="w-full md:w-80 lg:w-96 bg-white shadow-[0_0_20px_rgba(0,0,0,0.05)] flex flex-col h-[50vh] md:h-screen z-20">
+    <div class="w-full md:w-80 lg:w-96 bg-white dark:bg-[#0d192b] shadow-[0_0_20px_rgba(0,0,0,0.05)] flex flex-col h-[50vh] md:h-screen z-20 border-l border-transparent dark:border-slate-700">
         
         <!-- Header & Language Toggle -->
-        <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-30">
-            <h2 class="text-xl font-bold text-gray-800" id="panel-title">控制面板</h2>
-            
-            <div class="relative inline-block w-14 mr-2 align-middle select-none transition duration-200 ease-in">
+        <div class="p-5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-[#0d192b] sticky top-0 z-30 gap-2">
+            <h2 class="serif-font text-lg font-bold text-gray-800 dark:text-white" id="panel-title">控制面板</h2>
+
+            <div class="flex items-center gap-2">
+            <a href="../../physics.html" class="bp-btn" aria-label="返回索引 / Back to index">
+                <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+            </a>
+            <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+                <span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span>
+            </button>
+            <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
                 <input type="checkbox" name="toggle" id="lang-toggle" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
                 <label for="lang-toggle" class="toggle-label block overflow-hidden h-7 rounded-full bg-gray-300 cursor-pointer text-xs font-bold flex items-center justify-between px-1.5 text-white">
                     <span>EN</span><span class="text-gray-400">中</span>
                 </label>
+            </div>
             </div>
         </div>
 
@@ -140,13 +171,13 @@
         <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
             
             <!-- Controls Section -->
-            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-inner">
+            <div class="bg-gray-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-inner">
                 
                 <!-- Wavelength Slider -->
                 <div class="mb-5">
                     <div class="flex justify-between items-end mb-2">
-                        <label class="text-sm font-semibold text-gray-700" id="label-wl">波長 Wavelength (<span class="var">&lambda;</span>)</label>
-                        <span class="text-xs font-mono bg-white px-2 py-1 rounded shadow-sm text-blue-600 font-bold" id="val-wl">4.0 m</span>
+                        <label class="text-sm font-semibold text-gray-700 dark:text-slate-300" id="label-wl">波長 Wavelength (<span class="var">&lambda;</span>)</label>
+                        <span class="text-xs font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded shadow-sm text-blue-600 dark:text-blue-400 font-bold" id="val-wl">4.0 m</span>
                     </div>
                     <input type="range" id="slider-wl" min="2" max="10" step="0.1" value="4.0">
                 </div>
@@ -154,8 +185,8 @@
                 <!-- Amplitude Slider -->
                 <div class="mb-5">
                     <div class="flex justify-between items-end mb-2">
-                        <label class="text-sm font-semibold text-gray-700" id="label-amp">振幅 Amplitude (<span class="var">A</span>)</label>
-                        <span class="text-xs font-mono bg-white px-2 py-1 rounded shadow-sm text-blue-600 font-bold" id="val-amp">2.0</span>
+                        <label class="text-sm font-semibold text-gray-700 dark:text-slate-300" id="label-amp">振幅 Amplitude (<span class="var">A</span>)</label>
+                        <span class="text-xs font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded shadow-sm text-blue-600 dark:text-blue-400 font-bold" id="val-amp">2.0</span>
                     </div>
                     <input type="range" id="slider-amp" min="0.5" max="4" step="0.1" value="2.0">
                 </div>
@@ -163,15 +194,15 @@
                 <!-- Speed Slider -->
                 <div class="mb-2">
                     <div class="flex justify-between items-end mb-2">
-                        <label class="text-sm font-semibold text-gray-700" id="label-speed">播放速度 Anim Speed</label>
-                        <span class="text-xs font-mono bg-white px-2 py-1 rounded shadow-sm text-blue-600 font-bold" id="val-speed">1.0x</span>
+                        <label class="text-sm font-semibold text-gray-700 dark:text-slate-300" id="label-speed">播放速度 Anim Speed</label>
+                        <span class="text-xs font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded shadow-sm text-blue-600 dark:text-blue-400 font-bold" id="val-speed">1.0x</span>
                     </div>
                     <input type="range" id="slider-speed" min="0" max="3" step="0.1" value="1.0">
                 </div>
 
                 <!-- Show Planes Toggle -->
-                <div class="mb-2 mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
-                    <label class="text-sm font-semibold text-gray-700 cursor-pointer" for="toggle-planes" id="label-planes">顯示振動平面</label>
+                <div class="mb-2 mt-4 flex items-center justify-between border-t border-gray-100 dark:border-slate-700 pt-4">
+                    <label class="text-sm font-semibold text-gray-700 dark:text-slate-300 cursor-pointer" for="toggle-planes" id="label-planes">顯示振動平面</label>
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" id="toggle-planes" class="sr-only peer">
                       <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -180,12 +211,12 @@
             </div>
 
             <!-- Physics Explanation Card -->
-            <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-                <h3 class="font-bold text-blue-800 mb-2 flex items-center gap-2" id="concept-title">
+            <div class="bg-blue-50/50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/30">
+                <h3 class="font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2" id="concept-title">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     DSE 物理重點
                 </h3>
-                <ul class="text-sm text-gray-700 space-y-2 list-disc pl-4" id="concept-text">
+                <ul class="text-sm text-gray-700 dark:text-slate-300 space-y-2 list-disc pl-4" id="concept-text">
                     <li>由<b>加速運動的帶電粒子</b>（如振盪電荷）產生。</li>
                     <li><b>變化的電場</b>與<b>變化的磁場</b>交互產生，以波動形式向前推進。</li>
                     <li>在真空中以<b>光速</b>傳播 (\( c = 3 \times 10^8 \text{ m/s} \))。</li>
@@ -391,7 +422,8 @@
         function initThree() {
             // Scene setup
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xf9fafb); // Tailwind gray-50
+            scene.background = new THREE.Color(document.body.classList.contains('dark') ? 0x0a1626 : 0xf9fafb);
+            window.__setSceneTheme = (dark) => { if(scene) scene.background = new THREE.Color(dark ? 0x0a1626 : 0xf9fafb); };
 
             // 加入光照，讓粗化後的 3D 箭頭與線管擁有立體感
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
@@ -607,6 +639,7 @@
             initThree();
             updateLanguage(); // Set initial text
             updateUIValues();
+            if(window.lucide) lucide.createIcons();
         };
 
     </script>
