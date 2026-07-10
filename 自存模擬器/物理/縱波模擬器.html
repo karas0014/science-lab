@@ -3,77 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DSE Physics: Longitudinal Wave Simulator</title>
-
-    
+    <title>縱波模擬器 · Longitudinal Wave Simulator</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- MathJax -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
+    <!-- Fonts: Serif (CJK titles) · Sans (body) · Mono (technical labels) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        /* ===== BLUEPRINT SKIN ===== */
+        :root{ color-scheme: light dark; --ac:#10b981; }
+        body{ font-family:'Noto Sans HK',sans-serif; transition:background-color .3s; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+
+        .bp-surface{
+            background-color:#eaeef3;
+            background-image:
+                linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),
+                linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
         }
+        body.dark .bp-surface{
+            background-color:#0a1626;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .bp-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;
+            border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;
+            font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;
+            text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s;
+        }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
         .slider-thumb::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #4F46E5;
-            cursor: pointer;
-            border-radius: 50%;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            -webkit-appearance: none; appearance: none; width: 18px; height: 18px;
+            background: var(--ac); cursor: pointer; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         }
         .slider-thumb::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #4F46E5;
-            cursor: pointer;
-            border-radius: 50%;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            width: 18px; height: 18px; background: var(--ac); cursor: pointer; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         }
-        /* Custom Toggle Switch Logic */
-        .toggle-checkbox:checked + .toggle-track .toggle-knob {
-            transform: translateX(100%);
-            border-color: #4F46E5;
-        }
-        .toggle-checkbox:checked + .toggle-track {
-            background-color: #4F46E5;
-        }
-        ::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
-        }
+        .toggle-checkbox:checked + .toggle-track .toggle-knob { transform: translateX(100%); border-color: var(--ac); }
+        .toggle-checkbox:checked + .toggle-track { background-color: var(--ac); }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
-<body class="bg-slate-50 flex flex-col overflow-hidden text-slate-800" style="height: 100vh; height: 100dvh;">
-<a id="__backlink" href="../../physics.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bp-surface flex flex-col overflow-hidden text-slate-800 dark:text-slate-200" style="height: 100vh; height: 100dvh;">
 
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center shadow-sm z-10 shrink-0">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">P</div>
-            <div>
-                <h1 class="font-bold text-lg leading-tight md:text-xl text-slate-800">縱波模擬器 <span class="text-xs font-normal text-slate-500 block md:inline">Longitudinal Wave Sim</span></h1>
-            </div>
+    <!-- Header: drawing title block + controls -->
+    <header class="bg-white/80 dark:bg-[#0a1626]/85 backdrop-blur-xl border-b border-slate-300 dark:border-slate-700 px-4 py-3 flex justify-between items-center z-10 shrink-0 gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+            <a href="../../physics.html" class="bp-btn shrink-0" aria-label="返回索引 / Back to index">
+                <i data-lucide="home" width="15" height="15"></i><span class="hidden sm:inline">INDEX</span>
+            </a>
+            <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase shrink-0" style="color:var(--ac)">FIG.20</span>
+            <h1 class="serif-font font-bold text-base md:text-xl text-slate-900 dark:text-white leading-tight truncate">
+                縱波模擬器 <span class="mono text-[11px] font-normal text-slate-400 dark:text-slate-500 block md:inline tracking-wide">Longitudinal Wave</span>
+            </h1>
         </div>
-        
-        <div id="langBtn" class="relative flex items-center bg-slate-200 rounded-lg p-1 cursor-pointer select-none w-24 h-9 shadow-inner">
-            <div id="langIndicator" class="absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-md shadow-sm transition-transform duration-300"></div>
-            <div class="z-10 w-1/2 text-center text-sm font-bold transition-colors duration-300 text-indigo-600" id="text-zh">中</div>
-            <div class="z-10 w-1/2 text-center text-sm font-bold transition-colors duration-300 text-slate-500" id="text-en">EN</div>
+
+        <div class="flex items-center gap-2 shrink-0">
+            <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式">
+                <span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span>
+            </button>
+            <div id="langBtn" class="relative flex items-center bg-slate-200 dark:bg-slate-700 rounded-md p-1 cursor-pointer select-none w-24 h-9 shadow-inner">
+                <div id="langIndicator" class="absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] bg-white dark:bg-slate-900 rounded shadow-sm transition-transform duration-300"></div>
+                <div class="z-10 w-1/2 text-center text-sm font-bold transition-colors duration-300" id="text-zh">中</div>
+                <div class="z-10 w-1/2 text-center text-sm font-bold transition-colors duration-300 text-slate-500" id="text-en">EN</div>
+            </div>
         </div>
     </header>
 
     <!-- Main Canvas Area -->
-    <main class="flex-1 relative w-full bg-slate-50 min-h-0">
+    <main class="flex-1 relative w-full min-h-0 bg-white/40 dark:bg-slate-900/30">
         <canvas id="waveCanvas" class="absolute inset-0 w-full h-full block touch-none"></canvas>
-        
-        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-slate-200 text-xs md:text-sm pointer-events-none select-none">
+
+        <div class="absolute top-4 left-4 bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm p-3 rounded border border-slate-300 dark:border-slate-600 text-xs md:text-sm pointer-events-none select-none">
             <div class="flex items-center gap-2 mb-1">
                 <span class="w-3 h-3 rounded-full bg-red-500"></span>
                 <span id="label-particle">追蹤粒子 (Tracked Particle)</span>
@@ -86,76 +107,74 @@
     </main>
 
     <!-- Responsive Controls Dashboard -->
-    <section class="bg-white border-t border-slate-200 px-3 py-3 md:px-4 md:py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20 shrink-0 max-h-[50vh] overflow-y-auto overscroll-contain">
+    <section class="bg-white/80 dark:bg-[#0a1626]/85 backdrop-blur-xl border-t border-slate-300 dark:border-slate-700 px-3 py-3 md:px-4 md:py-4 z-20 shrink-0 max-h-[50vh] overflow-y-auto overscroll-contain">
         <div class="max-w-6xl mx-auto flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-8">
-            
-            <!-- Left Side: Core Buttons & Toggles (4/12 width on tablet+) -->
+
+            <!-- Left Side -->
             <div class="md:col-span-5 lg:col-span-4 flex flex-col gap-3">
-                <!-- Action Buttons -->
                 <div class="grid grid-cols-3 gap-2">
-                    <button id="playBtn" class="h-11 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-semibold shadow-md flex items-center justify-center transition-all">
+                    <button id="playBtn" class="h-11 text-white rounded-md font-semibold shadow-md flex items-center justify-center transition-all" style="background:var(--ac)">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                         </svg>
                     </button>
-                    
-                    <select id="modeSelect" class="h-11 px-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium text-xs focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer text-center">
+
+                    <select id="modeSelect" class="h-11 px-2 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium text-xs focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer text-center">
                         <option value="particles">粒子</option>
                         <option value="sound">聲波</option>
                         <option value="spring">彈簧</option>
                     </select>
 
-                    <button id="resetBtn" class="h-11 rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 flex items-center justify-center">
+                    <button id="resetBtn" class="h-11 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                     </button>
                 </div>
 
-                <!-- Toggles -->
                 <div class="grid grid-cols-2 gap-2">
-                    <label class="flex items-center justify-center gap-2 h-11 px-3 rounded-xl border border-slate-200 bg-white cursor-pointer hover:bg-slate-50">
+                    <label class="flex items-center justify-center gap-2 h-11 px-3 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
                         <input type="checkbox" id="gridCheck" class="toggle-checkbox hidden" checked>
-                        <div class="toggle-track w-8 h-4 bg-slate-300 rounded-full relative transition-colors p-0.5">
+                        <div class="toggle-track w-8 h-4 bg-slate-300 dark:bg-slate-600 rounded-full relative transition-colors p-0.5">
                             <div class="toggle-knob w-3 h-3 bg-white rounded-full shadow-sm transition-transform"></div>
                         </div>
-                        <span class="text-xs font-bold text-slate-600" id="txt-grid">Grid</span>
+                        <span class="mono text-xs font-bold text-slate-600 dark:text-slate-300" id="txt-grid">Grid</span>
                     </label>
 
-                    <label class="flex items-center justify-center gap-2 h-11 px-3 rounded-xl border border-slate-200 bg-white cursor-pointer hover:bg-slate-50">
+                    <label class="flex items-center justify-center gap-2 h-11 px-3 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
                         <input type="checkbox" id="labelCheck" class="toggle-checkbox hidden">
-                        <div class="toggle-track w-8 h-4 bg-slate-300 rounded-full relative transition-colors p-0.5">
+                        <div class="toggle-track w-8 h-4 bg-slate-300 dark:bg-slate-600 rounded-full relative transition-colors p-0.5">
                             <div class="toggle-knob w-3 h-3 bg-white rounded-full shadow-sm transition-transform"></div>
                         </div>
-                        <span class="text-xs font-bold text-slate-600" id="txt-label">A-Z</span>
+                        <span class="mono text-xs font-bold text-slate-600 dark:text-slate-300" id="txt-label">A-Z</span>
                     </label>
                 </div>
             </div>
 
-            <!-- Right Side: Sliders (8/12 width on tablet+) -->
+            <!-- Right Side: Sliders -->
             <div class="md:col-span-7 lg:col-span-8 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-center">
                 <div class="flex-1 flex flex-col">
                     <div class="flex justify-between items-center mb-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase" id="label-amp">振幅</label>
-                        <span id="val-amp" class="text-xs font-mono font-bold text-indigo-600">1.0</span>
+                        <label class="mono text-[10px] font-bold text-slate-400 uppercase tracking-wider" id="label-amp">振幅</label>
+                        <span id="val-amp" class="mono text-xs font-bold text-emerald-600 dark:text-emerald-400">1.0</span>
                     </div>
-                    <input type="range" id="slider-amp" min="0.1" max="2.0" step="0.1" value="1.0" class="slider-thumb w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slider-amp" min="0.1" max="2.0" step="0.1" value="1.0" class="slider-thumb w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer">
                 </div>
 
                 <div class="flex-1 flex flex-col">
                     <div class="flex justify-between items-center mb-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase" id="label-freq">頻率</label>
-                        <span id="val-freq" class="text-xs font-mono font-bold text-indigo-600">0.5 Hz</span>
+                        <label class="mono text-[10px] font-bold text-slate-400 uppercase tracking-wider" id="label-freq">頻率</label>
+                        <span id="val-freq" class="mono text-xs font-bold text-emerald-600 dark:text-emerald-400">0.5 Hz</span>
                     </div>
-                    <input type="range" id="slider-freq" min="0.1" max="2.0" step="0.1" value="0.5" class="slider-thumb w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slider-freq" min="0.1" max="2.0" step="0.1" value="0.5" class="slider-thumb w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer">
                 </div>
 
                 <div class="flex-1 flex flex-col">
                     <div class="flex justify-between items-center mb-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase" id="label-lambda">波長</label>
-                        <span id="val-lambda" class="text-xs font-mono font-bold text-indigo-600">300 px</span>
+                        <label class="mono text-[10px] font-bold text-slate-400 uppercase tracking-wider" id="label-lambda">波長</label>
+                        <span id="val-lambda" class="mono text-xs font-bold text-emerald-600 dark:text-emerald-400">300 px</span>
                     </div>
-                    <input type="range" id="slider-lambda" min="100" max="600" step="10" value="300" class="slider-thumb w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slider-lambda" min="100" max="600" step="10" value="300" class="slider-thumb w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer">
                 </div>
             </div>
         </div>
@@ -189,6 +208,20 @@
             }
         };
 
+        // Theme-aware canvas palette (blueprint)
+        function setCanvasTheme(dark){
+            CONFIG.colors.grid = dark ? 'rgba(56,189,248,.14)' : '#E2E8F0';
+            CONFIG.colors.text = dark ? '#cbd5e1' : '#334155';
+            CONFIG.colors.secondary = dark ? '#64748B' : '#94A3B8';
+        }
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="16" height="16"></i>`;
+            setCanvasTheme(dark);
+            if(window.lucide) lucide.createIcons();
+        }
+
         const canvas = document.getElementById('waveCanvas');
         const ctx = canvas.getContext('2d');
         const playBtn = document.getElementById('playBtn');
@@ -218,7 +251,7 @@
             ctx.clearRect(0, 0, state.width, state.height);
             const pY = state.height * CONFIG.baseYPercentage;
             const gY = state.height * CONFIG.graphYPercentage;
-            
+
             if (state.showGrid) {
                 ctx.beginPath();
                 ctx.strokeStyle = CONFIG.colors.grid;
@@ -229,7 +262,7 @@
 
             // Graph
             ctx.beginPath();
-            ctx.strokeStyle = '#94A3B8';
+            ctx.strokeStyle = CONFIG.colors.secondary;
             ctx.moveTo(0, gY); ctx.lineTo(state.width, gY);
             ctx.stroke();
 
@@ -271,7 +304,7 @@
                     prevX = fX;
                 } else if (state.visualMode === 'sound') {
                     ctx.beginPath();
-                    ctx.strokeStyle = isT ? CONFIG.colors.highlight : '#475569';
+                    ctx.strokeStyle = isT ? CONFIG.colors.highlight : CONFIG.colors.text;
                     ctx.globalAlpha = isT ? 1 : 0.6;
                     ctx.moveTo(fX, pY-30); ctx.lineTo(fX, pY+30);
                     ctx.stroke();
@@ -312,14 +345,16 @@
             document.getElementById('label-lambda').textContent = d.labelLambda;
             document.getElementById('txt-grid').textContent = d.txtGrid;
             document.getElementById('txt-label').textContent = d.txtLabel;
+            document.getElementById('label-particle').textContent = d.labelParticle;
+            document.getElementById('label-others').textContent = d.labelOthers;
             modeSelect.options[0].text = d.modeParticles;
             modeSelect.options[1].text = d.modeSound;
             modeSelect.options[2].text = d.modeSpring;
-            
+
             const langInd = document.getElementById('langIndicator');
             langInd.style.transform = state.lang === 'zh' ? 'translateX(0)' : 'translateX(100%)';
-            document.getElementById('text-zh').style.color = state.lang === 'zh' ? '#4F46E5' : '#64748B';
-            document.getElementById('text-en').style.color = state.lang === 'en' ? '#4F46E5' : '#64748B';
+            document.getElementById('text-zh').style.color = state.lang === 'zh' ? '#10b981' : '#64748B';
+            document.getElementById('text-en').style.color = state.lang === 'en' ? '#10b981' : '#64748B';
         }
 
         playBtn.onclick = () => { state.isPlaying = !state.isPlaying; updateUI(); };
@@ -345,7 +380,9 @@
 
         window.onresize = resize;
         function animate() { if(state.isPlaying) state.time += 0.02; draw(); requestAnimationFrame(animate); }
+        setCanvasTheme(true); // default dark, matching the hubs
         resize(); updateUI(); animate();
+        if(window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>
