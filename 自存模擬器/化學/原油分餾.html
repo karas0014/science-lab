@@ -3,76 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>原油分餾互動學習模擬器</title>
+    <title>原油分餾 · Crude Oil Fractional Distillation</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700;900&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap');
-        
-        body { 
-            font-family: 'Noto Sans TC', sans-serif; 
-            background-color: #0f172a; /* Slate 900 */
+        :root{ --ac:#3b82f6; }
+        body {
+            font-family: 'Noto Sans HK', sans-serif;
             color: #f8fafc;
+            transition:background-color .3s,color .3s;
         }
-        
-        /* 玻璃擬態效果 */
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .mono, .font-mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+        .bp-surface{
+            background-color:#0a1626;
+            background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
         }
+        body.light .bp-surface{
+            background-color:#eaeef3;
+            background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #2c3e57;background:rgba(10,22,38,.85);color:#cbd5e1;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        body.light .bp-btn{ background:rgba(255,255,255,.85);border-color:#c3ccd8;color:#334155; }
+        body.light .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
 
-        /* 分餾塔背景溫度漸變 (下熱上冷) */
-        .tower-bg { 
-            background: linear-gradient(to top, 
-                #7f1d1d 0%,    /* 深紅 (極高溫) */
-                #b91c1c 15%,   /* 紅 */
-                #ea580c 35%,   /* 橙 */
-                #ca8a04 55%,   /* 黃 */
-                #0284c7 80%,   /* 藍 */
-                #1e3a8a 100%   /* 深藍 (低溫) */
-            ); 
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-        }
-
-        /* 自訂滾動條 */
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .tower-bg { background: linear-gradient(to top, #7f1d1d 0%, #b91c1c 15%, #ea580c 35%, #ca8a04 55%, #0284c7 80%, #1e3a8a 100%); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-
         .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* 按鈕特效 */
-        .fraction-btn {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        .fraction-btn::after {
-            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
-            transform: skewX(-25deg); transition: all 0.5s ease;
-        }
+        .fraction-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+        .fraction-btn::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); transition: all 0.5s ease; }
         .fraction-btn:hover::after { left: 150%; }
         .fraction-btn.active { border-color: #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.5); }
+
+        /* 淺色模式覆蓋 (保持塔與螢幕為深色 scope) */
+        body.light{ color:#0f172a; }
+        body.light .glass-panel{ background:rgba(255,255,255,.82); border-color:#c3ccd8; }
+        body.light #app-container header{ background:rgba(255,255,255,.9) !important; border-color:#c3ccd8 !important; }
+        body.light .text-white{ color:#0f172a !important; }
+        body.light .text-slate-300,body.light .text-slate-400{ color:#475569 !important; }
+        body.light #display-name{ background:#e2e8f0 !important; border-color:#c3ccd8 !important; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-2 md:p-6 relative overflow-x-hidden">
-<a id="__backlink" href="../../chemistry.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bp-surface min-h-screen flex flex-col items-center justify-center p-2 md:p-6 relative overflow-x-hidden">
 
-    <!-- 網格背景點綴 -->
-    <div class="fixed inset-0 z-[-1] opacity-10 pointer-events-none" style="background-image: radial-gradient(#38bdf8 1px, transparent 1px); background-size: 30px 30px;"></div>
+    <a href="../../chemistry.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:60" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:60" class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+        <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language"><i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span></button>
+    </div>
 
     <!-- 頁面容器 -->
-    <div id="app-container" class="w-full max-w-5xl flex flex-col relative rounded-2xl shadow-2xl glass-panel overflow-hidden min-h-[90vh]">
-        
+    <div id="app-container" class="w-full max-w-5xl flex flex-col relative rounded-2xl shadow-2xl glass-panel overflow-hidden min-h-[90vh] mt-10">
+
         <!-- Header -->
         <header class="bg-slate-900/80 border-b border-slate-700 p-4 text-center flex justify-between items-center z-20">
             <div class="flex items-center gap-3">
                 <span class="text-3xl">🧪</span>
-                <h1 class="text-xl md:text-2xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                <h1 class="serif-font text-xl md:text-2xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400" data-zh="原油分餾控制中心" data-en="Crude Oil Distillation Control Center">
                     原油分餾控制中心
                 </h1>
             </div>
@@ -81,44 +80,44 @@
 
         <!-- Main Content Area -->
         <main class="flex-grow flex flex-col relative w-full h-full p-4 md:p-6">
-            
+
             <!-- 視圖 1: 登入畫面 -->
             <div id="view-login" class="w-full h-full flex-grow flex flex-col items-center justify-center fade-in">
                 <div class="glass-panel p-8 rounded-2xl border border-slate-600 text-center w-full max-w-md relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-500"></div>
-                    <h2 class="text-2xl font-bold text-white mb-2">系統登入認證</h2>
-                    <p class="text-slate-400 mb-8 text-sm">請輸入實驗員名稱以啟動分餾模擬器及知識考核系統。</p>
-                    
+                    <h2 class="serif-font text-2xl font-bold text-white mb-2" data-zh="系統登入認證" data-en="System Login">系統登入認證</h2>
+                    <p class="text-slate-400 mb-8 text-sm" data-zh="請輸入實驗員名稱以啟動分餾模擬器及知識考核系統。" data-en="Enter your operator name to launch the distillation simulator and the knowledge test.">請輸入實驗員名稱以啟動分餾模擬器及知識考核系統。</p>
+
                     <div class="relative mb-6">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                         </span>
-                        <input type="text" id="student-name" placeholder="輸入姓名" class="w-full pl-10 pr-4 py-3 bg-slate-900/50 border-2 border-slate-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors">
+                        <input type="text" id="student-name" placeholder="輸入姓名" data-ph-zh="輸入姓名" data-ph-en="Enter name" class="w-full pl-10 pr-4 py-3 bg-slate-900/50 border-2 border-slate-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors">
                     </div>
-                    
-                    <button onclick="startLearning()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all duration-300 transform hover:-translate-y-1">
+
+                    <button onclick="startLearning()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all duration-300 transform hover:-translate-y-1" data-zh="初始化系統 🚀" data-en="Initialise system 🚀">
                         初始化系統 🚀
                     </button>
-                    <p id="login-error" class="text-red-400 text-sm mt-4 hidden bg-red-900/30 py-2 rounded-lg border border-red-800/50">⚠️ 存取被拒：請先輸入姓名</p>
+                    <p id="login-error" class="text-red-400 text-sm mt-4 hidden bg-red-900/30 py-2 rounded-lg border border-red-800/50" data-zh="⚠️ 存取被拒：請先輸入姓名" data-en="⚠️ Access denied: please enter a name">⚠️ 存取被拒：請先輸入姓名</p>
                 </div>
             </div>
 
             <!-- 視圖 2: 學習模擬器 -->
             <div id="view-learn" class="w-full hidden fade-in flex-col h-full">
-                <p class="text-slate-400 text-sm mb-4">系統提示：觀察碳氫化合物粒子的<span class="text-red-400">蒸發上升</span>與<span class="text-blue-400">冷卻凝結</span>過程，點擊右側控制板以隔離顯示特定餾分。</p>
-                
+                <p class="text-slate-400 text-sm mb-4">
+                    <span class="lang-zh">系統提示：觀察碳氫化合物粒子的<span class="text-red-400">蒸發上升</span>與<span class="text-blue-400">冷卻凝結</span>過程，點擊右側控制板以隔離顯示特定餾分。</span>
+                    <span class="lang-en" style="display:none">System note: watch the hydrocarbon particles <span class="text-red-400">evaporate and rise</span> then <span class="text-blue-400">cool and condense</span>. Click the control panel on the right to isolate a specific fraction.</span>
+                </p>
+
                 <div class="flex flex-col md:flex-row gap-6 w-full flex-grow items-stretch">
-                    
+
                     <!-- 左側：動畫分餾塔與管道 -->
                     <div class="relative w-full md:w-1/2 lg:w-7/12 h-[500px] md:h-[600px] flex justify-center items-end bg-slate-900/50 rounded-2xl border border-slate-700 p-4 pb-8 md:pb-10">
-                        
-                        <!-- 塔與管道綜合容器 -->
+
                         <div class="relative w-full max-w-[320px] md:max-w-[420px] h-full flex z-10 ml-6 md:ml-10">
-                            
-                            <!-- Canvas -->
+
                             <canvas id="tower-canvas" class="absolute inset-0 w-full h-full z-30 pointer-events-none"></canvas>
-                            
-                            <!-- 左側溫度標籤列 -->
+
                             <div class="absolute -left-12 md:-left-16 top-0 bottom-0 w-12 md:w-16 flex flex-col z-40">
                                 <div class="flex-1 relative"><div class="absolute bottom-0 translate-y-1/2 right-2 text-[10px] md:text-xs text-blue-300 font-mono font-bold bg-slate-800/90 px-1.5 py-0.5 rounded border border-slate-600 shadow-md whitespace-nowrap">20°C</div></div>
                                 <div class="flex-1 relative"><div class="absolute bottom-0 translate-y-1/2 right-2 text-[10px] md:text-xs text-yellow-300 font-mono font-bold bg-slate-800/90 px-1.5 py-0.5 rounded border border-slate-600 shadow-md whitespace-nowrap">70°C</div></div>
@@ -129,92 +128,16 @@
                                 <div class="flex-1 relative"></div>
                             </div>
 
-                            <!-- 塔本體 (佔 75%) -->
                             <div class="relative w-[75%] h-full tower-bg rounded-t-[100px] border-x-[6px] border-t-[6px] border-b-[12px] border-slate-500 shadow-[0_0_40px_rgba(0,0,0,0.8),inset_0_0_30px_rgba(0,0,0,0.6)] z-10 flex flex-col">
-                                
-                                <!-- Zone 0 (煉油氣) -->
-                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]">
-                                    <div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none">
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Zone 1 (汽油) -->
-                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]">
-                                    <div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none">
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Zone 2 (石腦油) -->
-                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]">
-                                    <div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none">
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Zone 3 (煤油) -->
-                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]">
-                                    <div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none">
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Zone 4 (柴油) -->
-                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]">
-                                    <div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none">
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Zone 5 (潤滑油) -->
-                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]">
-                                    <div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none">
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                        <div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]">
-                                            <div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div>
-                                            <div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Zone 6 (瀝青) - 底層無層板 -->
+                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]"><div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none"><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div></div></div>
+                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]"><div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none"><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div></div></div>
+                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]"><div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none"><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div></div></div>
+                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]"><div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none"><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div></div></div>
+                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]"><div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none"><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div></div></div>
+                                <div class="flex-1 relative border-b-[4px] border-slate-400 shadow-[0_-4px_10px_rgba(0,0,0,0.4)_inset]"><div class="absolute bottom-0 w-full flex justify-evenly px-4 md:px-8 z-10 pointer-events-none"><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div><div class="w-6 h-4 md:w-8 md:h-5 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-md border-2 border-b-0 border-slate-600 relative flex justify-center shadow-[inset_0_-2px_3px_rgba(0,0,0,0.5)]"><div class="absolute -top-1 w-2 h-1 bg-slate-500 rounded-t-sm"></div><div class="absolute bottom-0 w-full flex justify-between px-1 pb-0.5"><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div><div class="w-[2px] h-1.5 md:h-2 bg-slate-900 rounded-t-sm"></div></div></div></div></div>
                                 <div class="flex-1 relative"></div>
                             </div>
 
-                            <!-- 右側餾分出口管道 (佔 25%) -->
                             <div class="relative w-[25%] h-full flex flex-col z-20 pointer-events-none">
                                 <div class="flex-1 relative"><div id="pipe-0" class="absolute top-4 left-[-8px] w-[calc(100%+8px)] h-5 md:h-7 bg-gradient-to-b from-slate-400 via-slate-300 to-slate-500 border-y-2 border-r-2 border-slate-600 rounded-r-lg shadow-lg flex items-center pr-2"><div class="w-1.5 md:w-2 h-full bg-slate-800/40 ml-1 md:ml-2 border-r border-slate-300/50"></div><div class="w-2 h-2 rounded-full bg-blue-400 ml-auto animate-pulse shadow-[0_0_8px_currentColor]"></div></div></div>
                                 <div class="flex-1 relative"><div id="pipe-1" class="absolute bottom-0 translate-y-1/2 left-[-8px] w-[calc(100%+8px)] h-5 md:h-7 bg-gradient-to-b from-slate-400 via-slate-300 to-slate-500 border-y-2 border-r-2 border-slate-600 rounded-r-lg shadow-lg flex items-center pr-2"><div class="w-1.5 md:w-2 h-full bg-slate-800/40 ml-1 md:ml-2 border-r border-slate-300/50"></div><div class="w-2 h-2 rounded-full bg-yellow-400 ml-auto animate-pulse shadow-[0_0_8px_currentColor]"></div></div></div>
@@ -225,9 +148,8 @@
                                 <div class="flex-1 relative"><div id="pipe-6" class="absolute bottom-2 md:bottom-4 left-[-8px] w-[calc(100%+8px)] h-5 md:h-7 bg-gradient-to-b from-slate-400 via-slate-300 to-slate-500 border-y-2 border-r-2 border-slate-600 rounded-r-lg shadow-lg flex items-center pr-2"><div class="w-1.5 md:w-2 h-full bg-slate-800/40 ml-1 md:ml-2 border-r border-slate-300/50"></div><div class="w-2 h-2 rounded-full bg-slate-400 ml-auto animate-pulse shadow-[0_0_8px_currentColor]"></div></div></div>
                             </div>
 
-                            <!-- 原油入口 -->
                             <div class="absolute -left-10 md:-left-16 bottom-2 md:bottom-4 flex flex-col items-center z-40">
-                                <div class="bg-slate-800 border border-slate-600 text-orange-400 text-[10px] md:text-xs px-2 py-1 rounded shadow-lg font-bold whitespace-nowrap mb-1">加熱爐 (~400°C)</div>
+                                <div class="bg-slate-800 border border-slate-600 text-orange-400 text-[10px] md:text-xs px-2 py-1 rounded shadow-lg font-bold whitespace-nowrap mb-1" data-zh="加熱爐 (~400°C)" data-en="Furnace (~400°C)">加熱爐 (~400°C)</div>
                                 <div class="w-16 md:w-20 h-6 md:h-8 bg-gradient-to-b from-slate-600 via-slate-800 to-slate-900 border-y-2 border-l-2 border-slate-500 relative flex items-center justify-end rounded-l-lg shadow-lg">
                                     <div class="w-1.5 md:w-2 h-full bg-slate-800/50 border-r border-slate-600 mr-2"></div>
                                     <div class="absolute inset-0 bg-gradient-to-r from-red-600/40 to-transparent animate-pulse rounded-l-lg"></div>
@@ -239,27 +161,17 @@
 
                     <!-- 右側：控制板與資訊 -->
                     <div class="w-full md:w-1/2 lg:w-5/12 flex flex-col gap-4 h-[500px] md:h-[600px]">
-                        
-                        <!-- 資訊顯示螢幕 -->
+
                         <div id="info-panel" class="w-full bg-black/60 border-2 border-slate-600 p-5 rounded-xl shadow-inner min-h-[160px] flex flex-col justify-center relative overflow-hidden">
-                            <div class="absolute top-0 right-0 p-2 opacity-30"><svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg></div>
-                            <div id="info-content" class="z-10">
-                                <p class="text-slate-400 text-center flex flex-col items-center gap-2 animate-pulse">
-                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
-                                    請點擊下方餾分按鈕以啟動分析
-                                </p>
-                            </div>
+                            <div class="absolute top-0 right-0 p-2 opacity-30 text-slate-300"><svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg></div>
+                            <div id="info-content" class="z-10"></div>
                         </div>
 
-                        <!-- 餾分按鈕 (由上至下) -->
-                        <div class="flex-grow flex flex-col justify-between bg-slate-800/50 p-4 rounded-xl border border-slate-700 overflow-y-auto gap-2" id="fraction-buttons">
-                            <!-- JS 生成按鈕 -->
-                        </div>
+                        <div class="flex-grow flex flex-col justify-between bg-slate-800/50 p-4 rounded-xl border border-slate-700 overflow-y-auto gap-2" id="fraction-buttons"></div>
 
-                        <!-- 進入測驗按鈕 -->
                         <button onclick="startChallenge()" class="mt-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            進入知識考核
+                            <span data-zh="進入知識考核" data-en="Start knowledge test">進入知識考核</span>
                         </button>
                     </div>
                 </div>
@@ -270,31 +182,26 @@
                 <div class="w-full flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                        知識考核
+                        <span data-zh="知識考核" data-en="Knowledge Test">知識考核</span>
                     </h2>
                     <div class="bg-slate-800 px-4 py-2 rounded-lg border border-slate-600 font-bold text-emerald-400 shadow-inner">
                         <span id="quiz-progress">1 / 10</span>
                     </div>
                 </div>
 
-                <!-- 進度條 -->
                 <div class="w-full h-2 bg-slate-800 rounded-full mb-8 overflow-hidden">
                     <div id="progress-bar-fill" class="h-full bg-blue-500 transition-all duration-300" style="width: 10%;"></div>
                 </div>
 
                 <div class="w-full glass-panel p-6 md:p-8 rounded-2xl">
                     <p id="question-text" class="text-xl md:text-2xl font-semibold text-white mb-8 leading-relaxed"></p>
-                    
-                    <div id="options-container" class="flex flex-col space-y-4">
-                        <!-- 選項會透過 JS 動態生成 -->
-                    </div>
+                    <div id="options-container" class="flex flex-col space-y-4"></div>
                 </div>
             </div>
 
             <!-- 視圖 4: 結果畫面 -->
             <div id="view-result" class="w-full hidden fade-in flex-col items-center justify-center flex-grow">
                 <div class="glass-panel p-8 rounded-3xl border border-slate-600 text-center w-full max-w-lg relative overflow-hidden">
-                    <!-- 裝飾光暈 -->
                     <div class="absolute -top-20 -left-20 w-40 h-40 bg-blue-500 rounded-full mix-blend-screen filter blur-[50px] opacity-20"></div>
                     <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-emerald-500 rounded-full mix-blend-screen filter blur-[50px] opacity-20"></div>
 
@@ -303,29 +210,28 @@
                         <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
                         <span></span>
                     </p>
-                    
+
                     <div class="flex justify-center items-center my-8 relative">
-                        <!-- 圓形進度圖背景 -->
                         <svg class="w-40 h-40 transform -rotate-90" viewBox="0 0 36 36">
                             <path class="text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
                             <path id="score-ring" class="text-emerald-500 transition-all duration-1000 ease-out" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
                         </svg>
                         <div class="absolute inset-0 flex items-center justify-center flex-col">
                             <span id="result-score" class="text-5xl font-black text-white"></span>
-                            <span class="text-xs text-slate-400 mt-1">分</span>
+                            <span class="text-xs text-slate-400 mt-1" data-zh="分" data-en="pts">分</span>
                         </div>
                     </div>
-                    
+
                     <div id="result-message-box" class="p-4 rounded-xl mb-6 bg-slate-800/80 border">
                         <p id="result-message" class="text-lg font-medium"></p>
                     </div>
 
                     <div id="upload-status" class="flex items-center justify-center gap-2 text-sm text-slate-400 mb-8 bg-slate-900/50 py-2 px-4 rounded-full inline-flex">
                         <svg class="animate-spin w-4 h-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span>正在同步數據至伺服器...</span>
+                        <span id="upload-text"></span>
                     </div>
-                    
-                    <button onclick="location.reload()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 px-4 rounded-xl border border-slate-500 transition duration-300">
+
+                    <button onclick="location.reload()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 px-4 rounded-xl border border-slate-500 transition duration-300" data-zh="登出並重新開始" data-en="Log out & restart">
                         登出並重新開始
                     </button>
                 </div>
@@ -335,40 +241,57 @@
     </div>
 
     <script>
-        // --- 設定區 ---
-        const GOOGLE_APP_SCRIPT_URL = 'DISABLED';
-        function __noSend(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({status:'success'});},text:function(){return Promise.resolve('');}});} 
+        let LANG = 'zh';
+        const L = (o) => (o && typeof o === 'object') ? (o[LANG] ?? o.zh) : o;
 
-        // 餾分資料與視覺設定
+        const GOOGLE_APP_SCRIPT_URL = 'DISABLED';
+        function __noSend(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({status:'success'});},text:function(){return Promise.resolve('');}});}
+
+        const UI = {
+            operator: {zh:'實驗員: ', en:'Operator: '},
+            infoPrompt: {zh:'請點擊下方餾分按鈕以啟動分析', en:'Click a fraction button below to start the analysis'},
+            bpRange: {zh:'沸點範圍', en:'Boiling range'},
+            carbons: {zh:'碳原子數', en:'Carbon atoms'},
+            uses: {zh:'主要用途', en:'Main uses'},
+            subject: {zh:'受測者：', en:'Candidate: '},
+            passTitle: {zh:'考核通過 🏅', en:'Test passed 🏅'},
+            failTitle: {zh:'需重新培訓 ⚠️', en:'Retraining needed ⚠️'},
+            passMsg: {zh:'表現優異！你已成功掌握原油分餾的核心原理與產物特性。', en:'Excellent! You have grasped the core principles of crude oil distillation and its products.'},
+            failMsg: {zh:'成績未達合格標準(80分)，請返回控制中心重新觀察蒸發與凝結過程。', en:'Below the passing mark (80). Return to the control center and observe evaporation and condensation again.'},
+            syncing: {zh:'正在同步數據至伺服器...', en:'Syncing data to the server...'},
+            synced: {zh:'成績已成功同步至伺服器', en:'Score synced to the server'},
+            syncFail: {zh:'網路異常，資料同步失敗', en:'Network error — sync failed'}
+        };
+
         const fractionData = [
-            { name: "煉油氣", en: "Refinery Gas", bp: "< 20°C", carbons: "1-4", uses: "瓶裝石油氣 (LPG)、燃料", color: "#60a5fa", tailwind: "border-blue-400 text-blue-400" },
-            { name: "汽油", en: "Petrol", bp: "20-70°C", carbons: "5-10", uses: "汽車燃料", color: "#fde047", tailwind: "border-yellow-400 text-yellow-400" },
-            { name: "石腦油", en: "Naphtha", bp: "70-160°C", carbons: "8-12", uses: "化工原料、製造塑膠", color: "#fbbf24", tailwind: "border-amber-400 text-amber-400" },
-            { name: "煤油", en: "Kerosene", bp: "160-250°C", carbons: "10-16", uses: "飛機燃料、火爐", color: "#f97316", tailwind: "border-orange-500 text-orange-500" },
-            { name: "柴油", en: "Diesel", bp: "250-350°C", carbons: "14-20", uses: "重型車輛 (貨車/巴士) 燃料", color: "#ef4444", tailwind: "border-red-500 text-red-500" },
-            { name: "潤滑油", en: "Lubricating Oil", bp: "350-500°C", carbons: "20-50", uses: "機器潤滑劑、蠟燭", color: "#991b1b", tailwind: "border-red-800 text-red-400" },
-            { name: "瀝青", en: "Bitumen", bp: "> 500°C", carbons: "> 50", uses: "鋪設公路、防水材料", color: "#475569", tailwind: "border-slate-500 text-slate-400" }
+            { name: {zh:"煉油氣",en:"Refinery Gas"}, en: "Refinery Gas", bp: "< 20°C", carbons: "1-4", uses: {zh:"瓶裝石油氣 (LPG)、燃料",en:"Bottled LPG, fuel"}, color: "#60a5fa", tailwind: "border-blue-400 text-blue-400" },
+            { name: {zh:"汽油",en:"Petrol"}, en: "Petrol", bp: "20-70°C", carbons: "5-10", uses: {zh:"汽車燃料",en:"Car fuel"}, color: "#fde047", tailwind: "border-yellow-400 text-yellow-400" },
+            { name: {zh:"石腦油",en:"Naphtha"}, en: "Naphtha", bp: "70-160°C", carbons: "8-12", uses: {zh:"化工原料、製造塑膠",en:"Petrochemical feedstock, plastics"}, color: "#fbbf24", tailwind: "border-amber-400 text-amber-400" },
+            { name: {zh:"煤油",en:"Kerosene"}, en: "Kerosene", bp: "160-250°C", carbons: "10-16", uses: {zh:"飛機燃料、火爐",en:"Jet fuel, stoves"}, color: "#f97316", tailwind: "border-orange-500 text-orange-500" },
+            { name: {zh:"柴油",en:"Diesel"}, en: "Diesel", bp: "250-350°C", carbons: "14-20", uses: {zh:"重型車輛 (貨車/巴士) 燃料",en:"Heavy vehicle (truck/bus) fuel"}, color: "#ef4444", tailwind: "border-red-500 text-red-500" },
+            { name: {zh:"潤滑油",en:"Lubricating Oil"}, en: "Lubricating Oil", bp: "350-500°C", carbons: "20-50", uses: {zh:"機器潤滑劑、蠟燭",en:"Machine lubricant, candles"}, color: "#991b1b", tailwind: "border-red-800 text-red-400" },
+            { name: {zh:"瀝青",en:"Bitumen"}, en: "Bitumen", bp: "> 500°C", carbons: "> 50", uses: {zh:"鋪設公路、防水材料",en:"Road surfacing, waterproofing"}, color: "#475569", tailwind: "border-slate-500 text-slate-400" }
         ];
 
         const quizData = [
-            { q: "1. 分餾出的碳氫化合物中，碳鏈最短的通常是？", options: ["煉油氣", "汽油", "柴油", "瀝青"], answer: 0 },
-            { q: "2. 原油分餾的原理是基於各成分的？", options: ["密度不同", "沸點不同", "熔點不同", "溶解度不同"], answer: 1 },
-            { q: "3. 分餾塔中，溫度最高的位置在？", options: ["塔頂", "塔的中央", "塔底", "加熱爐內"], answer: 2 },
-            { q: "4. 主要用作鋪路材料的是？", options: ["煤油", "潤滑油", "柴油", "瀝青"], answer: 3 },
-            { q: "5. 碳原子數目越多的烴類，其揮發性通常？", options: ["越低", "越高", "不變", "視乎情況"], answer: 0 },
-            { q: "6. 哪一種餾分是製造石化產品（如塑膠）的主要原料？", options: ["汽油", "煤油", "石腦油", "潤滑油"], answer: 2 },
-            { q: "7. 飛機的主要燃料是來自哪一種餾分？", options: ["汽油", "煤油", "柴油", "瀝青"], answer: 1 },
-            { q: "8. 下列哪一項餾分的沸點最高？", options: ["汽油", "石腦油", "柴油", "潤滑油"], answer: 3 },
-            { q: "9. 從塔頂收集到的氣體（煉油氣）主要用作？", options: ["家用燃料", "飛機燃料", "汽車燃料", "潤滑劑"], answer: 0 },
-            { q: "10. 餾分的顏色由上至下（沸點由低至高）會如何變化？", options: ["逐漸變淺", "逐漸變深", "皆為無色", "皆為黑色"], answer: 1 }
+            { q:{zh:"1. 分餾出的碳氫化合物中，碳鏈最短的通常是？",en:"1. Which fraction usually has the shortest carbon chain?"}, options:[{zh:"煉油氣",en:"Refinery gas"},{zh:"汽油",en:"Petrol"},{zh:"柴油",en:"Diesel"},{zh:"瀝青",en:"Bitumen"}], answer:0 },
+            { q:{zh:"2. 原油分餾的原理是基於各成分的？",en:"2. Fractional distillation separates crude oil by differences in?"}, options:[{zh:"密度不同",en:"Density"},{zh:"沸點不同",en:"Boiling point"},{zh:"熔點不同",en:"Melting point"},{zh:"溶解度不同",en:"Solubility"}], answer:1 },
+            { q:{zh:"3. 分餾塔中，溫度最高的位置在？",en:"3. Where is the temperature highest in the column?"}, options:[{zh:"塔頂",en:"Top"},{zh:"塔的中央",en:"Middle"},{zh:"塔底",en:"Bottom"},{zh:"加熱爐內",en:"Inside the furnace"}], answer:2 },
+            { q:{zh:"4. 主要用作鋪路材料的是？",en:"4. Which is mainly used for road surfacing?"}, options:[{zh:"煤油",en:"Kerosene"},{zh:"潤滑油",en:"Lubricating oil"},{zh:"柴油",en:"Diesel"},{zh:"瀝青",en:"Bitumen"}], answer:3 },
+            { q:{zh:"5. 碳原子數目越多的烴類，其揮發性通常？",en:"5. As the number of carbon atoms rises, volatility usually?"}, options:[{zh:"越低",en:"Decreases"},{zh:"越高",en:"Increases"},{zh:"不變",en:"Stays the same"},{zh:"視乎情況",en:"Depends"}], answer:0 },
+            { q:{zh:"6. 哪一種餾分是製造石化產品（如塑膠）的主要原料？",en:"6. Which fraction is the main feedstock for petrochemicals (e.g. plastics)?"}, options:[{zh:"汽油",en:"Petrol"},{zh:"煤油",en:"Kerosene"},{zh:"石腦油",en:"Naphtha"},{zh:"潤滑油",en:"Lubricating oil"}], answer:2 },
+            { q:{zh:"7. 飛機的主要燃料是來自哪一種餾分？",en:"7. Aircraft fuel mainly comes from which fraction?"}, options:[{zh:"汽油",en:"Petrol"},{zh:"煤油",en:"Kerosene"},{zh:"柴油",en:"Diesel"},{zh:"瀝青",en:"Bitumen"}], answer:1 },
+            { q:{zh:"8. 下列哪一項餾分的沸點最高？",en:"8. Which fraction has the highest boiling point?"}, options:[{zh:"汽油",en:"Petrol"},{zh:"石腦油",en:"Naphtha"},{zh:"柴油",en:"Diesel"},{zh:"潤滑油",en:"Lubricating oil"}], answer:3 },
+            { q:{zh:"9. 從塔頂收集到的氣體（煉油氣）主要用作？",en:"9. The gas collected at the top (refinery gas) is mainly used as?"}, options:[{zh:"家用燃料",en:"Domestic fuel"},{zh:"飛機燃料",en:"Jet fuel"},{zh:"汽車燃料",en:"Car fuel"},{zh:"潤滑劑",en:"Lubricant"}], answer:0 },
+            { q:{zh:"10. 餾分的顏色由上至下（沸點由低至高）會如何變化？",en:"10. From top to bottom (low to high boiling point), how does the colour change?"}, options:[{zh:"逐漸變淺",en:"Gets lighter"},{zh:"逐漸變深",en:"Gets darker"},{zh:"皆為無色",en:"All colourless"},{zh:"皆為黑色",en:"All black"}], answer:1 }
         ];
 
         let studentName = "";
         let currentQuestionIndex = 0;
         let score = 0;
-        let activeFractionIndex = null; // 記錄當前查看的餾分層
+        let activeFractionIndex = null;
+        let _resultShown = false;
 
-        // --- 介面邏輯 ---
         function switchView(viewId) {
             ['view-login', 'view-learn', 'view-quiz', 'view-result'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
@@ -386,12 +309,21 @@
             }
             studentName = nameInput;
             const displayName = document.getElementById('display-name');
-            displayName.innerText = `實驗員: ${studentName}`;
+            displayName.innerText = `${L(UI.operator)}${studentName}`;
             displayName.classList.remove('hidden');
-            
+
             initFractionButtons();
+            renderInfoDefault();
             switchView('view-learn');
-            initCanvasEngine(); // 啟動粒子動畫
+            initCanvasEngine();
+        }
+
+        function renderInfoDefault(){
+            document.getElementById('info-content').innerHTML = `
+                <p class="text-slate-400 text-center flex flex-col items-center gap-2 animate-pulse">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                    ${L(UI.infoPrompt)}
+                </p>`;
         }
 
         function initFractionButtons() {
@@ -400,56 +332,53 @@
             fractionData.forEach((data, index) => {
                 const btn = document.createElement('button');
                 btn.className = `fraction-btn w-full text-left bg-slate-900/60 border-l-4 ${data.tailwind} hover:bg-slate-700/80 p-2 md:p-3 rounded text-sm md:text-base font-bold shadow flex justify-between items-center`;
-                btn.innerHTML = `<span>${data.name} <span class="text-xs text-slate-400 block md:inline">${data.bp}</span></span> 
+                btn.innerHTML = `<span>${L(data.name)} <span class="text-xs text-slate-400 block md:inline">${data.bp}</span></span>
                                  <div class="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" style="background-color: ${data.color}"></div>`;
                 btn.onclick = () => showInfo(index, btn);
+                if(index === activeFractionIndex) btn.classList.add('active','bg-slate-700');
                 container.appendChild(btn);
             });
         }
 
         function showInfo(index, btnElement) {
-            activeFractionIndex = index; // 更新 Canvas 對焦目標
-            
-            // 更新按鈕樣式
+            activeFractionIndex = index;
             document.querySelectorAll('.fraction-btn').forEach(b => b.classList.remove('active', 'bg-slate-700'));
-            btnElement.classList.add('active', 'bg-slate-700');
+            if(btnElement) btnElement.classList.add('active', 'bg-slate-700');
 
             const data = fractionData[index];
             const content = document.getElementById('info-content');
-            
             content.innerHTML = `
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-4 h-8 rounded border border-white/30" style="background-color: ${data.color}; box-shadow: 0 0 15px ${data.color}"></div>
                     <div>
-                        <h3 class="text-2xl font-bold text-white tracking-wide" style="text-shadow: 0 0 10px ${data.color}80">${data.name}</h3>
+                        <h3 class="text-2xl font-bold text-white tracking-wide" style="text-shadow: 0 0 10px ${data.color}80">${L(data.name)}</h3>
                         <p class="text-xs text-slate-400 uppercase tracking-widest">${data.en}</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 text-sm bg-slate-900/50 p-4 rounded-lg border border-slate-700">
                     <div>
-                        <span class="text-slate-400 block mb-1 text-xs"><svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>沸點範圍</span> 
+                        <span class="text-slate-400 block mb-1 text-xs"><svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>${L(UI.bpRange)}</span>
                         <span class="font-bold text-white text-base">${data.bp}</span>
                     </div>
                     <div>
-                        <span class="text-slate-400 block mb-1 text-xs"><svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>碳原子數</span> 
+                        <span class="text-slate-400 block mb-1 text-xs"><svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>${L(UI.carbons)}</span>
                         <span class="font-bold text-white text-base">${data.carbons}</span>
                     </div>
                     <div class="col-span-2 pt-2 border-t border-slate-700">
-                        <span class="text-slate-400 block mb-1 text-xs"><svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>主要用途</span> 
-                        <span class="font-medium text-white">${data.uses}</span>
+                        <span class="text-slate-400 block mb-1 text-xs"><svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>${L(UI.uses)}</span>
+                        <span class="font-medium text-white">${L(data.uses)}</span>
                     </div>
                 </div>
             `;
-            
             content.parentElement.classList.remove('fade-in');
-            void content.parentElement.offsetWidth; // trigger reflow
+            void content.parentElement.offsetWidth;
             content.parentElement.classList.add('fade-in');
         }
 
-        // --- 考核系統邏輯 ---
         function startChallenge() {
             currentQuestionIndex = 0;
             score = 0;
+            _resultShown = false;
             switchView('view-quiz');
             loadQuestion();
         }
@@ -457,20 +386,16 @@
         function loadQuestion() {
             const qData = quizData[currentQuestionIndex];
             document.getElementById('quiz-progress').innerText = `${currentQuestionIndex + 1} / 10`;
-            
-            // 更新進度條
             const progressPercent = ((currentQuestionIndex) / 10) * 100;
             document.getElementById('progress-bar-fill').style.width = `${progressPercent}%`;
+            document.getElementById('question-text').innerText = L(qData.q);
 
-            document.getElementById('question-text').innerText = qData.q;
-            
             const optionsContainer = document.getElementById('options-container');
-            optionsContainer.innerHTML = ''; 
-            
+            optionsContainer.innerHTML = '';
             qData.options.forEach((opt, index) => {
                 const btn = document.createElement('button');
                 btn.className = "w-full text-left p-4 rounded-xl bg-slate-800/80 border-2 border-slate-600 hover:border-blue-500 hover:bg-slate-700 font-medium text-slate-200 transition-all duration-200 flex items-center group";
-                btn.innerHTML = `<span class="w-8 h-8 rounded bg-slate-900 border border-slate-600 flex items-center justify-center mr-4 group-hover:bg-blue-600 group-hover:border-blue-400 group-hover:text-white transition-colors">${String.fromCharCode(65 + index)}</span> <span class="text-lg">${opt}</span>`;
+                btn.innerHTML = `<span class="w-8 h-8 rounded bg-slate-900 border border-slate-600 flex items-center justify-center mr-4 group-hover:bg-blue-600 group-hover:border-blue-400 group-hover:text-white transition-colors">${String.fromCharCode(65 + index)}</span> <span class="text-lg">${L(opt)}</span>`;
                 btn.onclick = () => checkAnswer(index, btn);
                 optionsContainer.appendChild(btn);
             });
@@ -478,8 +403,6 @@
 
         function checkAnswer(selectedIndex, btnElement) {
             const correctIndex = quizData[currentQuestionIndex].answer;
-            
-            // 防止重複點擊
             const allBtns = document.getElementById('options-container').querySelectorAll('button');
             allBtns.forEach(b => b.onclick = null);
 
@@ -493,13 +416,11 @@
                 btnElement.classList.replace('border-slate-600', 'border-red-500');
                 btnElement.classList.add('bg-red-900/40');
                 btnElement.querySelector('span').classList.add('bg-red-500', 'text-white', 'border-red-400');
-                
-                // 標示正確答案
                 const correctBtn = allBtns[correctIndex];
                 correctBtn.classList.replace('border-slate-600', 'border-emerald-500');
                 correctBtn.classList.add('bg-emerald-900/20');
             }
-            
+
             setTimeout(() => {
                 currentQuestionIndex++;
                 if (currentQuestionIndex < quizData.length) {
@@ -508,82 +429,61 @@
                     document.getElementById('progress-bar-fill').style.width = `100%`;
                     setTimeout(showResult, 500);
                 }
-            }, 1000); // 延遲1秒讓學生看結果
+            }, 1000);
+        }
+
+        function renderResultText(){
+            document.getElementById('result-name').querySelector('span').innerText = `${L(UI.subject)}${studentName}`;
+            const title = document.getElementById('result-title');
+            const msgBox = document.getElementById('result-message-box');
+            const msg = document.getElementById('result-message');
+            if (score >= 8) {
+                title.innerText = L(UI.passTitle);
+                title.className = "text-3xl font-black mb-2 tracking-widest text-emerald-400";
+                msgBox.className = "p-4 rounded-xl mb-6 bg-emerald-900/30 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]";
+                msg.innerText = L(UI.passMsg);
+                msg.className = "text-lg font-medium text-emerald-300";
+            } else {
+                title.innerText = L(UI.failTitle);
+                title.className = "text-3xl font-black mb-2 tracking-widest text-amber-500";
+                msgBox.className = "p-4 rounded-xl mb-6 bg-amber-900/30 border border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]";
+                msg.innerText = L(UI.failMsg);
+                msg.className = "text-lg font-medium text-amber-300";
+            }
         }
 
         function showResult() {
             switchView('view-result');
-            document.getElementById('result-name').querySelector('span').innerText = `受測者：${studentName}`;
-            
-            // 分數動畫
+            _resultShown = true;
             let finalScore = score * 10;
             let currentDisplayScore = 0;
             const scoreDisplay = document.getElementById('result-score');
             const scoreRing = document.getElementById('score-ring');
-            
             const timer = setInterval(() => {
-                if (currentDisplayScore >= finalScore) {
-                    clearInterval(timer);
-                    scoreDisplay.innerText = finalScore;
-                } else {
-                    currentDisplayScore += 1;
-                    scoreDisplay.innerText = currentDisplayScore;
-                }
+                if (currentDisplayScore >= finalScore) { clearInterval(timer); scoreDisplay.innerText = finalScore; }
+                else { currentDisplayScore += 1; scoreDisplay.innerText = currentDisplayScore; }
             }, 20);
-
-            // 環形進度條動畫
-            setTimeout(() => {
-                scoreRing.setAttribute('stroke-dasharray', `${finalScore}, 100`);
-            }, 100);
-
-            const title = document.getElementById('result-title');
-            const msgBox = document.getElementById('result-message-box');
-            const msg = document.getElementById('result-message');
-            
-            if (score >= 8) {
-                title.innerText = "考核通過 🏅";
-                title.className = "text-3xl font-black mb-2 tracking-widest text-emerald-400";
-                scoreRing.classList.replace('text-emerald-500', 'text-emerald-400');
-                msgBox.className = "p-4 rounded-xl mb-6 bg-emerald-900/30 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]";
-                msg.innerText = "表現優異！你已成功掌握原油分餾的核心原理與產物特性。";
-                msg.className = "text-lg font-medium text-emerald-300";
-            } else {
-                title.innerText = "需重新培訓 ⚠️";
-                title.className = "text-3xl font-black mb-2 tracking-widest text-amber-500";
-                scoreRing.classList.replace('text-emerald-500', 'text-amber-500');
-                msgBox.className = "p-4 rounded-xl mb-6 bg-amber-900/30 border border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]";
-                msg.innerText = "成績未達合格標準(80分)，請返回控制中心重新觀察蒸發與凝結過程。";
-                msg.className = "text-lg font-medium text-amber-300";
-            }
-
+            setTimeout(() => { scoreRing.setAttribute('stroke-dasharray', `${finalScore}, 100`); }, 100);
+            if (score >= 8) scoreRing.classList.replace('text-emerald-500', 'text-emerald-400');
+            else scoreRing.classList.replace('text-emerald-500', 'text-amber-500');
+            renderResultText();
             uploadToGoogleSheet();
         }
 
         function uploadToGoogleSheet() {
             const statusDiv = document.getElementById('upload-status');
-            
-            // 使用 URLSearchParams 確保 Google Apps Script 能正確解析 e.parameter
             const params = new URLSearchParams();
             params.append('name', studentName);
             params.append('score', score * 10);
-
-            __noSend(0, {
-                method: 'POST',
-                body: params, 
-                mode: 'no-cors', // 忽略跨域錯誤
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            })
+            __noSend(0, { method:'POST', body:params, mode:'no-cors', headers:{'Content-Type':'application/x-www-form-urlencoded'} })
             .then(() => {
-                // 因為使用 no-cors，fetch 不會拋出網路以外的錯誤，只要請求發出就會到這裡
                 statusDiv.innerHTML = `<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                       <span class="text-emerald-400">成績已成功同步至伺服器</span>`;
+                                       <span class="text-emerald-400" id="upload-text">${L(UI.synced)}</span>`;
                 statusDiv.classList.replace('bg-slate-900/50', 'bg-emerald-900/30');
             })
             .catch(error => {
                 statusDiv.innerHTML = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                       <span class="text-red-400">網路異常，資料同步失敗</span>`;
+                                       <span class="text-red-400" id="upload-text">${L(UI.syncFail)}</span>`;
                 statusDiv.classList.replace('bg-slate-900/50', 'bg-red-900/30');
                 console.error("Upload error:", error);
             });
@@ -595,7 +495,7 @@
         let canvas, ctx;
         let particlesArray = [];
         let animationFrameId;
-        let targetYArray = []; // 新增：儲存各出口管道的精確 Y 座標
+        let targetYArray = [];
 
         function updateTargetY() {
             if (!canvas) return;
@@ -605,109 +505,69 @@
                 const pipe = document.getElementById(`pipe-${i}`);
                 if (pipe) {
                     const pipeRect = pipe.getBoundingClientRect();
-                    // 取得管道中心點相對於 Canvas 的 Y 座標
                     targetYArray[i] = pipeRect.top - canvasRect.top + (pipeRect.height / 2);
-                } else {
-                    targetYArray[i] = 0;
-                }
+                } else { targetYArray[i] = 0; }
             }
         }
 
         class Particle {
             constructor(cw, ch) {
-                this.fraction = Math.floor(Math.random() * 7); // 0 (Gas, top) to 6 (Bitumen, bottom)
-                
-                // 根據餾分設定不同的分子大小及物理特性
-                // 碳鏈越長 (fraction 越大) -> 分子半徑越大, 運動與擴散速度越慢
+                this.fraction = Math.floor(Math.random() * 7);
                 const physicsData = [
-                    { minR: 2.0, maxR: 3.0, speed: 2.0 },   // 0. 煉油氣 (C1-4) - 極輕極快
-                    { minR: 3.0, maxR: 4.5, speed: 1.7 },   // 1. 汽油 (C5-10)
-                    { minR: 4.5, maxR: 6.0, speed: 1.4 },   // 2. 石腦油 (C8-12)
-                    { minR: 6.0, maxR: 8.0, speed: 1.1 },   // 3. 煤油 (C10-16)
-                    { minR: 8.0, maxR: 11.0, speed: 0.8 },  // 4. 柴油 (C14-20)
-                    { minR: 11.0, maxR: 15.0, speed: 0.5 }, // 5. 潤滑油 (C20-50)
-                    { minR: 15.0, maxR: 20.0, speed: 0.3 }  // 6. 瀝青 (>C50) - 巨大且黏稠
+                    { minR: 2.0, maxR: 3.0, speed: 2.0 },
+                    { minR: 3.0, maxR: 4.5, speed: 1.7 },
+                    { minR: 4.5, maxR: 6.0, speed: 1.4 },
+                    { minR: 6.0, maxR: 8.0, speed: 1.1 },
+                    { minR: 8.0, maxR: 11.0, speed: 0.8 },
+                    { minR: 11.0, maxR: 15.0, speed: 0.5 },
+                    { minR: 15.0, maxR: 20.0, speed: 0.3 }
                 ];
-
                 const pData = physicsData[this.fraction];
                 this.radius = Math.random() * (pData.maxR - pData.minR) + pData.minR;
-                
-                // 初始位置：塔底左側 (對應加熱爐入口)
                 let towerWidth = cw * 0.75;
                 this.x = towerWidth * 0.15 + (Math.random() * towerWidth * 0.2);
-                this.y = ch - this.radius - 2; 
-                
-                // 運動參數 (套用物理速度基數)
-                this.speedY = -(Math.random() * pData.speed + pData.speed * 0.5); 
-                this.speedX = (Math.random() * 1 - 0.5) * pData.speed;    
-                this.baseFlowSpeed = pData.speed; // 紀錄基礎流速以供液態時使用
-                
-                // 增添分子抖動頻率，輕分子布朗運動(抖動)大，重分子幾乎不抖
+                this.y = ch - this.radius - 2;
+                this.speedY = -(Math.random() * pData.speed + pData.speed * 0.5);
+                this.speedX = (Math.random() * 1 - 0.5) * pData.speed;
+                this.baseFlowSpeed = pData.speed;
                 this.jitter = pData.speed * 0.4;
-
-                this.state = 'gas'; // gas -> condensing -> liquid
+                this.state = 'gas';
                 this.color = fractionData[this.fraction].color;
                 this.opacity = 1;
             }
-
             update(cw) {
-                // 如果有選擇特定餾分，非目標粒子變暗
                 let targetOpacity = (activeFractionIndex === null || activeFractionIndex === this.fraction) ? 1 : 0.15;
                 this.opacity += (targetOpacity - this.opacity) * 0.1;
-
                 let targetY = targetYArray[this.fraction];
-
                 if (this.state === 'gas') {
-                    // 氣態：向上運動 + 布朗運動
                     this.y += this.speedY;
                     this.x += this.speedX;
-                    
-                    // 碰壁反彈 (保持在金屬塔內, 塔佔 canvas 75%)
                     let towerWidth = cw * 0.75;
-                    // 加入邊距防止超出金屬邊框
                     if (this.x - this.radius < 6) this.speedX *= -1;
                     if (this.x + this.radius > towerWidth - 6) this.speedX *= -1;
-
-                    // 到達對應沸點的管道高度 -> 開始凝結並準備流出
-                    if (this.y <= targetY) {
-                        this.state = 'condensing';
-                        this.speedY = 0; // 停止上升
-                        this.y = targetY; // 對齊管道中心
-                    }
+                    if (this.y <= targetY) { this.state = 'condensing'; this.speedY = 0; this.y = targetY; }
                 } else if (this.state === 'condensing') {
-                    // 凝結態：轉向液體流出方向 (向右進入管道)，重分子流速較慢
                     this.speedX = Math.random() * this.baseFlowSpeed * 0.5 + this.baseFlowSpeed * 0.5;
                     this.state = 'liquid';
                 } else if (this.state === 'liquid') {
-                    // 液態：向右流出塔外
                     this.x += this.speedX;
-                    // 液體在管道內根據抖動值輕微波動
-                    this.y += (Math.random() * this.jitter - this.jitter / 2); 
+                    this.y += (Math.random() * this.jitter - this.jitter / 2);
                 }
             }
-
             draw(ctx) {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                
-                // 發光效果 (氣態較亮，液態較實)
                 ctx.shadowBlur = this.state === 'gas' ? 8 : 2;
                 ctx.shadowColor = this.color;
-                
-                // 轉換 HEX 為 RGBA 處理透明度
                 const hex = this.color.replace('#', '');
                 const r = parseInt(hex.substring(0,2), 16);
                 const g = parseInt(hex.substring(2,4), 16);
                 const b = parseInt(hex.substring(4,6), 16);
-                
                 ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.opacity})`;
                 ctx.fill();
-                ctx.shadowBlur = 0; // 重置
-
-                // 為半徑較大 (代表重質油) 的分子加入立體高光 (Specular Highlight) 讓其具有液滴的視覺質感
+                ctx.shadowBlur = 0;
                 if (this.radius > 4 && this.opacity > 0.5) {
                     ctx.beginPath();
-                    // 在左上方加上高光
                     ctx.arc(this.x - this.radius * 0.35, this.y - this.radius * 0.35, this.radius * 0.25, 0, Math.PI * 2);
                     ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.5})`;
                     ctx.fill();
@@ -718,53 +578,64 @@
         function initCanvasEngine() {
             canvas = document.getElementById('tower-canvas');
             ctx = canvas.getContext('2d');
-            
-            // 設定正確的內部解析度
             function resizeCanvas() {
                 const rect = canvas.parentElement.getBoundingClientRect();
                 canvas.width = rect.width;
                 canvas.height = rect.height;
-                updateTargetY(); // 更新管道對齊座標
+                updateTargetY();
             }
             window.addEventListener('resize', resizeCanvas);
             resizeCanvas();
-
             particlesArray = [];
             animate();
         }
 
         function animate() {
-            // 清除畫布，帶點殘影效果 (拖尾)
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 持續產生新粒子 (模擬原油不斷注入)
             if (particlesArray.length < 300) {
-                // 每次新增 1-2 顆
-                for(let i=0; i<2; i++){
-                    particlesArray.push(new Particle(canvas.width, canvas.height));
-                }
+                for(let i=0; i<2; i++){ particlesArray.push(new Particle(canvas.width, canvas.height)); }
             }
-
-            // 更新與繪製粒子
             for (let i = 0; i < particlesArray.length; i++) {
                 let p = particlesArray[i];
                 p.update(canvas.width);
                 p.draw(ctx);
-
-                // 如果液體粒子流出塔外 (超出右側)，將其移除
-                if (p.x > canvas.width + p.radius) {
-                    particlesArray.splice(i, 1);
-                    i--;
-                }
+                if (p.x > canvas.width + p.radius) { particlesArray.splice(i, 1); i--; }
             }
-
-            // 確保動畫只在學習視圖中運行 (節省效能)
             if (!document.getElementById('view-learn').classList.contains('hidden')) {
                 animationFrameId = requestAnimationFrame(animate);
             }
         }
 
+        // --- 主題 / 語言切換 ---
+        function toggleTheme(){
+            const light = !document.body.classList.contains('light');
+            document.body.classList.toggle('light', light);
+            document.body.classList.toggle('dark', !light);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${light?'moon':'sun'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+        function toggleLang(){
+            LANG = LANG==='zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = LANG==='zh' ? 'EN' : '中';
+            document.querySelectorAll('[data-zh][data-en]').forEach(el=>{
+                el.textContent = el.getAttribute(LANG==='zh'?'data-zh':'data-en');
+            });
+            document.querySelectorAll('[data-ph-zh][data-ph-en]').forEach(el=>{
+                el.placeholder = el.getAttribute(LANG==='zh'?'data-ph-zh':'data-ph-en');
+            });
+            document.querySelectorAll('.lang-zh').forEach(el=>{ el.style.display = LANG==='zh'?'':'none'; });
+            document.querySelectorAll('.lang-en').forEach(el=>{ el.style.display = LANG==='en'?'':'none'; });
+            // 動態內容重繪
+            const dn = document.getElementById('display-name');
+            if(!dn.classList.contains('hidden')) dn.innerText = `${L(UI.operator)}${studentName}`;
+            const fb = document.getElementById('fraction-buttons');
+            if(fb && fb.children.length){ initFractionButtons(); if(activeFractionIndex!==null) showInfo(activeFractionIndex, null); else renderInfoDefault(); }
+            if(!document.getElementById('view-quiz').classList.contains('hidden')) loadQuestion();
+            if(_resultShown && !document.getElementById('view-result').classList.contains('hidden')) renderResultText();
+        }
+
+        if(window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>
