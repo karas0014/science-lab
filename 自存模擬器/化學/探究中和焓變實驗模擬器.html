@@ -3,188 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>化學實驗室：探究中和焓變</title>
-    <!-- Tailwind CSS -->
+    <title>探究中和焓變 · Enthalpy of Neutralisation</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Zen Maru Gothic (Cute rounded font) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for Icons -->
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Zen Maru Gothic', sans-serif;
-            background-color: #fff0f5; /* Lavender Blush */
-            background-image: radial-gradient(#ffc1e3 20%, transparent 20%),
-                              radial-gradient(#ffc1e3 20%, transparent 20%);
-            background-size: 50px 50px;
-            background-position: 0 0, 25px 25px;
-            color: #4a4a4a;
+        :root{ --ac:#3b82f6; }
+        body { font-family: 'Zen Maru Gothic', 'Noto Sans HK', sans-serif; color: #4a4a4a; transition:background-color .3s; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+        .bp-surface{
+            background-color:#eaeef3;
+            background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
         }
+        body.dark .bp-surface{
+            background-color:#0a1626;
+            background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
 
-        .kawaii-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 25px;
-            border: 4px solid #ffb7b2;
-            box-shadow: 8px 8px 0px #ffdac1;
-            transition: transform 0.2s;
-        }
-
-        .kawaii-btn {
-            background-color: #ff9aa2;
-            color: white;
-            border-radius: 50px;
-            border: 3px solid white;
-            box-shadow: 4px 4px 0px #e2f0cb;
-            font-weight: bold;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .kawaii-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 6px 6px 0px #e2f0cb;
-            background-color: #ffb7b2;
-        }
-
-        .kawaii-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0px 0px 0px #e2f0cb;
-        }
-
-        .kawaii-btn:disabled {
-            background-color: #e5e7eb;
-            border-color: #d1d5db;
-            box-shadow: none;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .input-kawaii {
-            border: 2px solid #b5ead7;
-            border-radius: 15px;
-            padding: 8px 15px;
-            outline: none;
-            color: #555;
-            transition: border-color 0.3s;
-        }
-
-        .input-kawaii:focus {
-            border-color: #ff9aa2;
-        }
-
-        .input-kawaii:disabled {
-            background-color: #f3f4f6;
-            cursor: not-allowed;
-        }
-
-        .liquid {
-            transition: height 1s ease-in-out, background-color 0.5s;
-        }
-
-        .thermometer-inner {
-            transition: height 0.5s ease-out; /* Smoother transition for loop */
-        }
-
-        /* Speech Bubble */
-        .speech-bubble {
-            position: relative;
-            background: #ffffff;
-            border-radius: .4em;
-            border: 3px solid #ff9aa2;
-        }
-
-        .speech-bubble:after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 0;
-            height: 0;
-            border: 10px solid transparent;
-            border-right-color: #ff9aa2;
-            border-left: 0;
-            border-top: 0;
-            margin-top: -5px;
-            margin-left: -10px;
-        }
-        
-        .result-step {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: popIn 0.5s forwards;
-            background: #fff;
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px dashed #b5ead7;
-            margin-bottom: 8px;
-        }
-
-        @keyframes popIn {
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Superscript and Subscript styling fixes */
-        sub, sup {
-            font-size: 75%;
-            line-height: 0;
-            position: relative;
-            vertical-align: baseline;
-        }
+        .kawaii-card { background: rgba(255, 255, 255, 0.95); border-radius: 25px; border: 4px solid #ffb7b2; box-shadow: 8px 8px 0px #ffdac1; transition: transform 0.2s; }
+        .kawaii-btn { background-color: #ff9aa2; color: white; border-radius: 50px; border: 3px solid white; box-shadow: 4px 4px 0px #e2f0cb; font-weight: bold; transition: all 0.2s; cursor: pointer; }
+        .kawaii-btn:hover { transform: translateY(-2px); box-shadow: 6px 6px 0px #e2f0cb; background-color: #ffb7b2; }
+        .kawaii-btn:active { transform: translateY(2px); box-shadow: 0px 0px 0px #e2f0cb; }
+        .kawaii-btn:disabled { background-color: #e5e7eb; border-color: #d1d5db; box-shadow: none; cursor: not-allowed; transform: none; }
+        .input-kawaii { border: 2px solid #b5ead7; border-radius: 15px; padding: 8px 15px; outline: none; color: #555; transition: border-color 0.3s; }
+        .input-kawaii:focus { border-color: #ff9aa2; }
+        .input-kawaii:disabled { background-color: #f3f4f6; cursor: not-allowed; }
+        .liquid { transition: height 1s ease-in-out, background-color 0.5s; }
+        .thermometer-inner { transition: height 0.5s ease-out; }
+        .speech-bubble { position: relative; background: #ffffff; border-radius: .4em; border: 3px solid #ff9aa2; }
+        .speech-bubble:after { content: ''; position: absolute; left: 0; top: 50%; width: 0; height: 0; border: 10px solid transparent; border-right-color: #ff9aa2; border-left: 0; border-top: 0; margin-top: -5px; margin-left: -10px; }
+        .result-step { opacity: 0; transform: translateY(20px); animation: popIn 0.5s forwards; background: #fff; padding: 10px; border-radius: 10px; border: 1px dashed #b5ead7; margin-bottom: 8px; }
+        @keyframes popIn { to { opacity: 1; transform: translateY(0); } }
+        sub, sup { font-size: 75%; line-height: 0; position: relative; vertical-align: baseline; }
         sup { top: -0.5em; }
         sub { bottom: -0.25em; }
+
+        /* 深色覆蓋 */
+        body.dark .kawaii-card{ background:#131f33; border-color:#3a2e3a; box-shadow:8px 8px 0px #1e293b; color:#cbd5e1; }
+        body.dark .speech-bubble{ background:#1e293b; color:#e2e8f0; }
+        body.dark .input-kawaii{ background:#0f1a2e; color:#e2e8f0; border-color:#2c3e57; }
+        body.dark .result-step{ background:#0f1a2e; border-color:#2c3e57; }
+        body.dark .text-gray-600,body.dark .text-gray-700{ color:#cbd5e1 !important; }
+        body.dark .text-gray-500,body.dark .text-gray-400{ color:#94a3b8 !important; }
     </style>
 </head>
-<body class="p-4 min-h-screen flex flex-col items-center">
-<a id="__backlink" href="../../chemistry.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bp-surface p-4 min-h-screen flex flex-col items-center">
+
+    <a href="../../chemistry.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:60" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:60" class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+        <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language"><i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span></button>
+    </div>
 
     <!-- Header -->
-    <header class="text-center mb-6">
-        <h1 class="text-3xl md:text-5xl font-bold text-pink-500 drop-shadow-md tracking-wider">
-            <i class="fa-solid fa-flask mr-2"></i>化學實驗室<i class="fa-solid fa-flask ml-2"></i>
+    <header class="text-center mb-6 mt-10">
+        <h1 class="serif-font text-3xl md:text-5xl font-bold text-pink-500 drop-shadow-md tracking-wider">
+            <i class="fa-solid fa-flask mr-2"></i><span data-zh="化學實驗室" data-en="Chemistry Lab">化學實驗室</span><i class="fa-solid fa-flask ml-2"></i>
         </h1>
-        <p class="text-gray-500 mt-2 font-bold text-lg">✨ 探究中和焓變模擬器 ✨</p>
+        <p class="text-gray-500 mt-2 font-bold text-lg" data-zh="✨ 探究中和焓變模擬器 ✨" data-en="✨ Enthalpy of Neutralisation Simulator ✨">✨ 探究中和焓變模擬器 ✨</p>
     </header>
 
     <div class="flex flex-col md:flex-row gap-6 w-full max-w-5xl">
-        
+
         <!-- Left Panel: Controls & Mascot -->
         <div class="w-full md:w-1/3 flex flex-col gap-4">
-            
+
             <!-- Mascot Area -->
             <div class="flex items-center gap-2 mb-2">
                 <div class="text-6xl text-pink-400 animate-bounce" style="animation-duration: 3s;">
                     <i class="fa-regular fa-face-smile-wink"></i>
                 </div>
                 <div class="speech-bubble p-3 text-sm text-gray-600 shadow-sm flex-1 font-bold">
-                    <span id="mascot-text">歡迎來到實驗室！我是燒杯醬。<br>請設定酸和鹼的參數吧！</span>
+                    <span id="mascot-text"></span>
                 </div>
             </div>
 
             <!-- Controls Card -->
             <div class="kawaii-card p-5">
                 <h2 class="text-xl font-bold text-pink-400 mb-4 border-b-2 border-pink-200 pb-2">
-                    <i class="fa-solid fa-sliders"></i> 實驗設定
+                    <i class="fa-solid fa-sliders"></i> <span data-zh="實驗設定" data-en="Setup">實驗設定</span>
                 </h2>
 
                 <!-- Acid Settings -->
                 <div class="mb-4">
                     <label class="block text-gray-600 font-bold mb-1">
-                        <span class="inline-block w-3 h-3 rounded-full bg-red-300 mr-2"></span>酸 (Acid)
+                        <span class="inline-block w-3 h-3 rounded-full bg-red-300 mr-2"></span><span data-zh="酸 (Acid)" data-en="Acid">酸 (Acid)</span>
                     </label>
                     <select id="acid-type" class="w-full input-kawaii mb-2 bg-white setup-input">
-                        <option value="HCl">HCl (鹽酸)</option>
-                        <option value="HNO3">HNO3 (硝酸)</option>
+                        <option value="HCl" data-zh="HCl (鹽酸)" data-en="HCl (hydrochloric acid)">HCl (鹽酸)</option>
+                        <option value="HNO3" data-zh="HNO3 (硝酸)" data-en="HNO3 (nitric acid)">HNO3 (硝酸)</option>
                     </select>
                     <div class="flex gap-2">
                         <div class="w-1/2">
-                            <label class="text-xs text-gray-500">濃度 (M)</label>
+                            <label class="text-xs text-gray-500" data-zh="濃度 (M)" data-en="Conc. (M)">濃度 (M)</label>
                             <input type="number" id="acid-conc" value="1.0" min="0.5" max="2.0" step="0.1" class="w-full input-kawaii text-center setup-input">
                         </div>
                         <div class="w-1/2">
-                            <label class="text-xs text-gray-500">體積 (cm³)</label>
+                            <label class="text-xs text-gray-500" data-zh="體積 (cm³)" data-en="Volume (cm³)">體積 (cm³)</label>
                             <input type="number" id="acid-vol" value="50" min="20" max="100" step="10" class="w-full input-kawaii text-center setup-input">
                         </div>
                     </div>
@@ -193,60 +120,57 @@
                 <!-- Base Settings -->
                 <div class="mb-6">
                     <label class="block text-gray-600 font-bold mb-1">
-                        <span class="inline-block w-3 h-3 rounded-full bg-blue-300 mr-2"></span>鹼 (Alkali)
+                        <span class="inline-block w-3 h-3 rounded-full bg-blue-300 mr-2"></span><span data-zh="鹼 (Alkali)" data-en="Alkali">鹼 (Alkali)</span>
                     </label>
                     <select id="base-type" class="w-full input-kawaii mb-2 bg-white setup-input">
-                        <option value="NaOH">NaOH (氫氧化鈉)</option>
-                        <option value="KOH">KOH (氫氧化鉀)</option>
+                        <option value="NaOH" data-zh="NaOH (氫氧化鈉)" data-en="NaOH (sodium hydroxide)">NaOH (氫氧化鈉)</option>
+                        <option value="KOH" data-zh="KOH (氫氧化鉀)" data-en="KOH (potassium hydroxide)">KOH (氫氧化鉀)</option>
                     </select>
                     <div class="flex gap-2">
                         <div class="w-1/2">
-                            <label class="text-xs text-gray-500">濃度 (M)</label>
+                            <label class="text-xs text-gray-500" data-zh="濃度 (M)" data-en="Conc. (M)">濃度 (M)</label>
                             <input type="number" id="base-conc" value="1.0" min="0.5" max="2.0" step="0.1" class="w-full input-kawaii text-center setup-input">
                         </div>
                         <div class="w-1/2">
-                            <label class="text-xs text-gray-500">體積 (cm³)</label>
+                            <label class="text-xs text-gray-500" data-zh="體積 (cm³)" data-en="Volume (cm³)">體積 (cm³)</label>
                             <input type="number" id="base-vol" value="50" min="20" max="100" step="10" class="w-full input-kawaii text-center setup-input">
                         </div>
                     </div>
                 </div>
 
                 <button onclick="startExperiment()" id="start-btn" class="kawaii-btn w-full py-3 text-lg">
-                    <i class="fa-solid fa-play"></i> 開始實驗！
+                    <i class="fa-solid fa-play"></i> <span data-zh="開始實驗！" data-en="Start experiment!">開始實驗！</span>
                 </button>
                 <button onclick="resetExperiment()" id="reset-btn" class="kawaii-btn w-full py-3 text-lg mt-2 hidden bg-blue-300">
-                    <i class="fa-solid fa-rotate-right"></i> 重置實驗
+                    <i class="fa-solid fa-rotate-right"></i> <span data-zh="重置實驗" data-en="Reset">重置實驗</span>
                 </button>
             </div>
         </div>
 
         <!-- Right Panel: Visualization & Results -->
         <div class="w-full md:w-2/3 flex flex-col gap-4">
-            
+
             <!-- Visualization Card -->
             <div class="kawaii-card p-6 min-h-[300px] flex flex-col justify-center items-center relative overflow-hidden bg-white">
-                <div class="absolute top-2 left-2 text-gray-400 text-sm font-bold">🧪 實驗台</div>
-                
+                <div class="absolute top-2 left-2 text-gray-400 text-sm font-bold" data-zh="🧪 實驗台" data-en="🧪 Bench">🧪 實驗台</div>
+
                 <div class="flex items-end justify-center gap-8 w-full h-48">
                     <!-- Thermometer -->
                     <div class="w-8 h-48 bg-gray-100 rounded-full border-2 border-gray-300 relative shadow-inner">
-                        <!-- Ticks -->
                         <div class="absolute top-4 left-0 w-full border-b border-gray-300 h-1"></div>
                         <div class="absolute top-12 left-0 w-full border-b border-gray-300 h-1"></div>
                         <div class="absolute top-20 left-0 w-full border-b border-gray-300 h-1"></div>
-                        
+
                         <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-4 bg-red-500 rounded-b-full thermometer-inner" style="height: 20%;" id="thermometer-level"></div>
                         <div class="absolute -right-24 bottom-1/2 text-2xl font-bold text-red-500 bg-white px-2 py-1 rounded border-2 border-red-100" id="temp-display">25.0°C</div>
                     </div>
 
                     <!-- Beaker -->
                     <div class="relative w-40 h-40 border-b-4 border-l-4 border-r-4 border-gray-400 rounded-b-xl flex justify-center items-end bg-white">
-                        <!-- Stirrer -->
                         <div id="stirrer" class="hidden absolute h-32 w-2 bg-gray-300 rounded top-[-20px] left-1/2 origin-top animate-spin" style="animation-duration: 0.5s; animation-direction: alternate; transform-origin: top center;"></div>
-                        
+
                         <div id="liquid" class="w-full bg-blue-300 opacity-50 rounded-b-lg liquid" style="height: 0%;"></div>
                         <div class="absolute bottom-2 text-center w-full text-xs font-bold text-gray-600" id="beaker-label">空量熱器</div>
-                        <!-- Sparkles animation container -->
                         <div id="sparkles" class="absolute inset-0 pointer-events-none"></div>
                     </div>
                 </div>
@@ -255,29 +179,29 @@
             <!-- Analysis Section (Hidden initially) -->
             <div id="analysis-section" class="kawaii-card p-5 hidden">
                 <h2 class="text-xl font-bold text-purple-500 mb-3 border-b border-purple-100 pb-2">
-                    <i class="fa-solid fa-calculator"></i> 數據記錄
+                    <i class="fa-solid fa-calculator"></i> <span data-zh="數據記錄" data-en="Data record">數據記錄</span>
                 </h2>
-                
+
                 <div class="grid grid-cols-3 gap-2 text-center mb-6">
                     <div class="bg-blue-50 p-2 rounded-lg border border-blue-100">
-                        <div class="text-xs text-gray-500 font-bold">初始溫度 (T<sub>1</sub>)</div>
+                        <div class="text-xs text-gray-500 font-bold"><span data-zh="初始溫度" data-en="Initial temp">初始溫度</span> (T<sub>1</sub>)</div>
                         <div class="text-lg font-bold text-blue-600">25.0°C</div>
                     </div>
                     <div class="bg-red-50 p-2 rounded-lg border border-red-100">
-                        <div class="text-xs text-gray-500 font-bold">最高溫度 (T<sub>2</sub>)</div>
+                        <div class="text-xs text-gray-500 font-bold"><span data-zh="最高溫度" data-en="Max temp">最高溫度</span> (T<sub>2</sub>)</div>
                         <div class="text-lg font-bold text-red-600" id="final-temp-val">--</div>
                     </div>
                     <div class="bg-green-50 p-2 rounded-lg border border-green-100">
-                        <div class="text-xs text-gray-500 font-bold">溫升 (ΔT)</div>
+                        <div class="text-xs text-gray-500 font-bold"><span data-zh="溫升" data-en="Temp rise">溫升</span> (ΔT)</div>
                         <div class="text-lg font-bold text-green-600" id="delta-temp-val">--</div>
                     </div>
                 </div>
 
                 <div class="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-200 mb-4">
                     <p class="text-sm text-gray-600 mb-3 leading-relaxed">
-                        <i class="fa-regular fa-lightbulb text-yellow-500"></i> 
-                        請計算中和焓變 (Enthalpy Change of Neutralization)。<br>
-                        <span class="text-xs text-gray-500 bg-white px-1 rounded border border-gray-200 inline-block mt-1">
+                        <i class="fa-regular fa-lightbulb text-yellow-500"></i>
+                        <span data-zh="請計算中和焓變 (Enthalpy Change of Neutralization)。" data-en="Calculate the enthalpy change of neutralisation.">請計算中和焓變 (Enthalpy Change of Neutralization)。</span><br>
+                        <span class="text-xs text-gray-500 bg-white px-1 rounded border border-gray-200 inline-block mt-1" data-zh="提示: c = 4.2 J g⁻¹ K⁻¹, 密度 = 1.0 g cm⁻³" data-en="Hint: c = 4.2 J g⁻¹ K⁻¹, density = 1.0 g cm⁻³">
                             提示: c = 4.2 J g⁻¹ K⁻¹, 密度 = 1.0 g cm⁻³
                         </span>
                     </p>
@@ -285,132 +209,106 @@
                         <label class="font-bold text-gray-700 text-lg">ΔH = </label>
                         <input type="number" id="student-answer" placeholder="-57.0" class="input-kawaii w-32 text-center text-lg font-bold">
                         <span class="font-bold text-gray-700">kJ mol⁻¹</span>
-                        <button onclick="checkAnswer()" class="kawaii-btn px-6 py-2 text-sm ml-2">檢查答案</button>
+                        <button onclick="checkAnswer()" class="kawaii-btn px-6 py-2 text-sm ml-2" data-zh="檢查答案" data-en="Check answer">檢查答案</button>
                     </div>
                     <div id="feedback-msg" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>
                 </div>
             </div>
 
              <!-- Tutorial Section (Hidden initially) -->
-             <div id="tutorial-section" class="hidden">
-                <!-- Content injected via JS -->
-             </div>
+             <div id="tutorial-section" class="hidden"></div>
 
         </div>
     </div>
 
     <script>
-        // Game State
+        let LANG = 'zh';
+        const L = (o) => (o && typeof o === 'object') ? (o[LANG] ?? o.zh) : o;
+
+        const T = {
+            welcome: {zh:'歡迎來到實驗室！我是燒杯醬。<br>請設定酸和鹼的參數吧！', en:"Welcome to the lab! I'm Beaker-chan.<br>Set the acid and alkali parameters!"},
+            zeroErr: {zh:'哎呀！數值不能是零、負數或空白喔！<br>請檢查一下設定。', en:'Oops! Values cannot be zero, negative or blank!<br>Please check your setup.'},
+            started: {zh:'實驗開始！混合酸和鹼...<br>觀察溫度計的變化！', en:'Experiment started! Mixing acid and alkali...<br>Watch the thermometer!'},
+            finished: {zh:'反應完成！<br>溫度明顯上升了呢！是放熱反應喔。', en:'Reaction complete!<br>The temperature clearly rose — it is exothermic.'},
+            resetDone: {zh:'實驗已重置！<br>試試看不同的濃度或體積吧？', en:'Experiment reset!<br>Try different concentrations or volumes?'},
+            correct: {zh:'太棒了！答對了！<br>你已經掌握了中和焓變的計算！✨', en:"Great! Correct!<br>You've mastered the enthalpy-of-neutralisation calculation! ✨"},
+            wrong: {zh:'嗯...好像有點差距。<br>看看下面的計算步驟，再試一次吧！💪', en:"Hmm... a bit off.<br>Look at the steps below and try again! 💪"},
+            emptyCal: {zh:'空量熱器', en:'Empty calorimeter'},
+            mixed: {zh:'混合溶液', en:'Mixed solution'}
+        };
+
         let experimentState = {
             acid: { type: 'HCl', c: 1, v: 50 },
             base: { type: 'NaOH', c: 1, v: 50 },
-            finalTemp: 0,
-            deltaT: 0,
-            molesWater: 0,
-            heatQ: 0, // In Joules, rounded
-            totalMass: 0,
-            correctDeltaH: 0 // In kJ/mol, calculated from rounded T
+            finalTemp: 0, deltaT: 0, molesWater: 0, heatQ: 0, totalMass: 0, correctDeltaH: 0
         };
+
+        // 用於語言切換的狀態
+        let _mascot = T.welcome;
+        let _beakerLabel = T.emptyCal;
+        let _feedbackRender = null;
+        let _tutorialCorrect = null;
 
         const mascot = document.getElementById('mascot-text');
 
-        function updateMascot(text) {
-            mascot.innerHTML = text;
-        }
+        function updateMascot(o) { _mascot = o; mascot.innerHTML = L(o); }
+        function setBeakerLabel(o) { _beakerLabel = o; document.getElementById('beaker-label').innerText = L(o); }
 
         function startExperiment() {
-            // Get inputs
             const acidType = document.getElementById('acid-type').value;
             const acidC = parseFloat(document.getElementById('acid-conc').value);
             const acidV = parseFloat(document.getElementById('acid-vol').value);
-            
             const baseType = document.getElementById('base-type').value;
             const baseC = parseFloat(document.getElementById('base-conc').value);
             const baseV = parseFloat(document.getElementById('base-vol').value);
 
-            // Validation
             if(acidV <= 0 || baseV <= 0 || acidC <= 0 || baseC <= 0 || isNaN(acidV) || isNaN(baseV) || isNaN(acidC) || isNaN(baseC)) {
-                updateMascot("哎呀！數值不能是零、負數或空白喔！<br>請檢查一下設定。");
+                updateMascot(T.zeroErr);
                 return;
             }
 
-            // Lock ONLY Setup inputs, NOT the answer input
-            // 修正：只鎖定有 setup-input class 的元素
             document.querySelectorAll('.setup-input').forEach(el => el.disabled = true);
             document.getElementById('start-btn').classList.add('hidden');
             document.getElementById('reset-btn').classList.remove('hidden');
-            
-            // Clear previous results
+
             document.getElementById('student-answer').value = "";
             document.getElementById('feedback-msg').innerHTML = "";
+            _feedbackRender = null;
             document.getElementById('tutorial-section').classList.add('hidden');
+            _tutorialCorrect = null;
 
-            // --- Chemistry Logic ---
-            
-            // 1. Calculate Moles
             const molAcid = acidC * (acidV / 1000);
             const molBase = baseC * (baseV / 1000);
-            
-            // Assuming monobasic strong acid/base reaction (1:1 stoichiometry)
-            // H+ + OH- -> H2O
             const molWater = Math.min(molAcid, molBase);
-            
-            // 2. Theoretical Heat (Q)
-            // Standard Enthalpy of Neutralization approx -57.3 kJ/mol
-            // We use 57300 J/mol.
-            const standardEnthalpyJ = 57300; 
-            const theoreticalQ = molWater * standardEnthalpyJ; // Joules
-
-            // 3. Total Mass (assume density = 1 g/cm3)
-            const totalMass = acidV + baseV; // grams
-            const c = 4.2; // J g-1 K-1
-
-            // 4. Calculate Delta T (Theoretical)
-            // Q = mcΔT  => ΔT = Q / mc
+            const standardEnthalpyJ = 57300;
+            const theoreticalQ = molWater * standardEnthalpyJ;
+            const totalMass = acidV + baseV;
+            const c = 4.2;
             let rawDeltaT = theoreticalQ / (totalMass * c);
-            
-            // 5. Simulate "Measured" Data (Round to 1 decimal place like a real thermometer)
-            // IMPORTANT: Students must calculate based on the DISPLAYED temperature.
             const displayDeltaT = parseFloat(rawDeltaT.toFixed(1));
             const displayFinalTemp = 25.0 + displayDeltaT;
+            const calculatedQ = totalMass * c * displayDeltaT;
+            const calculatedDeltaH = -(calculatedQ / molWater) / 1000;
 
-            // 6. Back-calculate "Correct Answer" based on the displayed (rounded) Delta T
-            // This ensures if student follows formula, they get it "Right".
-            const calculatedQ = totalMass * c * displayDeltaT; // Joules
-            const calculatedDeltaH = -(calculatedQ / molWater) / 1000; // kJ/mol (Negative for Exothermic)
-
-            // Store state
             experimentState = {
                 acid: { type: acidType, c: acidC, v: acidV },
                 base: { type: baseType, c: baseC, v: baseV },
-                finalTemp: displayFinalTemp,
-                deltaT: displayDeltaT,
-                molesWater: molWater,
-                heatQ: calculatedQ,
-                totalMass: totalMass,
-                correctDeltaH: calculatedDeltaH
+                finalTemp: displayFinalTemp, deltaT: displayDeltaT, molesWater: molWater,
+                heatQ: calculatedQ, totalMass: totalMass, correctDeltaH: calculatedDeltaH
             };
 
-            // --- Animation Sequence ---
-            updateMascot("實驗開始！混合酸和鹼...<br>觀察溫度計的變化！");
-            
-            // 1. Pouring animation (Liquid rises)
+            updateMascot(T.started);
+
             const liquid = document.getElementById('liquid');
             liquid.style.height = "80%";
-            liquid.style.backgroundColor = "#d8b4fe"; // Light Purple for mixture
-            document.getElementById('beaker-label').innerText = "混合溶液";
+            liquid.style.backgroundColor = "#d8b4fe";
+            setBeakerLabel(T.mixed);
 
-            // 2. Add sparkles
             createSparkles();
 
-            // 3. Temp rise animation
             setTimeout(() => {
-                // Visual height logic (20% is base, max 95%)
-                // Scale: let's say 20 deg rise = max height
-                const tempHeightPercent = 20 + (displayDeltaT * 3); 
+                const tempHeightPercent = 20 + (displayDeltaT * 3);
                 document.getElementById('thermometer-level').style.height = `${Math.min(tempHeightPercent, 95)}%`;
-                
-                // Count up text
                 let currentT = 25.0;
                 const interval = setInterval(() => {
                     currentT += 0.1;
@@ -420,8 +318,7 @@
                         finishExperiment();
                     }
                     document.getElementById('temp-display').innerText = currentT.toFixed(1) + "°C";
-                }, 40); // speed of counting
-
+                }, 40);
             }, 800);
         }
 
@@ -442,19 +339,12 @@
         }
 
         function finishExperiment() {
-            updateMascot("反應完成！<br>溫度明顯上升了呢！是放熱反應喔。");
-            
+            updateMascot(T.finished);
             const analysis = document.getElementById('analysis-section');
             analysis.classList.remove('hidden');
-            
-            // Update Data Display
             document.getElementById('final-temp-val').innerText = experimentState.finalTemp.toFixed(1) + "°C";
             document.getElementById('delta-temp-val').innerText = experimentState.deltaT.toFixed(1) + "°C";
-
-            // Scroll to analysis
             analysis.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            // Ensure answer input is NOT disabled
             document.getElementById('student-answer').disabled = false;
         }
 
@@ -463,75 +353,73 @@
             const studentVal = parseFloat(studentInput.value);
             const correctVal = experimentState.correctDeltaH;
             const feedback = document.getElementById('feedback-msg');
-            
+
             if(isNaN(studentVal)) {
-                feedback.innerHTML = "<span class='text-red-500 bg-red-100 px-2 py-1 rounded'>請輸入數字喔！</span>";
+                _feedbackRender = () => `<span class='text-red-500 bg-red-100 px-2 py-1 rounded'>${LANG==='zh'?'請輸入數字喔！':'Please enter a number!'}</span>`;
+                feedback.innerHTML = _feedbackRender();
                 return;
             }
 
-            // Margin of error: +/- 2 kJ/mol (generous for student inputs)
-            const margin = 2.0; 
+            const margin = 2.0;
             const isCorrect = Math.abs(studentVal - correctVal) <= margin;
 
             document.getElementById('tutorial-section').classList.remove('hidden');
-            
+
             if (isCorrect) {
-                updateMascot("太棒了！答對了！<br>你已經掌握了中和焓變的計算！✨");
-                feedback.innerHTML = `<span class='text-green-600 bg-green-100 px-3 py-1 rounded shadow-sm text-lg'><i class="fa-solid fa-circle-check"></i> 很好！標準答案約為 ${correctVal.toFixed(1)} kJ mol⁻¹</span>`;
+                updateMascot(T.correct);
+                _feedbackRender = () => `<span class='text-green-600 bg-green-100 px-3 py-1 rounded shadow-sm text-lg'><i class="fa-solid fa-circle-check"></i> ${LANG==='zh'?'很好！標準答案約為':'Great! The model answer is about'} ${correctVal.toFixed(1)} kJ mol⁻¹</span>`;
+                feedback.innerHTML = _feedbackRender();
                 studentInput.style.borderColor = "#4ade80";
                 confettiEffect();
                 renderTutorial(true);
             } else {
-                updateMascot("嗯...好像有點差距。<br>看看下面的計算步驟，再試一次吧！💪");
-                feedback.innerHTML = `<span class='text-orange-500 bg-orange-100 px-3 py-1 rounded shadow-sm'><i class="fa-solid fa-circle-xmark"></i> 差了一點點。正確答案約為 ${correctVal.toFixed(1)} kJ mol⁻¹</span>`;
+                updateMascot(T.wrong);
+                _feedbackRender = () => `<span class='text-orange-500 bg-orange-100 px-3 py-1 rounded shadow-sm'><i class="fa-solid fa-circle-xmark"></i> ${LANG==='zh'?'差了一點點。正確答案約為':'A little off. The correct answer is about'} ${correctVal.toFixed(1)} kJ mol⁻¹</span>`;
+                feedback.innerHTML = _feedbackRender();
                 studentInput.style.borderColor = "#fb923c";
                 renderTutorial(false);
             }
         }
 
         function renderTutorial(isCorrect) {
+            _tutorialCorrect = isCorrect;
             const acidV = experimentState.acid.v;
             const baseV = experimentState.base.v;
             const totalV = acidV + baseV;
             const moles = experimentState.molesWater;
-            const heatQ = experimentState.heatQ; // Rounded J based on rounded T
-            
+            const heatQ = experimentState.heatQ;
+            const zh = LANG==='zh';
+
             const html = `
                 <div class="kawaii-card p-5 mt-4 bg-white border-dashed border-4 border-pink-200">
-                    <h3 class="text-lg font-bold text-pink-500 mb-3 text-center">🎓 燒杯醬的計算小教室</h3>
-                    
+                    <h3 class="text-lg font-bold text-pink-500 mb-3 text-center">${zh?'🎓 燒杯醬的計算小教室':"🎓 Beaker-chan's calculation class"}</h3>
                     <div class="space-y-4 text-gray-700 text-sm md:text-base">
-                        
                         <div class="result-step" style="animation-delay: 0.1s">
-                            <h4 class="font-bold text-blue-500 mb-1"><i class="fa-solid fa-1"></i> 計算釋放的能量 (Q)</h4>
+                            <h4 class="font-bold text-blue-500 mb-1"><i class="fa-solid fa-1"></i> ${zh?'計算釋放的能量 (Q)':'Calculate the heat released (Q)'}</h4>
                             <div class="pl-2 border-l-4 border-blue-200">
-                                <p>公式：Q = m × c × ΔT</p>
-                                <p>• m (總質量) ≈ 體積總和 = ${acidV} + ${baseV} = ${totalV} g</p>
-                                <p>• c (比熱容量) = 4.2 J g⁻¹ K⁻¹</p>
-                                <p>• ΔT (溫升) = ${experimentState.deltaT.toFixed(1)} °C</p>
+                                <p>${zh?'公式：Q = m × c × ΔT':'Formula: Q = m × c × ΔT'}</p>
+                                <p>• ${zh?'m (總質量) ≈ 體積總和':'m (total mass) ≈ total volume'} = ${acidV} + ${baseV} = ${totalV} g</p>
+                                <p>• ${zh?'c (比熱容量)':'c (specific heat)'} = 4.2 J g⁻¹ K⁻¹</p>
+                                <p>• ${zh?'ΔT (溫升)':'ΔT (temp rise)'} = ${experimentState.deltaT.toFixed(1)} °C</p>
                                 <p class="mt-1 font-bold bg-blue-50 p-1 rounded">
                                     Q = ${totalV} × 4.2 × ${experimentState.deltaT.toFixed(1)} = ${heatQ.toFixed(0)} J
                                 </p>
                             </div>
                         </div>
-
                         <div class="result-step" style="animation-delay: 0.3s">
-                            <h4 class="font-bold text-purple-500 mb-1"><i class="fa-solid fa-2"></i> 計算生成水的摩爾數 (n)</h4>
+                            <h4 class="font-bold text-purple-500 mb-1"><i class="fa-solid fa-2"></i> ${zh?'計算生成水的摩爾數 (n)':'Calculate moles of water formed (n)'}</h4>
                             <div class="pl-2 border-l-4 border-purple-200">
-                                <p>• 酸摩爾數 = ${experimentState.acid.c} × (${acidV}/1000) = ${(experimentState.acid.c * acidV/1000).toFixed(3)} mol</p>
-                                <p>• 鹼摩爾數 = ${experimentState.base.c} × (${baseV}/1000) = ${(experimentState.base.c * baseV/1000).toFixed(3)} mol</p>
-                                <p class="text-xs text-gray-500 mt-1">* 兩者反應比例為 1:1，取較小值為限量試劑。</p>
-                                <p class="mt-1 font-bold bg-purple-50 p-1 rounded">
-                                    n = ${moles.toFixed(3)} mol
-                                </p>
+                                <p>• ${zh?'酸摩爾數':'Moles of acid'} = ${experimentState.acid.c} × (${acidV}/1000) = ${(experimentState.acid.c * acidV/1000).toFixed(3)} mol</p>
+                                <p>• ${zh?'鹼摩爾數':'Moles of alkali'} = ${experimentState.base.c} × (${baseV}/1000) = ${(experimentState.base.c * baseV/1000).toFixed(3)} mol</p>
+                                <p class="text-xs text-gray-500 mt-1">${zh?'* 兩者反應比例為 1:1，取較小值為限量試劑。':'* They react 1:1; take the smaller value as the limiting reagent.'}</p>
+                                <p class="mt-1 font-bold bg-purple-50 p-1 rounded">n = ${moles.toFixed(3)} mol</p>
                             </div>
                         </div>
-
                         <div class="result-step" style="animation-delay: 0.5s">
-                            <h4 class="font-bold text-pink-500 mb-1"><i class="fa-solid fa-3"></i> 計算中和焓變 (ΔH)</h4>
+                            <h4 class="font-bold text-pink-500 mb-1"><i class="fa-solid fa-3"></i> ${zh?'計算中和焓變 (ΔH)':'Calculate the enthalpy change (ΔH)'}</h4>
                             <div class="pl-2 border-l-4 border-pink-200">
-                                <p>公式：ΔH = -Q / n <span class="text-xs text-red-400">(放熱反應加負號)</span></p>
-                                <p>• 將 Q 換算為 kJ: ${heatQ.toFixed(0)} J = ${(heatQ/1000).toFixed(3)} kJ</p>
+                                <p>${zh?'公式：ΔH = -Q / n':'Formula: ΔH = -Q / n'} <span class="text-xs text-red-400">${zh?'(放熱反應加負號)':'(negative for exothermic)'}</span></p>
+                                <p>• ${zh?'將 Q 換算為 kJ:':'Convert Q to kJ:'} ${heatQ.toFixed(0)} J = ${(heatQ/1000).toFixed(3)} kJ</p>
                                 <p>• ΔH = -${(heatQ/1000).toFixed(3)} / ${moles.toFixed(3)}</p>
                                 <p class="mt-2 text-xl font-bold text-pink-600 bg-pink-50 p-2 rounded text-center shadow">
                                     ΔH ≈ ${experimentState.correctDeltaH.toFixed(1)} kJ mol⁻¹
@@ -543,31 +431,29 @@
             `;
             const tutorialSection = document.getElementById('tutorial-section');
             tutorialSection.innerHTML = html;
-            tutorialSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if(isCorrect !== '__relang') tutorialSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function resetExperiment() {
-            // Reset UI Visuals
             document.getElementById('liquid').style.height = "0%";
             document.getElementById('temp-display').innerText = "25.0°C";
             document.getElementById('thermometer-level').style.height = "20%";
-            document.getElementById('beaker-label').innerText = "空量熱器";
-            
-            // Reset Buttons & Sections
+            setBeakerLabel(T.emptyCal);
+
             document.getElementById('start-btn').classList.remove('hidden');
             document.getElementById('reset-btn').classList.add('hidden');
             document.getElementById('analysis-section').classList.add('hidden');
             document.getElementById('tutorial-section').classList.add('hidden');
-            
-            // Clear Inputs
+            _tutorialCorrect = null;
+
             document.getElementById('student-answer').value = "";
             document.getElementById('student-answer').style.borderColor = "#b5ead7";
             document.getElementById('feedback-msg').innerHTML = "";
+            _feedbackRender = null;
 
-            // Unlock Setup Inputs
             document.querySelectorAll('.setup-input').forEach(el => el.disabled = false);
-            
-            updateMascot("實驗已重置！<br>試試看不同的濃度或體積吧？");
+
+            updateMascot(T.resetDone);
         }
 
         function confettiEffect() {
@@ -582,18 +468,39 @@
                 conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                 conf.style.transition = 'top 3s ease-in, transform 3s linear';
                 conf.style.zIndex = 9999;
-                conf.style.borderRadius = '50%'; // round confetti
+                conf.style.borderRadius = '50%';
                 document.body.appendChild(conf);
-
-                // Trigger animation next frame
                 requestAnimationFrame(() => {
                     conf.style.top = '110vh';
                     conf.style.transform = `rotate(${Math.random()*720}deg) translateX(${Math.random()*100 - 50}px)`;
                 });
-
                 setTimeout(() => conf.remove(), 3000);
             }
         }
+
+        // --- 主題 / 語言切換 ---
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+        function toggleLang(){
+            LANG = LANG==='zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = LANG==='zh' ? 'EN' : '中';
+            document.querySelectorAll('[data-zh][data-en]').forEach(el=>{
+                el.textContent = el.getAttribute(LANG==='zh'?'data-zh':'data-en');
+            });
+            mascot.innerHTML = L(_mascot);
+            document.getElementById('beaker-label').innerText = L(_beakerLabel);
+            if(_feedbackRender) document.getElementById('feedback-msg').innerHTML = _feedbackRender();
+            if(_tutorialCorrect !== null){ const c=_tutorialCorrect; renderTutorial('__relang'); _tutorialCorrect=c; }
+        }
+
+        // 初始化
+        updateMascot(T.welcome);
+        setBeakerLabel(T.emptyCal);
+        if(window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>
