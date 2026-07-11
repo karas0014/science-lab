@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>記憶體層次 · Memory Hierarchy</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .level{ border:1px solid #c3ccd8;border-radius:6px;padding:10px 14px;transition:all .3s; } body.dark .level{ border-color:#2c3e57; }
+ .level.probe{ border-color:#f59e0b;box-shadow:0 0 16px -4px #f59e0b; }
+ .level.hit{ border-color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,transparent);box-shadow:0 0 16px -3px var(--ac); }
+ .slot{ display:inline-flex;align-items:center;justify-content:center;min-width:2.2rem;height:1.9rem;padding:0 6px;border:1px solid #c3ccd8;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700; } body.dark .slot{ border-color:#2c3e57; }
+ .slot.filled{ background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac);border-color:var(--ac); }
+ .slot.just{ background:#f59e0b;color:#fff;border-color:#f59e0b; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-5xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.10</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">記憶體層次</span><span class="lang-en hidden">Memory Hierarchy</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Cache / RAM / ROM</span>
+  </div>
+
+  <div class="flex flex-col lg:flex-row">
+    <!-- hierarchy -->
+    <div class="w-full lg:w-1/2 p-5 border-b lg:border-b-0 lg:border-r border-slate-300 dark:border-slate-700 space-y-2">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1"><span class="lang-zh">▲ 越上：越快、越貴、越小</span><span class="lang-en hidden">▲ higher = faster, pricier, smaller</span></div>
+      <div id="lv-reg" class="level" style="margin-left:0"><div class="flex justify-between mono text-xs"><b>Registers</b><span class="text-slate-400">~1 ns · &lt;1 KB</span></div></div>
+      <div id="lv-cache" class="level" style="margin-left:8px">
+        <div class="flex justify-between mono text-xs mb-2"><b>Cache <span class="lang-zh">(快取)</span></b><span class="text-slate-400">~2 ns · MBs</span></div>
+        <div id="cacheslots" class="flex flex-wrap gap-1.5"></div>
+      </div>
+      <div id="lv-ram" class="level" style="margin-left:16px"><div class="flex justify-between mono text-xs"><b>RAM <span class="lang-zh">(主記憶體)</span></b><span class="text-slate-400">~60 ns · GBs</span></div></div>
+      <div id="lv-rom" class="level" style="margin-left:16px"><div class="flex justify-between mono text-xs"><b>ROM</b><span class="text-slate-400"><span class="lang-zh">非揮發·開機</span><span class="lang-en hidden">non-volatile·boot</span></span></div></div>
+      <div id="lv-disk" class="level" style="margin-left:24px"><div class="flex justify-between mono text-xs"><b>Storage <span class="lang-zh">(磁碟/SSD)</span></b><span class="text-slate-400">~10⁶ ns · TBs</span></div></div>
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mt-1"><span class="lang-zh">▼ 越下：越慢、越平、越大</span><span class="lang-en hidden">▼ lower = slower, cheaper, bigger</span></div>
+    </div>
+
+    <!-- request -->
+    <div class="w-full lg:w-1/2 p-5 space-y-4">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400"><span class="lang-zh">存取記憶體位址</span><span class="lang-en hidden">Access a memory address</span></div>
+      <div class="flex flex-wrap gap-2" id="addrbtns"></div>
+      <button onclick="autoseq()" class="bp-btn"><i data-lucide="repeat" width="13" height="13"></i><span class="lang-zh">示範程式局部性</span><span class="lang-en hidden">Demo locality</span></button>
+
+      <div class="bp-panel rounded p-4">
+        <div id="result" class="mono text-lg font-bold text-center py-2"></div>
+        <div id="detail" class="text-xs text-slate-500 dark:text-slate-400 text-center"></div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 text-center mono text-sm">
+        <div class="bp-panel rounded p-2"><div class="text-[9px] text-slate-400 uppercase">Hit</div><div id="hits" class="font-bold" style="color:var(--ac)">0</div></div>
+        <div class="bp-panel rounded p-2"><div class="text-[9px] text-slate-400 uppercase">Miss</div><div id="misses" class="font-bold text-amber-500">0</div></div>
+        <div class="bp-panel rounded p-2"><div class="text-[9px] text-slate-400 uppercase"><span class="lang-zh">命中率</span><span class="lang-en hidden">Hit rate</span></div><div id="rate" class="font-bold">–</div></div>
+      </div>
+
+      <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+        <span class="lang-zh"><b style="color:var(--ac)">快取 (cache)</b> 存放最近用過的資料。命中 (hit) 便極快;未命中 (miss) 要到較慢的 RAM 取，再載入快取 (取代最久沒用的)。由於程式常重複存取相近位址 (<b>局部性</b>)，快取能大幅加快平均速度。</span>
+        <span class="lang-en hidden"><b style="color:var(--ac)">Cache</b> holds recently used data. A hit is very fast; a miss must fetch from slower RAM and load it into cache (evicting the least-recently-used). Because programs re-access nearby addresses (<b>locality</b>), the cache greatly speeds up the average access.</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const CACHE_SIZE=4;
+  let cache=[]; // LRU: front = most recent
+  let hits=0, misses=0, busy=false;
+  const ADDRS=[0xA0,0xA4,0xB8,0xC0,0xC4,0xF0];
+
+  function renderCache(justAddr){
+    const c=$('cacheslots'); c.innerHTML='';
+    for(let i=0;i<CACHE_SIZE;i++){
+      const s=document.createElement('div');
+      if(i<cache.length){ s.className='slot filled'+(cache[i]===justAddr?' just':''); s.textContent='0x'+cache[i].toString(16).toUpperCase(); }
+      else { s.className='slot'; s.textContent='·'; }
+      c.appendChild(s);
+    }
+  }
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  function clearHi(){ ['reg','cache','ram','rom','disk'].forEach(x=>$('lv-'+x).classList.remove('probe','hit')); }
+
+  async function access(addr){
+    if(busy) return; busy=true;
+    clearHi();
+    $('lv-cache').classList.add('probe');
+    $('result').textContent='...'; $('detail').textContent='';
+    await sleep(350);
+    const idx=cache.indexOf(addr);
+    if(idx>=0){ // HIT
+      hits++;
+      cache.splice(idx,1); cache.unshift(addr);
+      $('lv-cache').classList.remove('probe'); $('lv-cache').classList.add('hit');
+      $('result').innerHTML='<span style="color:var(--ac)">✓ CACHE HIT</span>';
+      $('detail').innerHTML=__lang==='zh'?`0x${addr.toString(16).toUpperCase()} 在快取中 → 極快 (~2 ns)`:`0x${addr.toString(16).toUpperCase()} found in cache → very fast (~2 ns)`;
+      renderCache(addr);
+    } else { // MISS
+      misses++;
+      $('lv-cache').classList.remove('probe');
+      await sleep(200); $('lv-ram').classList.add('probe');
+      await sleep(500);
+      $('lv-ram').classList.remove('probe'); $('lv-ram').classList.add('hit');
+      // load into cache (LRU evict)
+      cache.unshift(addr); let evicted=null; if(cache.length>CACHE_SIZE) evicted=cache.pop();
+      $('result').innerHTML='<span style="color:#f59e0b">✗ CACHE MISS</span>';
+      $('detail').innerHTML=__lang==='zh'
+        ?`需到 RAM 取 0x${addr.toString(16).toUpperCase()} (~60 ns)，並載入快取${evicted!=null?'，淘汰 0x'+evicted.toString(16).toUpperCase():''}`
+        :`Fetched 0x${addr.toString(16).toUpperCase()} from RAM (~60 ns), loaded into cache${evicted!=null?', evicted 0x'+evicted.toString(16).toUpperCase():''}`;
+      renderCache(addr);
+    }
+    const tot=hits+misses;
+    $('hits').textContent=hits; $('misses').textContent=misses;
+    $('rate').textContent=tot? Math.round(hits/tot*100)+'%':'–';
+    await sleep(300);
+    busy=false;
+  }
+  window.access=access;
+
+  async function autoseq(){
+    const seq=[0xA0,0xA0,0xA4,0xA0,0xB8,0xA4,0xC0,0xC0,0xA0];
+    for(const a of seq){ await access(a); await sleep(150); }
+  }
+  window.autoseq=autoseq;
+
+  const ab=$('addrbtns');
+  ADDRS.forEach(a=>{ const b=document.createElement('button'); b.className='bp-btn'; b.textContent='0x'+a.toString(16).toUpperCase(); b.onclick=()=>access(a); ab.appendChild(b); });
+  renderCache();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

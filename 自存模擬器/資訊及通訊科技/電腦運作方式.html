@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電腦運作方式 · Processing Modes</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .svg-ink{ fill:#475569; } body.dark .svg-ink{ fill:#94a3b8; }
+ .svg-line{ stroke:#94a3b8; } body.dark .svg-line{ stroke:#475569; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.13</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">電腦運作方式</span><span class="lang-en hidden">Processing Modes</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · System Operation</span>
+  </div>
+
+  <div class="p-5 sm:p-8">
+    <div class="flex flex-wrap gap-2 mb-5" id="modebtns"></div>
+
+    <div class="bp-panel rounded p-4">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">排程時序 (4 個工件在時間軸上如何執行)</span><span class="lang-en hidden">Scheduling timeline (how 4 jobs run over time)</span></div>
+      <svg id="gantt" viewBox="0 0 460 200" class="w-full"></svg>
+      <button onclick="play()" class="bp-btn"><i data-lucide="play" width="13" height="13"></i><span class="lang-zh">播放</span><span class="lang-en hidden">Play</span></button>
+    </div>
+
+    <div class="bp-panel rounded p-4 mt-4">
+      <h3 id="mode-title" class="serif-font font-bold text-lg mb-1" style="color:var(--ac)"></h3>
+      <p id="mode-desc" class="text-sm text-slate-600 dark:text-slate-300"></p>
+      <div class="mt-2 mono text-xs text-slate-400" id="mode-eg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();draw();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();draw();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const COL=['#8b5cf6','#3b82f6','#14b8a6','#f59e0b'];
+  // each mode defines rows (processors/nodes) and blocks {job,row,start,dur}
+  const MODES={
+    batch:{ zh:'成批處理', en:'Batch Processing', rows:['CPU'],
+      blocks:[{j:0,r:0,s:2,d:2},{j:1,r:0,s:4,d:2},{j:2,r:0,s:6,d:2},{j:3,r:0,s:8,d:2}],
+      dz:'工件先收集成一批,無需即時互動,累積後一次過依序執行,結果稍後才輸出。周轉時間長但機器使用率高。',
+      de:'Jobs are collected into a batch with no user interaction, then run one after another; results come later. Long turnaround but high utilisation.',
+      eg:'例 / e.g. 出糧計算、水電費帳單、大量報表' },
+    interactive:{ zh:'網上互動 (即時互動)', en:'Interactive / Online', rows:['CPU'],
+      blocks:[{j:0,r:0,s:1,d:1},{j:1,r:0,s:3,d:1},{j:2,r:0,s:5,d:1},{j:3,r:0,s:7,d:1}],
+      dz:'使用者提交要求後立即得到回應 (請求-回應)。系統與用戶來回對話,回應時間短。',
+      de:'The user submits a request and gets an immediate response (request–response). Short response time, conversational.',
+      eg:'例 / e.g. ATM 提款、網上訂票、搜尋器' },
+    realtime:{ zh:'實時系統', en:'Real-time', rows:['CPU'],
+      blocks:[{j:0,r:0,s:0.5,d:0.8},{j:1,r:0,s:2,d:0.8},{j:2,r:0,s:4,d:0.8},{j:3,r:0,s:6,d:0.8}],
+      deadline:true,
+      dz:'必須在嚴格的期限內完成回應,否則可能造成嚴重後果。輸入一到即刻處理。',
+      de:'Must respond within a strict deadline or serious consequences follow. Input is processed the instant it arrives.',
+      eg:'例 / e.g. 汽車安全氣囊、飛機控制、醫療監測' },
+    parallel:{ zh:'並行式處理', en:'Parallel Processing', rows:['CPU 1','CPU 2','CPU 3','CPU 4'],
+      blocks:[{j:0,r:0,s:2,d:4},{j:1,r:1,s:2,d:4},{j:2,r:2,s:2,d:4},{j:3,r:3,s:2,d:4}],
+      dz:'一部電腦有多個處理器,同時處理一件工作的不同部分,大幅縮短總時間。',
+      de:'One computer with multiple processors works on different parts of a task simultaneously, greatly cutting total time.',
+      eg:'例 / e.g. 天氣模擬、3D 渲染、超級電腦' },
+    distributed:{ zh:'分布式處理', en:'Distributed Processing', rows:['Node A','Node B','Node C','Node D'],
+      blocks:[{j:0,r:0,s:1,d:3},{j:1,r:1,s:2,d:3},{j:2,r:2,s:1.5,d:3},{j:3,r:3,s:3,d:3}],
+      dz:'工作分派到網絡上多部獨立電腦協同完成,可靠且可擴展。各節點各自運算再匯合。',
+      de:'Work is split across many networked computers that cooperate — reliable and scalable. Each node computes, then results combine.',
+      eg:'例 / e.g. 雲端運算、區塊鏈、SETI@home' },
+    virtual:{ zh:'虛擬化', en:'Virtualization', rows:['VM 1','VM 2','VM 3'],
+      blocks:[{j:0,r:0,s:2,d:6},{j:1,r:1,s:2,d:6},{j:2,r:2,s:2,d:6}],
+      dz:'一部實體機器透過軟件分割成多部虛擬機 (VM),各自執行不同作業系統/工作,提升硬件使用率。',
+      de:'One physical machine is split by software into several virtual machines (VMs), each running its own OS/task — better hardware utilisation.',
+      eg:'例 / e.g. 雲端伺服器、VMware、資料中心' },
+  };
+  let cur='batch', T=0, timer=null;
+  const X0=50,X1=445,Y0=15;
+
+  function draw(){
+    const m=MODES[cur];
+    const rowH=Math.min(38,(180-Y0)/m.rows.length);
+    const maxT=10;
+    const sx=t=>X0+t/maxT*(X1-X0);
+    let s='';
+    // deadline line
+    if(m.deadline){ const dx=sx(1.3); s+=`<line x1="${dx}" y1="${Y0}" x2="${dx}" y2="${Y0+m.rows.length*rowH}" stroke="#ef4444" stroke-dasharray="3 3"/><text x="${dx}" y="${Y0-3}" font-size="8" fill="#ef4444" text-anchor="middle" class="mono">deadline</text>`; }
+    // rows
+    m.rows.forEach((r,i)=>{
+      const y=Y0+i*rowH;
+      s+=`<text class="svg-ink mono" x="${X0-6}" y="${y+rowH/2+3}" font-size="9" text-anchor="end">${r}</text>`;
+      s+=`<line class="svg-line" x1="${X0}" y1="${y+rowH-3}" x2="${X1}" y2="${y+rowH-3}" stroke-opacity=".4"/>`;
+    });
+    // blocks (clipped by T)
+    m.blocks.forEach(b=>{
+      const y=Y0+b.r*rowH+3;
+      const drawStart=b.s, drawEnd=Math.min(b.s+b.d, T);
+      if(drawEnd>drawStart){
+        const x=sx(drawStart), w=sx(drawEnd)-x;
+        s+=`<rect x="${x}" y="${y}" width="${w}" height="${rowH-9}" rx="3" fill="${COL[b.j]}" fill-opacity=".85"/>`;
+        if(drawEnd>=b.s+b.d-0.01) s+=`<text x="${x+w/2}" y="${y+(rowH-9)/2+3}" font-size="9" fill="#fff" text-anchor="middle" class="mono">J${b.j+1}</text>`;
+      }
+    });
+    // time axis
+    const ay=Y0+m.rows.length*rowH+6;
+    s+=`<line class="svg-line" x1="${X0}" y1="${ay}" x2="${X1}" y2="${ay}"/>`;
+    for(let t=0;t<=maxT;t+=2){ const x=sx(t); s+=`<line class="svg-line" x1="${x}" y1="${ay}" x2="${x}" y2="${ay+4}"/><text class="svg-ink mono" x="${x}" y="${ay+14}" font-size="8" text-anchor="middle">${t}</text>`; }
+    // playhead
+    if(T>0&&T<maxT){ const px=sx(T); s+=`<line x1="${px}" y1="${Y0}" x2="${px}" y2="${ay}" stroke="var(--ac)" stroke-width="1.5"/>`; }
+    $('gantt').innerHTML=s;
+    $('mode-title').textContent=__lang==='zh'?m.zh:m.en;
+    $('mode-desc').textContent=__lang==='zh'?m.dz:m.de;
+    $('mode-eg').textContent=m.eg;
+  }
+  function play(){ if(timer)clearInterval(timer); T=0; timer=setInterval(()=>{ T+=0.25; if(T>=10){T=10;clearInterval(timer);} draw(); },60); }
+  window.play=play; window.draw=draw;
+
+  const mb=$('modebtns');
+  Object.keys(MODES).forEach(k=>{ const b=document.createElement('button'); b.className='bp-btn';
+    b.innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${MODES[k].zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${MODES[k].en}</span>`;
+    b.onclick=()=>{ cur=k; mb.querySelectorAll('button').forEach(x=>x.style.borderColor=''); b.style.borderColor='var(--ac)'; T=10; draw(); };
+    mb.appendChild(b);
+  });
+  mb.querySelector('button').style.borderColor='var(--ac)';
+  T=10; draw();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

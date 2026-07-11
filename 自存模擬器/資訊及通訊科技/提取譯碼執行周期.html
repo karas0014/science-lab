@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提取─譯碼─執行周期 · Fetch-Decode-Execute Cycle</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .reg{ border:1px solid #c3ccd8;border-radius:6px;padding:8px 10px;transition:all .3s; } body.dark .reg{ border-color:#2c3e57; }
+ .reg.active{ border-color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent);box-shadow:0 0 16px -3px var(--ac); }
+ .reg .val{ font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.1rem; }
+ .memcell{ display:flex;gap:6px;align-items:center;padding:3px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:12px;transition:all .25s; }
+ .memcell.pc{ background:rgba(59,130,246,.16);outline:1px solid #3b82f6; }
+ .memcell.active{ background:color-mix(in srgb,var(--ac) 18%,transparent);outline:1px solid var(--ac); }
+ .phase-pill{ padding:4px 12px;border-radius:99px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.1em; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-5xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.09</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">提取─譯碼─執行周期</span><span class="lang-en hidden">Fetch-Decode-Execute Cycle</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Machine Cycle</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <!-- controls -->
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <button onclick="step()" id="stepbtn" class="bp-btn" style="border-color:var(--ac)"><i data-lucide="step-forward" width="14" height="14"></i><span class="lang-zh">單步</span><span class="lang-en hidden">Step</span></button>
+      <button onclick="auto()" id="autobtn" class="bp-btn"><i data-lucide="play" width="14" height="14"></i><span class="lang-zh">自動</span><span class="lang-en hidden">Auto</span></button>
+      <button onclick="reset()" class="bp-btn"><i data-lucide="rotate-ccw" width="13" height="13"></i><span class="lang-zh">重設</span><span class="lang-en hidden">Reset</span></button>
+      <div class="ml-auto flex items-center gap-2">
+        <span id="pill-f" class="phase-pill" style="background:rgba(148,163,184,.2)">FETCH</span>
+        <span id="pill-d" class="phase-pill" style="background:rgba(148,163,184,.2)">DECODE</span>
+        <span id="pill-e" class="phase-pill" style="background:rgba(148,163,184,.2)">EXECUTE</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- CPU -->
+      <div class="lg:col-span-2 bp-panel rounded p-4">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-3">CPU</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div id="reg-pc" class="reg"><div class="mono text-[10px] text-slate-400">PC · <span class="lang-zh">程式計數器</span><span class="lang-en hidden">Program Counter</span></div><div class="val" style="color:#3b82f6">0</div></div>
+          <div id="reg-mar" class="reg"><div class="mono text-[10px] text-slate-400">MAR · <span class="lang-zh">記憶體位址</span><span class="lang-en hidden">Addr Reg</span></div><div class="val">–</div></div>
+          <div id="reg-mdr" class="reg"><div class="mono text-[10px] text-slate-400">MDR · <span class="lang-zh">記憶體資料</span><span class="lang-en hidden">Data Reg</span></div><div class="val">–</div></div>
+          <div id="reg-ir" class="reg"><div class="mono text-[10px] text-slate-400">IR/CIR · <span class="lang-zh">指令</span><span class="lang-en hidden">Instruction</span></div><div class="val text-sm">–</div></div>
+          <div id="reg-acc" class="reg"><div class="mono text-[10px] text-slate-400">ACC · <span class="lang-zh">累加器</span><span class="lang-en hidden">Accumulator</span></div><div class="val" style="color:var(--ac)">0</div></div>
+          <div id="reg-alu" class="reg"><div class="mono text-[10px] text-slate-400">ALU · <span class="lang-zh">算術邏輯</span><span class="lang-en hidden">Arithmetic</span></div><div class="val text-sm">–</div></div>
+        </div>
+        <div class="mt-4 reg" id="reg-out" style="border-style:dashed"><div class="mono text-[10px] text-slate-400">OUTPUT</div><div class="val" style="color:#10b981">–</div></div>
+      </div>
+
+      <!-- RAM -->
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-3">RAM · <span class="lang-zh">主記憶體</span><span class="lang-en hidden">Main Memory</span></div>
+        <div id="ram" class="space-y-1"></div>
+      </div>
+    </div>
+
+    <!-- RTN description -->
+    <div class="bp-panel rounded p-4 mt-4 min-h-[64px]">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1"><span class="lang-zh">目前微操作 (register transfer)</span><span class="lang-en hidden">Current micro-operation</span></div>
+      <div id="rtn" class="mono text-sm font-bold" style="color:var(--ac)"></div>
+      <div id="rtn2" class="text-xs text-slate-500 dark:text-slate-400 mt-1"></div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">機器周期</b>不斷重複三步：<b>提取</b>(依 PC 從記憶體取指令入 IR，PC 加 1)、<b>譯碼</b>(拆解指令的操作碼與運算元)、<b>執行</b>(ALU/暫存器完成動作)。程式：把 mem[5]+mem[6] 存入 mem[7] 並輸出。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">The machine cycle</b> repeats three steps: <b>Fetch</b> (get instruction at PC into IR, PC+1), <b>Decode</b> (split opcode and operand), <b>Execute</b> (ALU/registers do the work). Program: store mem[5]+mem[6] into mem[7] and output it.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();showRTN();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const OPS={0:'LOAD',1:'ADD',2:'SUB',3:'STORE',4:'OUT',5:'HALT'};
+  // memory: [opcode, operand] encoded as "OP n" strings for program; data as numbers
+  let mem, cpu, queue, autoTimer=null, lastRTN={zh:'',en:'',d:''};
+
+  function initMem(){
+    return [
+      {type:'instr',op:0,arg:5},  // 0 LOAD 5
+      {type:'instr',op:1,arg:6},  // 1 ADD 6
+      {type:'instr',op:3,arg:7},  // 2 STORE 7
+      {type:'instr',op:4,arg:0},  // 3 OUT
+      {type:'instr',op:5,arg:0},  // 4 HALT
+      {type:'data',val:12},       // 5
+      {type:'data',val:30},       // 6
+      {type:'data',val:0},        // 7 result
+    ];
+  }
+  function reset(){
+    if(autoTimer){clearInterval(autoTimer);autoTimer=null;$('autobtn').innerHTML='<i data-lucide="play" width="14" height="14"></i><span class="lang-zh">自動</span><span class="lang-en hidden">Auto</span>';}
+    mem=initMem();
+    cpu={pc:0,mar:'–',mdr:'–',ir:'–',acc:0,alu:'–',out:'–'};
+    queue=[]; lastRTN={zh:__lang==='zh'?'按「單步」開始':'Press Step to begin',en:'Press Step to begin',d:''};
+    buildRAM(); renderCPU(); setPhase(null); showRTN(); applyLang(); if(window.lucide)lucide.createIcons();
+  }
+
+  function buildRAM(){
+    const r=$('ram'); r.innerHTML='';
+    mem.forEach((m,i)=>{
+      const d=document.createElement('div'); d.className='memcell'; d.id='mem'+i;
+      const content = m.type==='instr' ? `${OPS[m.op]} ${m.op<=3?m.arg:''}` : m.val;
+      d.innerHTML=`<span class="text-slate-400 w-6">[${i}]</span><span class="flex-grow">${content}</span>`;
+      r.appendChild(d);
+    });
+  }
+  function renderCPU(){
+    $('reg-pc').querySelector('.val').textContent=cpu.pc;
+    $('reg-mar').querySelector('.val').textContent=cpu.mar;
+    $('reg-mdr').querySelector('.val').textContent=cpu.mdr;
+    $('reg-ir').querySelector('.val').textContent=cpu.ir;
+    $('reg-acc').querySelector('.val').textContent=cpu.acc;
+    $('reg-alu').querySelector('.val').textContent=cpu.alu;
+    $('reg-out').querySelector('.val').textContent=cpu.out;
+    // pc marker on ram
+    document.querySelectorAll('.memcell').forEach(c=>c.classList.remove('pc'));
+    if(mem[cpu.pc]) $('mem'+cpu.pc)?.classList.add('pc');
+  }
+  function clearHi(){ document.querySelectorAll('.reg').forEach(r=>r.classList.remove('active')); document.querySelectorAll('.memcell').forEach(c=>c.classList.remove('active')); }
+  function hi(ids){ clearHi(); ids.forEach(id=>document.getElementById(id)?.classList.add('active')); }
+  function setPhase(p){ ['f','d','e'].forEach(x=>{ const el=$('pill-'+x); el.style.background=(p===x)?'var(--ac)':'rgba(148,163,184,.2)'; el.style.color=(p===x)?'#fff':''; }); }
+
+  function showRTN(){ $('rtn').textContent=lastRTN.d||''; $('rtn2').innerHTML=(__lang==='zh'?lastRTN.zh:lastRTN.en); }
+
+  // build micro-op queue for one instruction cycle at current PC
+  function buildCycle(){
+    const q=[];
+    const atPC=cpu.pc;
+    // FETCH
+    q.push({ph:'f',hi:['reg-pc','reg-mar'],d:'MAR ← PC',zh:'提取：把 PC 的位址複製到 MAR',en:'Fetch: copy PC address into MAR',do:()=>{cpu.mar=atPC;}});
+    q.push({ph:'f',hi:['reg-mar','mem'+atPC,'reg-mdr'],d:'MDR ← mem[MAR] ; PC ← PC+1',zh:'提取：讀取記憶體，指令進 MDR，PC 加 1',en:'Fetch: read memory into MDR; increment PC',do:()=>{const m=mem[atPC]; cpu.mdr=`${OPS[m.op]} ${m.op<=3?m.arg:''}`.trim(); cpu.pc=atPC+1;}});
+    q.push({ph:'f',hi:['reg-mdr','reg-ir'],d:'IR ← MDR',zh:'提取：指令由 MDR 送入 IR',en:'Fetch: move instruction from MDR into IR',do:()=>{cpu.ir=cpu.mdr;}});
+    // DECODE
+    const ins=mem[atPC];
+    q.push({ph:'d',hi:['reg-ir'],d:`decode: ${OPS[ins.op]}`,zh:`譯碼：操作碼 = ${OPS[ins.op]}${ins.op<=3?'，運算元 = '+ins.arg:''}`,en:`Decode: opcode = ${OPS[ins.op]}${ins.op<=3?', operand = '+ins.arg:''}`,do:()=>{}});
+    // EXECUTE per opcode
+    if(ins.op===0){ // LOAD
+      q.push({ph:'e',hi:['reg-mar'],d:'MAR ← operand',zh:'執行：運算元位址進 MAR',en:'Execute: operand address into MAR',do:()=>{cpu.mar=ins.arg;}});
+      q.push({ph:'e',hi:['mem'+ins.arg,'reg-mdr'],d:'MDR ← mem[MAR]',zh:'執行：由記憶體讀取資料',en:'Execute: read data from memory',do:()=>{cpu.mdr=mem[ins.arg].val;}});
+      q.push({ph:'e',hi:['reg-mdr','reg-acc'],d:'ACC ← MDR',zh:'執行：資料載入累加器',en:'Execute: load data into ACC',do:()=>{cpu.acc=mem[ins.arg].val;}});
+    } else if(ins.op===1||ins.op===2){ // ADD/SUB
+      q.push({ph:'e',hi:['reg-mar'],d:'MAR ← operand',zh:'執行：運算元位址進 MAR',en:'Execute: operand address into MAR',do:()=>{cpu.mar=ins.arg;}});
+      q.push({ph:'e',hi:['mem'+ins.arg,'reg-mdr'],d:'MDR ← mem[MAR]',zh:'執行：由記憶體讀取運算元',en:'Execute: read operand from memory',do:()=>{cpu.mdr=mem[ins.arg].val;}});
+      q.push({ph:'e',hi:['reg-acc','reg-mdr','reg-alu'],d:ins.op===1?'ALU: ACC + MDR':'ALU: ACC − MDR',zh:'執行：ALU 運算，結果回存 ACC',en:'Execute: ALU computes, result back to ACC',do:()=>{const v=mem[ins.arg].val; cpu.acc = ins.op===1? cpu.acc+v : cpu.acc-v; cpu.alu=cpu.acc;}});
+    } else if(ins.op===3){ // STORE
+      q.push({ph:'e',hi:['reg-mar'],d:'MAR ← operand',zh:'執行：目標位址進 MAR',en:'Execute: target address into MAR',do:()=>{cpu.mar=ins.arg;}});
+      q.push({ph:'e',hi:['reg-acc','reg-mdr'],d:'MDR ← ACC',zh:'執行：把 ACC 放入 MDR',en:'Execute: move ACC into MDR',do:()=>{cpu.mdr=cpu.acc;}});
+      q.push({ph:'e',hi:['reg-mdr','mem'+ins.arg],d:'mem[MAR] ← MDR',zh:'執行：寫入記憶體',en:'Execute: write to memory',do:()=>{mem[ins.arg].val=cpu.acc; buildRAM();}});
+    } else if(ins.op===4){ // OUT
+      q.push({ph:'e',hi:['reg-acc','reg-out'],d:'OUTPUT ← ACC',zh:'執行：把 ACC 送到輸出',en:'Execute: send ACC to output',do:()=>{cpu.out=cpu.acc;}});
+    } else if(ins.op===5){ // HALT
+      q.push({ph:'e',hi:[],d:'HALT',zh:'執行：停機',en:'Execute: halt',do:()=>{cpu.halted=true;}});
+    }
+    return q;
+  }
+
+  function step(){
+    if(cpu.halted){ lastRTN={d:'HALT',zh:'程式已結束',en:'Program finished'}; showRTN(); stopAuto(); return; }
+    if(queue.length===0){ queue=buildCycle(); }
+    const mop=queue.shift();
+    mop.do();
+    setPhase(mop.ph); hi(mop.hi.map(x=>x)); renderCPU();
+    lastRTN={d:mop.d,zh:mop.zh,en:mop.en}; showRTN();
+    if(window.lucide)lucide.createIcons();
+    if(cpu.halted){ stopAuto(); }
+  }
+  function stopAuto(){ if(autoTimer){clearInterval(autoTimer);autoTimer=null;$('autobtn').innerHTML='<i data-lucide="play" width="14" height="14"></i><span class="lang-zh">自動</span><span class="lang-en hidden">Auto</span>';applyLang();if(window.lucide)lucide.createIcons();} }
+  function auto(){ if(autoTimer){stopAuto();return;} $('autobtn').innerHTML='<i data-lucide="pause" width="14" height="14"></i><span class="lang-zh">暫停</span><span class="lang-en hidden">Pause</span>';applyLang();if(window.lucide)lucide.createIcons(); autoTimer=setInterval(step,850); }
+
+  window.step=step; window.auto=auto; window.reset=reset; window.showRTN=showRTN;
+  reset();
+})();
+</script>
+</body>
+</html>
