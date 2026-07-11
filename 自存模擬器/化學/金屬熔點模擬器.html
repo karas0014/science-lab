@@ -3,209 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>金屬熔點百科</title>
-    <!-- Google Fonts for a cute rounded look -->
-    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+    <title>金屬熔點 · Metal Melting Points</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
     <style>
         :root {
+            --ac:#3b82f6;
             --kawaii-pink: #FFB7B2;
             --kawaii-blue: #A2E1DB;
             --kawaii-yellow: #FFFFB5;
             --kawaii-purple: #E2F0CB;
             --text-color: #555;
         }
-
         body {
-            font-family: 'Kosugi Maru', sans-serif;
-            background-color: #FFF5F7; /* Pale Pink Background */
+            font-family: 'Noto Sans HK', sans-serif;
+            background-color: #FFF5F7;
             background-image: radial-gradient(#FFDEE9 2px, transparent 2px);
             background-size: 20px 20px;
             color: var(--text-color);
+            transition:background-color .3s,color .3s;
         }
+        body.dark{
+            color:#cbd5e1;
+            background-color:#0a1626;
+            background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        h1, h2, h3, .title-font { font-family: 'Mochiy Pop One', 'Noto Sans HK', sans-serif; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
 
-        h1, h2, h3, .title-font {
-            font-family: 'Mochiy Pop One', sans-serif;
-        }
+        .btn-kawaii { background-color: white; border: 3px solid var(--kawaii-pink); color: var(--kawaii-pink); border-radius: 9999px; padding: 0.5rem 1.5rem; font-weight: bold; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); box-shadow: 0 4px 0 var(--kawaii-pink); cursor: pointer; }
+        .btn-kawaii:hover { transform: translateY(-2px); background-color: #FFF0F5; }
+        .btn-kawaii:active { transform: translateY(2px); box-shadow: 0 0 0 var(--kawaii-pink); }
+        .btn-kawaii.active { background-color: var(--kawaii-pink); color: white; box-shadow: 0 2px 0 #E08E89; transform: translateY(2px); }
+        body.dark .btn-kawaii{ background:#1e293b; }
+        body.dark .btn-kawaii:hover{ background:#243044; }
 
-        /* Cute Button Styling */
-        .btn-kawaii {
-            background-color: white;
-            border: 3px solid var(--kawaii-pink);
-            color: var(--kawaii-pink);
-            border-radius: 9999px;
-            padding: 0.5rem 1.5rem;
-            font-weight: bold;
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            box-shadow: 0 4px 0 var(--kawaii-pink);
-            cursor: pointer;
-        }
+        #sim-container { background: white; border: 4px solid var(--kawaii-blue); border-radius: 20px; position: relative; overflow: hidden; box-shadow: 8px 8px 0px rgba(162, 225, 219, 0.4); }
+        .metal-ion { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); position: absolute; transition: transform 0.1s; box-shadow: inset -2px -2px 5px rgba(0,0,0,0.1), 2px 2px 5px rgba(0,0,0,0.1); user-select: none; z-index: 10; }
+        .ion-face { font-size: 0.8em; pointer-events: none; }
+        .electron { width: 6px; height: 6px; background-color: #FFD700; border-radius: 50%; position: absolute; box-shadow: 0 0 4px #FFD700; z-index: 5; pointer-events: none; transition: all 0.5s ease-out; }
 
-        .btn-kawaii:hover {
-            transform: translateY(-2px);
-            background-color: #FFF0F5;
-        }
+        @keyframes vibrate { 0% { transform: translate(0, 0); } 25% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 75% { transform: translate(-1px, 1px); } 100% { transform: translate(1px, -1px); } }
+        @keyframes vibrate-heavy { 0% { transform: translate(0, 0) rotate(0deg); } 25% { transform: translate(3px, 3px) rotate(2deg); } 50% { transform: translate(-3px, -3px) rotate(-2deg); } 75% { transform: translate(-3px, 3px) rotate(2deg); } 100% { transform: translate(3px, -3px) rotate(-2deg); } }
+        .vibrating { animation: vibrate 0.5s infinite linear; }
+        .vibrating-heavy { animation: vibrate-heavy 0.2s infinite linear; }
 
-        .btn-kawaii:active {
-            transform: translateY(2px);
-            box-shadow: 0 0 0 var(--kawaii-pink);
-        }
+        .speech-bubble { position: relative; background: #ffffff; border-radius: .4em; padding: 15px; border: 3px solid var(--kawaii-purple); }
+        .speech-bubble:after { content: ''; position: absolute; bottom: 0; left: 20px; width: 0; height: 0; border: 20px solid transparent; border-top-color: var(--kawaii-purple); border-bottom: 0; border-left: 0; margin-left: -10px; margin-bottom: -20px; }
+        body.dark .speech-bubble{ background:#1e293b; border-color:#2c3e57; color:#e2e8f0; }
+        body.dark .speech-bubble:after{ border-top-color:#2c3e57; }
 
-        .btn-kawaii.active {
-            background-color: var(--kawaii-pink);
-            color: white;
-            box-shadow: 0 2px 0 #E08E89;
-            transform: translateY(2px);
-        }
-
-        /* Simulation Container */
-        #sim-container {
-            background: white;
-            border: 4px solid var(--kawaii-blue);
-            border-radius: 20px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 8px 8px 0px rgba(162, 225, 219, 0.4);
-        }
-
-        /* Metal Ion Styling */
-        .metal-ion {
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-            text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
-            position: absolute;
-            transition: transform 0.1s;
-            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.1), 2px 2px 5px rgba(0,0,0,0.1);
-            user-select: none;
-            z-index: 10;
-        }
-
-        .ion-face {
-            font-size: 0.8em;
-            pointer-events: none;
-        }
-
-        /* Electron Styling */
-        .electron {
-            width: 6px;
-            height: 6px;
-            background-color: #FFD700; /* Gold */
-            border-radius: 50%;
-            position: absolute;
-            box-shadow: 0 0 4px #FFD700;
-            z-index: 5;
-            pointer-events: none;
-            transition: all 0.5s ease-out;
-        }
-
-        /* Animations */
-        @keyframes vibrate {
-            0% { transform: translate(0, 0); }
-            25% { transform: translate(1px, 1px); }
-            50% { transform: translate(-1px, -1px); }
-            75% { transform: translate(-1px, 1px); }
-            100% { transform: translate(1px, -1px); }
-        }
-
-        @keyframes vibrate-heavy {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            25% { transform: translate(3px, 3px) rotate(2deg); }
-            50% { transform: translate(-3px, -3px) rotate(-2deg); }
-            75% { transform: translate(-3px, 3px) rotate(2deg); }
-            100% { transform: translate(3px, -3px) rotate(-2deg); }
-        }
-
-        .vibrating {
-            animation: vibrate 0.5s infinite linear;
-        }
-        
-        .vibrating-heavy {
-            animation: vibrate-heavy 0.2s infinite linear;
-        }
-
-        /* Mascot Speech Bubble */
-        .speech-bubble {
-            position: relative;
-            background: #ffffff;
-            border-radius: .4em;
-            padding: 15px;
-            border: 3px solid var(--kawaii-purple);
-        }
-
-        .speech-bubble:after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 20px;
-            width: 0;
-            height: 0;
-            border: 20px solid transparent;
-            border-top-color: var(--kawaii-purple);
-            border-bottom: 0;
-            border-left: 0;
-            margin-left: -10px;
-            margin-bottom: -20px;
-        }
-
-        /* Slider Styling */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            margin: 10px 0;
-            background: transparent;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 24px;
-            width: 24px;
-            border-radius: 50%;
-            background: #FF6B6B;
-            cursor: pointer;
-            margin-top: -8px;
-            box-shadow: 0 0 0 3px white, 0 0 0 6px #FF6B6B;
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 8px;
-            cursor: pointer;
-            background: #FFD3D3;
-            border-radius: 5px;
-        }
-        
+        input[type=range] { -webkit-appearance: none; width: 100%; margin: 10px 0; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #FF6B6B; cursor: pointer; margin-top: -8px; box-shadow: 0 0 0 3px white, 0 0 0 6px #FF6B6B; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #FFD3D3; border-radius: 5px; }
         .state-solid { color: #4A90E2; font-weight: bold; }
         .state-liquid { color: #FF6B6B; font-weight: bold; }
 
+        /* 深色卡片覆蓋 (sim-container 保持淺色 scope) */
+        body.dark .bg-white{ background:#0d192b !important; }
+        body.dark .border-pink-200{ border-color:#3a2e3a !important; }
+        body.dark .border-yellow-200{ border-color:#3a361e !important; }
+        body.dark .border-blue-200{ border-color:#2c3e57 !important; }
+        body.dark .text-gray-400,body.dark .text-gray-500,body.dark .text-gray-600{ color:#94a3b8 !important; }
+        body.dark .bg-gray-200{ background:#334155 !important; }
+        body.dark .border-gray-100,body.dark .border-blue-100{ border-color:#2c3e57 !important; }
+        body.dark #sim-container{ border-color:#2c3e57; }
+        body.dark .bg-pink-100{ background:#3a2e3a !important; }
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen">
-<a id="__backlink" href="../../chemistry.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark p-4 md:p-8 min-h-screen">
+
+    <a href="../../chemistry.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:60" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:60" class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+        <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language"><i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span></button>
+    </div>
 
     <!-- Header -->
-    <header class="text-center mb-8">
-        <h1 class="text-3xl md:text-5xl text-pink-500 mb-2 drop-shadow-sm">✨ 金屬熔點・可愛大百科 ✨</h1>
-        <p class="text-gray-500 text-lg">觀察金屬離子大小與電子海，探索熔點的秘密！</p>
+    <header class="text-center mb-8 mt-8">
+        <h1 class="serif-font text-3xl md:text-5xl text-pink-500 mb-2 drop-shadow-sm" data-zh="✨ 金屬熔點・可愛大百科 ✨" data-en="✨ Metal Melting Points · Encyclopedia ✨">✨ 金屬熔點・可愛大百科 ✨</h1>
+        <p class="text-gray-500 text-lg" data-zh="觀察金屬離子大小與電子海，探索熔點的秘密！" data-en="Watch the ion size and sea of electrons to uncover the secret of melting points!">觀察金屬離子大小與電子海，探索熔點的秘密！</p>
     </header>
 
     <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
+
         <!-- Left Control Panel -->
         <div class="lg:col-span-3 space-y-4">
             <div class="bg-white p-6 rounded-3xl border-4 border-pink-200 shadow-lg">
-                <h2 class="text-xl text-center text-pink-400 mb-4 title-font">選擇金屬選手</h2>
+                <h2 class="text-xl text-center text-pink-400 mb-4 title-font" data-zh="選擇金屬選手" data-en="Choose a metal">選擇金屬選手</h2>
                 <div class="flex flex-col gap-3">
-                    <button class="btn-kawaii active" onclick="selectMetal('K')">鉀 (K) - 第1族</button>
-                    <button class="btn-kawaii" onclick="selectMetal('Mg')">鎂 (Mg) - 第2族</button>
-                    <button class="btn-kawaii" onclick="selectMetal('Al')">鋁 (Al) - 第3族</button>
-                    <button class="btn-kawaii" onclick="selectMetal('W')">鎢 (W) - 過渡金屬</button>
+                    <button id="mbtn-K" class="btn-kawaii active" onclick="selectMetal('K')" data-zh="鉀 (K) - 第1族" data-en="Potassium (K) - Group 1">鉀 (K) - 第1族</button>
+                    <button id="mbtn-Mg" class="btn-kawaii" onclick="selectMetal('Mg')" data-zh="鎂 (Mg) - 第2族" data-en="Magnesium (Mg) - Group 2">鎂 (Mg) - 第2族</button>
+                    <button id="mbtn-Al" class="btn-kawaii" onclick="selectMetal('Al')" data-zh="鋁 (Al) - 第3族" data-en="Aluminium (Al) - Group 3">鋁 (Al) - 第3族</button>
+                    <button id="mbtn-W" class="btn-kawaii" onclick="selectMetal('W')" data-zh="鎢 (W) - 過渡金屬" data-en="Tungsten (W) - Transition">鎢 (W) - 過渡金屬</button>
                 </div>
             </div>
 
             <div class="bg-white p-6 rounded-3xl border-4 border-yellow-200 shadow-lg">
-                <h2 class="text-xl text-center text-yellow-400 mb-4 title-font">加熱實驗室 🔥</h2>
+                <h2 class="text-xl text-center text-yellow-400 mb-4 title-font" data-zh="加熱實驗室 🔥" data-en="Heating lab 🔥">加熱實驗室 🔥</h2>
                 <div class="mb-2 flex justify-between text-sm font-bold">
                     <span>0°C</span>
                     <span id="temp-display" class="text-red-500 text-lg">25°C</span>
@@ -213,30 +117,29 @@
                 </div>
                 <input type="range" id="temp-slider" min="0" max="4000" value="25" step="10">
                 <div class="text-center mt-2">
-                    狀態: <span id="state-display" class="state-solid">固體 (Solid)</span>
+                    <span data-zh="狀態: " data-en="State: ">狀態: </span><span id="state-display" class="state-solid">固體 (Solid)</span>
                 </div>
-                <button onclick="resetTemp()" class="mt-4 w-full text-sm text-gray-400 underline hover:text-gray-600">重置溫度</button>
+                <button onclick="resetTemp()" class="mt-4 w-full text-sm text-gray-400 underline hover:text-gray-600" data-zh="重置溫度" data-en="Reset temperature">重置溫度</button>
             </div>
         </div>
 
         <!-- Center Simulation Area -->
         <div class="lg:col-span-6">
             <div id="sim-container" class="h-96 w-full relative bg-gray-50">
-                <!-- Ions and Electrons will be injected here -->
-                <div class="absolute top-2 right-2 bg-white/80 px-3 py-1 rounded-lg text-xs text-gray-500 z-20 pointer-events-none">
+                <div id="zoom-label" class="absolute top-2 right-2 bg-white/80 px-3 py-1 rounded-lg text-xs text-gray-500 z-20 pointer-events-none" data-zh="視窗倍率: x10,000,000" data-en="Zoom: x10,000,000">
                     視窗倍率: x10,000,000
                 </div>
             </div>
-            
+
             <!-- Legend -->
             <div class="flex justify-center gap-6 mt-4 text-sm text-gray-600">
                 <div class="flex items-center gap-2">
                     <div class="w-4 h-4 rounded-full bg-blue-400 border-2 border-white shadow"></div>
-                    <span>金屬陽離子</span>
+                    <span data-zh="金屬陽離子" data-en="Metal cation">金屬陽離子</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-yellow-400 shadow"></div>
-                    <span>離域電子 (電子海)</span>
+                    <span data-zh="離域電子 (電子海)" data-en="Delocalised electrons (sea)">離域電子 (電子海)</span>
                 </div>
             </div>
         </div>
@@ -246,31 +149,31 @@
             <!-- Stats Card -->
             <div class="bg-white p-5 rounded-3xl border-4 border-blue-200 shadow-lg relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 bg-blue-100 w-20 h-20 rounded-full opacity-50"></div>
-                <h2 class="text-xl text-blue-400 mb-3 title-font border-b-2 border-blue-100 pb-2">📊 選手數值</h2>
-                
+                <h2 class="text-xl text-blue-400 mb-3 title-font border-b-2 border-blue-100 pb-2" data-zh="📊 選手數值" data-en="📊 Stats">📊 選手數值</h2>
+
                 <div class="space-y-3 text-sm">
                     <div class="flex justify-between">
-                        <span class="text-gray-400">熔點 (M.P.):</span>
+                        <span class="text-gray-400" data-zh="熔點 (M.P.):" data-en="Melting point:">熔點 (M.P.):</span>
                         <span id="info-mp" class="font-bold text-pink-500 text-lg">63 °C</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-400">離子電荷:</span>
+                        <span class="text-gray-400" data-zh="離子電荷:" data-en="Ion charge:">離子電荷:</span>
                         <span id="info-charge" class="font-bold text-blue-500">+1</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-400">離域電子數:</span>
-                        <span id="info-electrons" class="font-bold text-yellow-500">少 (1個/原子)</span>
+                        <span class="text-gray-400" data-zh="離域電子數:" data-en="Delocalised electrons:">離域電子數:</span>
+                        <span id="info-electrons" class="font-bold text-yellow-500">-</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-400">離子半徑:</span>
-                        <span id="info-radius" class="font-bold text-green-500">大 (227 pm)</span>
+                        <span class="text-gray-400" data-zh="離子半徑:" data-en="Ion radius:">離子半徑:</span>
+                        <span id="info-radius" class="font-bold text-green-500">-</span>
                     </div>
                     <div class="mt-2 pt-2 border-t border-gray-100">
-                        <span class="text-gray-400 block mb-1">金屬鍵強度:</span>
+                        <span class="text-gray-400 block mb-1" data-zh="金屬鍵強度:" data-en="Metallic bond strength:">金屬鍵強度:</span>
                         <div class="w-full bg-gray-200 rounded-full h-2.5">
                             <div id="strength-bar" class="bg-gradient-to-r from-blue-300 to-pink-400 h-2.5 rounded-full" style="width: 10%"></div>
                         </div>
-                        <p id="strength-text" class="text-right text-xs mt-1 text-gray-500">非常弱</p>
+                        <p id="strength-text" class="text-right text-xs mt-1 text-gray-500">-</p>
                     </div>
                 </div>
             </div>
@@ -278,16 +181,12 @@
             <!-- Mascot Explanation -->
             <div class="flex flex-col items-center">
                 <div class="speech-bubble w-full mb-4 shadow-sm text-sm leading-relaxed text-gray-600">
-                    <span id="mascot-text">
-                        歡迎！我是化學醬 (Chem-chan)！<br>
-                        請點擊左邊的金屬按鈕，我們來看看它們的原子有什麼不同吧！(◕‿◕)
-                    </span>
+                    <span id="mascot-text"></span>
                 </div>
-                <!-- Mascot Image (CSS Art / Emoji placeholder) -->
                 <div class="w-24 h-24 bg-pink-100 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-5xl relative overflow-hidden">
                     <span id="mascot-face">👩‍🔬</span>
                 </div>
-                <div class="bg-white px-4 py-1 rounded-full text-xs font-bold text-pink-400 -mt-3 z-10 shadow border border-pink-100">
+                <div class="bg-white px-4 py-1 rounded-full text-xs font-bold text-pink-400 -mt-3 z-10 shadow border border-pink-100" data-zh="化學醬" data-en="Chem-chan">
                     化學醬
                 </div>
             </div>
@@ -295,73 +194,52 @@
     </div>
 
     <script>
-        // Data for metals
-        // Radius values are relative pixels for visualization, not exact pm scaling but proportional
+        let LANG = 'zh';
+        const L = (o) => (o && typeof o === 'object') ? (o[LANG] ?? o.zh) : o;
+
+        const T = {
+            solid: {zh:'固體 (Solid)',en:'Solid'},
+            liquid: {zh:'液體 (Liquid)',en:'Liquid'},
+            perAtom: {zh:'個/原子',en:'/atom'},
+            manyE: {zh:'超多 (d電子參與)',en:'Many (d-electrons)'},
+            rBig: {zh:'大 (胖胖的)',en:'Large (chubby)'},
+            rSmall: {zh:'小 (緊密的)',en:'Small (tight)'},
+            rMed: {zh:'中等',en:'Medium'},
+            sWeak: {zh:'弱',en:'Weak'},
+            sMed: {zh:'中等',en:'Medium'},
+            sStrong: {zh:'強',en:'Strong'},
+            sSuper: {zh:'超級強',en:'Very strong'},
+            welcome: {zh:'歡迎！我是化學醬 (Chem-chan)！<br>請點擊左邊的金屬按鈕，我們來看看它們的原子有什麼不同吧！(◕‿◕)', en:"Welcome! I'm Chem-chan!<br>Click a metal button on the left and let's see how their atoms differ! (◕‿◕)"},
+            melt: (t)=>({zh:`哎呀！溫度達到 ${t}°C，超過熔點了！金屬鍵斷裂，離子開始自由流動變成液體了！`, en:`Uh oh! The temperature reached ${t}°C, above the melting point! The metallic bonds break and the ions flow freely as a liquid!`})
+        };
+
         const metalData = {
-            'K': {
-                name: '鉀 (Potassium)',
-                symbol: 'K',
-                mp: 63,
-                charge: 1,
-                radius: 45, // Large
-                electronCount: 1,
-                color: '#A29BFE', // Purple-ish
-                strength: 10,
-                desc: '鉀離子很大(胖胖的)，而且每個原子只貢獻1個電子。正負電荷吸引力很弱，所以稍微加熱就熔化囉！(>_<)'
-            },
-            'Mg': {
-                name: '鎂 (Magnesium)',
-                symbol: 'Mg',
-                mp: 650,
-                charge: 2,
-                radius: 35, // Medium
-                electronCount: 2,
-                color: '#74B9FF', // Blue-ish
-                strength: 40,
-                desc: '鎂離子變小了，而且帶+2電荷！電子海的電子變多了，吸力變強，熔點比鉀高很多呢！(•̀ᴗ•́)و'
-            },
-            'Al': {
-                name: '鋁 (Aluminum)',
-                symbol: 'Al',
-                mp: 660,
-                charge: 3,
-                radius: 30, // Small-ish
-                electronCount: 3,
-                color: '#81ECEC', // Cyan-ish
-                strength: 55,
-                desc: '鋁有+3電荷和3個離域電子！雖然比鎂強，但因為結構排列關係，熔點跟鎂差不多。還算是強壯的金屬喔！'
-            },
-            'W': {
-                name: '鎢 (Tungsten)',
-                symbol: 'W',
-                mp: 3422,
-                charge: 6, // Simplified for high charge density
-                radius: 28, // Small
-                electronCount: 6, // Representing many d-electrons
-                color: '#636E72', // Grey
-                strength: 100,
-                desc: '哇！鎢是過渡金屬，有非常多離域電子參與鍵結，離子又小又密。這可是超級強的金屬鍵，超難熔化！(🔥Д🔥)'
-            }
+            'K':  { name:{zh:'鉀 (Potassium)',en:'Potassium (K)'}, symbol:'K', mp:63, charge:1, radius:45, electronCount:1, color:'#A29BFE', strength:10,
+                desc:{zh:'鉀離子很大(胖胖的)，而且每個原子只貢獻1個電子。正負電荷吸引力很弱，所以稍微加熱就熔化囉！(>_<)', en:'The potassium ion is large (chubby) and each atom gives only 1 electron. The attraction is weak, so it melts with just a little heat! (>_<)'} },
+            'Mg': { name:{zh:'鎂 (Magnesium)',en:'Magnesium (Mg)'}, symbol:'Mg', mp:650, charge:2, radius:35, electronCount:2, color:'#74B9FF', strength:40,
+                desc:{zh:'鎂離子變小了，而且帶+2電荷！電子海的電子變多了，吸力變強，熔點比鉀高很多呢！(•̀ᴗ•́)و', en:'The magnesium ion is smaller and carries +2 charge! More electrons in the sea means stronger attraction, so its melting point is much higher than potassium! (•̀ᴗ•́)و'} },
+            'Al': { name:{zh:'鋁 (Aluminum)',en:'Aluminium (Al)'}, symbol:'Al', mp:660, charge:3, radius:30, electronCount:3, color:'#81ECEC', strength:55,
+                desc:{zh:'鋁有+3電荷和3個離域電子！雖然比鎂強，但因為結構排列關係，熔點跟鎂差不多。還算是強壯的金屬喔！', en:'Aluminium has +3 charge and 3 delocalised electrons! It is stronger than magnesium, but due to its structure the melting point is similar. Still a sturdy metal!'} },
+            'W':  { name:{zh:'鎢 (Tungsten)',en:'Tungsten (W)'}, symbol:'W', mp:3422, charge:6, radius:28, electronCount:6, color:'#636E72', strength:100,
+                desc:{zh:'哇！鎢是過渡金屬，有非常多離域電子參與鍵結，離子又小又密。這可是超級強的金屬鍵，超難熔化！(🔥Д🔥)', en:'Wow! Tungsten is a transition metal with a huge number of delocalised electrons bonding, and small dense ions. Super strong metallic bonds — very hard to melt! (🔥Д🔥)'} }
         };
 
         let currentMetal = 'K';
         let currentTemp = 25;
         let ions = [];
         let electrons = [];
-        let animationFrameId;
 
         const container = document.getElementById('sim-container');
         const tempSlider = document.getElementById('temp-slider');
         const tempDisplay = document.getElementById('temp-display');
         const stateDisplay = document.getElementById('state-display');
 
-        // Init
         window.onload = () => {
             selectMetal('K');
             animate();
+            if(window.lucide) lucide.createIcons();
         };
 
-        // Event Listeners
         tempSlider.addEventListener('input', (e) => {
             currentTemp = parseInt(e.target.value);
             updateTemperatureEffects();
@@ -373,55 +251,46 @@
             updateTemperatureEffects();
         }
 
+        function renderMetalInfo(){
+            const data = metalData[currentMetal];
+            document.getElementById('info-mp').innerText = `${data.mp} °C`;
+            document.getElementById('info-charge').innerText = `+${data.charge}`;
+            document.getElementById('info-electrons').innerText = data.electronCount > 3 ? L(T.manyE) : `${data.electronCount}${L(T.perAtom)}`;
+            document.getElementById('info-radius').innerText = data.radius > 40 ? L(T.rBig) : (data.radius < 30 ? L(T.rSmall) : L(T.rMed));
+            document.getElementById('strength-bar').style.width = `${data.strength}%`;
+            let strengthText = L(T.sWeak);
+            if(data.strength > 30) strengthText = L(T.sMed);
+            if(data.strength > 50) strengthText = L(T.sStrong);
+            if(data.strength > 80) strengthText = L(T.sSuper);
+            document.getElementById('strength-text').innerText = strengthText;
+        }
+
         function selectMetal(metalKey) {
             currentMetal = metalKey;
             const data = metalData[metalKey];
-
-            // Update UI Buttons
-            document.querySelectorAll('.btn-kawaii').forEach(btn => {
-                btn.classList.remove('active');
-                if(btn.textContent.includes(data.symbol)) btn.classList.add('active');
-            });
-
-            // Update Info Panel
-            document.getElementById('info-mp').innerText = `${data.mp} °C`;
-            document.getElementById('info-charge').innerText = `+${data.charge}`;
-            document.getElementById('info-electrons').innerText = data.electronCount > 3 ? "超多 (d電子參與)" : `${data.electronCount}個/原子`;
-            document.getElementById('info-radius').innerText = data.radius > 40 ? "大 (胖胖的)" : (data.radius < 30 ? "小 (緊密的)" : "中等");
-            document.getElementById('strength-bar').style.width = `${data.strength}%`;
-            
-            let strengthText = "弱";
-            if(data.strength > 30) strengthText = "中等";
-            if(data.strength > 50) strengthText = "強";
-            if(data.strength > 80) strengthText = "超級強";
-            document.getElementById('strength-text').innerText = strengthText;
-
-            // Mascot Text
-            document.getElementById('mascot-text').innerText = data.desc;
+            document.querySelectorAll('.btn-kawaii').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`mbtn-${metalKey}`).classList.add('active');
+            renderMetalInfo();
             document.getElementById('mascot-face').innerText = data.strength > 80 ? '😎' : (data.strength < 20 ? '🥺' : '👩‍🔬');
-
             resetTemp();
             createSimulation(data);
         }
 
         function createSimulation(data) {
-            container.innerHTML = ''; // Clear
-            // Add zoom label back
+            container.innerHTML = '';
             const zoomLabel = document.createElement('div');
+            zoomLabel.id = 'zoom-label';
             zoomLabel.className = 'absolute top-2 right-2 bg-white/80 px-3 py-1 rounded-lg text-xs text-gray-500 z-20 pointer-events-none';
-            zoomLabel.innerText = '視窗倍率: x10,000,000';
+            zoomLabel.setAttribute('data-zh','視窗倍率: x10,000,000');
+            zoomLabel.setAttribute('data-en','Zoom: x10,000,000');
+            zoomLabel.innerText = LANG==='zh' ? '視窗倍率: x10,000,000' : 'Zoom: x10,000,000';
             container.appendChild(zoomLabel);
 
             ions = [];
             electrons = [];
+            const rows = 4, cols = 6, startX = 50, startY = 50;
+            const gap = data.radius * 2 + 10;
 
-            const rows = 4;
-            const cols = 6;
-            const startX = 50;
-            const startY = 50;
-            const gap = data.radius * 2 + 10; // Spacing based on size
-
-            // Create Ions
             for(let r=0; r<rows; r++) {
                 for(let c=0; c<cols; c++) {
                     const ion = document.createElement('div');
@@ -430,31 +299,13 @@
                     ion.style.height = `${data.radius * 2}px`;
                     ion.style.backgroundColor = data.color;
                     ion.innerHTML = `<span class="ion-face text-white opacity-80">${getFace(data.charge)}</span><span class="absolute text-xs bottom-1 font-mono opacity-50">${data.charge}+</span>`;
-                    
-                    // Initial Grid Position
                     const posX = startX + c * gap;
                     const posY = startY + r * gap;
-                    
                     ion.style.left = `${posX}px`;
                     ion.style.top = `${posY}px`;
-
                     container.appendChild(ion);
-                    
-                    ions.push({
-                        element: ion,
-                        baseX: posX,
-                        baseY: posY,
-                        x: posX,
-                        y: posY,
-                        vx: 0,
-                        vy: 0,
-                        isLiquid: false
-                    });
-
-                    // Create Electrons for this ion
-                    for(let e=0; e<data.electronCount; e++) {
-                        createElectron(posX, posY, data.radius);
-                    }
+                    ions.push({ element: ion, baseX: posX, baseY: posY, x: posX, y: posY, vx: 0, vy: 0, isLiquid: false });
+                    for(let e=0; e<data.electronCount; e++) { createElectron(posX, posY, data.radius); }
                 }
             }
         }
@@ -462,22 +313,12 @@
         function createElectron(x, y, radius) {
             const el = document.createElement('div');
             el.className = 'electron';
-            // Random start pos near the ion
             const offsetX = (Math.random() - 0.5) * radius * 2.5;
             const offsetY = (Math.random() - 0.5) * radius * 2.5;
-            
             el.style.left = `${x + radius + offsetX}px`;
             el.style.top = `${y + radius + offsetY}px`;
-            
             container.appendChild(el);
-            
-            electrons.push({
-                element: el,
-                x: x + radius + offsetX,
-                y: y + radius + offsetY,
-                vx: (Math.random() - 0.5) * 4,
-                vy: (Math.random() - 0.5) * 4
-            });
+            electrons.push({ element: el, x: x + radius + offsetX, y: y + radius + offsetY, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4 });
         }
 
         function getFace(charge) {
@@ -490,102 +331,76 @@
         function updateTemperatureEffects() {
             const data = metalData[currentMetal];
             tempDisplay.innerText = `${currentTemp}°C`;
-
             const isMelting = currentTemp >= data.mp;
-
-            // UI Update
             if (isMelting) {
-                stateDisplay.innerText = "液體 (Liquid)";
+                stateDisplay.innerText = L(T.liquid);
                 stateDisplay.className = "state-liquid";
                 document.getElementById('mascot-face').innerText = '🫠';
-                document.getElementById('mascot-text').innerText = `哎呀！溫度達到 ${currentTemp}°C，超過熔點了！金屬鍵斷裂，離子開始自由流動變成液體了！`;
-                
-                // Add red tint to background based on temp
+                document.getElementById('mascot-text').innerHTML = L(T.melt(currentTemp));
                 const heatIntensity = Math.min((currentTemp - data.mp) / 1000, 0.5);
                 container.style.backgroundColor = `rgba(255, 100, 100, ${heatIntensity})`;
             } else {
-                stateDisplay.innerText = "固體 (Solid)";
+                stateDisplay.innerText = L(T.solid);
                 stateDisplay.className = "state-solid";
-                container.style.backgroundColor = '#f9fafb'; // Reset
-                
-                // Restore mascot if temp drops
+                container.style.backgroundColor = '#f9fafb';
                 if(document.getElementById('mascot-face').innerText === '🫠') {
-                    document.getElementById('mascot-face').innerText = '👩‍🔬';
-                    document.getElementById('mascot-text').innerText = data.desc;
+                    document.getElementById('mascot-face').innerText = data.strength > 80 ? '😎' : (data.strength < 20 ? '🥺' : '👩‍🔬');
                 }
+                document.getElementById('mascot-text').innerHTML = L(data.desc);
             }
         }
 
         function animate() {
             const data = metalData[currentMetal];
             const isMelting = currentTemp >= data.mp;
-            
-            // Calculate vibration/movement speed based on temperature
-            // Base vibration
-            let vibration = (currentTemp / 4000) * 3; 
+            let vibration = (currentTemp / 4000) * 3;
             if (vibration < 0.5) vibration = 0.5;
-
-            // 1. Animate Ions
             ions.forEach(ion => {
                 if (isMelting) {
-                    // Liquid State: Random walk logic (Brownian motion-ish)
-                    // Move away from base grid slightly
                     ion.vx += (Math.random() - 0.5) * 0.5;
                     ion.vy += (Math.random() - 0.5) * 0.5;
-                    
-                    // Dampening
-                    ion.vx *= 0.95;
-                    ion.vy *= 0.95;
-                    
-                    // Gravity-ish (sink to bottom slightly if very hot liquid)
+                    ion.vx *= 0.95; ion.vy *= 0.95;
                     if(currentTemp > data.mp + 500) ion.vy += 0.05;
-
-                    ion.x += ion.vx;
-                    ion.y += ion.vy;
-
-                    // Boundaries
+                    ion.x += ion.vx; ion.y += ion.vy;
                     if(ion.x < 0 || ion.x > container.offsetWidth - 60) ion.vx *= -1;
                     if(ion.y < 0 || ion.y > container.offsetHeight - 60) ion.vy *= -1;
-
                 } else {
-                    // Solid State: Vibrate around base position
-                    // Higher temp = larger vibration radius
                     const shakeX = (Math.random() - 0.5) * vibration * 5;
                     const shakeY = (Math.random() - 0.5) * vibration * 5;
-                    
-                    // Lerp back to grid position
                     ion.x = ion.baseX + shakeX;
                     ion.y = ion.baseY + shakeY;
                 }
-
                 ion.element.style.transform = `translate(${ion.x - ion.baseX}px, ${ion.y - ion.baseY}px)`;
             });
-
-            // 2. Animate Electrons (Sea of electrons)
-            // They always move, but move faster at higher temps
             const electronSpeed = 2 + (currentTemp / 1000);
-
             electrons.forEach(e => {
                 e.x += e.vx * (electronSpeed/2);
                 e.y += e.vy * (electronSpeed/2);
-
-                // Boundaries (bounce)
                 if(e.x < 0 || e.x > container.offsetWidth) e.vx *= -1;
                 if(e.y < 0 || e.y > container.offsetHeight) e.vy *= -1;
-
-                // Random direction change occasionally
-                if(Math.random() < 0.05) {
-                    e.vx = (Math.random() - 0.5) * 4;
-                    e.vy = (Math.random() - 0.5) * 4;
-                }
-
+                if(Math.random() < 0.05) { e.vx = (Math.random() - 0.5) * 4; e.vy = (Math.random() - 0.5) * 4; }
                 e.element.style.left = `${e.x}px`;
                 e.element.style.top = `${e.y}px`;
             });
-
             requestAnimationFrame(animate);
         }
 
+        // --- 主題 / 語言切換 ---
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+        function toggleLang(){
+            LANG = LANG==='zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = LANG==='zh' ? 'EN' : '中';
+            document.querySelectorAll('[data-zh][data-en]').forEach(el=>{
+                el.textContent = el.getAttribute(LANG==='zh'?'data-zh':'data-en');
+            });
+            renderMetalInfo();
+            updateTemperatureEffects();
+        }
     </script>
 </body>
 </html>
