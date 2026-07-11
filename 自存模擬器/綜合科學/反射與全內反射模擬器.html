@@ -7,8 +7,29 @@
     <title>反射定律與全內反射模擬器 | Reflection & TIR Simulator - HK Junior Science S1-S3</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; overflow: hidden; background-color: #0f172a; touch-action: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        :root{ --ac:#6366f1; }
+        .serif-font{ font-family:'Noto Serif HK', serif; }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        /* Light-mode overrides for the dark glass UI chrome. The optical-bench canvas stays dark in both modes (it is the instrument "scope"). */
+        body.light{ background-color:#eaeef3; color:#334155; }
+        body.light .glass-panel{ background:rgba(255,255,255,.85) !important; border-color:#c3ccd8 !important; box-shadow:0 8px 24px rgba(31,38,135,.1) !important; }
+        body.light .window-header{ background:rgba(99,102,241,.12) !important; border-color:#c3ccd8 !important; }
+        body.light #window-body{ background:rgba(241,245,249,.7) !important; }
+        body.light #app-title{ color:#0f172a !important; }
+        body.light #concept-window .text-white{ color:#0f172a !important; }
+        body.light .text-slate-200, body.light .text-slate-300, body.light .text-slate-400{ color:#475569 !important; }
+        body.light .text-blue-400, body.light .text-blue-300{ color:#4f46e5 !important; }
+        body.light .border-slate-600, body.light .border-slate-500{ border-color:#c3ccd8 !important; }
+    </style>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0f172a; touch-action: none; font-family: 'Noto Sans HK','Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         #canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
         
         /* Glassmorphism Panel */
@@ -45,13 +66,15 @@
         .btn-disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
-<body class="text-slate-200">
-<a id="__backlink" href="../../science.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="text-slate-200 dark">
+    <a href="../../science.html" class="bp-btn" style="position:fixed;bottom:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
 
     <!-- Top Navigation Bar -->
     <div class="absolute top-0 left-0 w-full glass-panel flex justify-between items-center px-4 py-3 z-50">
         <div class="flex items-center gap-3">
-            <h1 id="app-title" class="text-xl md:text-2xl font-bold text-white tracking-wide">反射與全內反射模擬器</h1>
+            <h1 id="app-title" class="serif-font text-xl md:text-2xl font-bold text-white tracking-wide">反射與全內反射模擬器</h1>
             <button id="toggle-panel-btn" class="p-2 rounded-full hover:bg-slate-700 transition" title="Toggle Control Panel">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300 hover:text-white"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
@@ -63,6 +86,8 @@
                 <span class="relative z-10 w-1/2 text-center text-xs font-bold text-white">中</span>
                 <span class="relative z-10 w-1/2 text-center text-xs font-bold text-white">EN</span>
             </button>
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-slate-700 transition" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="18" height="18"></i></span></button>
         </div>
     </div>
 
@@ -656,10 +681,19 @@
             ctx.rotate(-laser.angle); ctx.translate(-laser.x, -laser.y);
         }
 
+        // --- Theme Toggle (chrome only; the optical-bench canvas stays dark in both modes) ---
+        function toggleTheme(){
+            const light = document.body.classList.toggle('light');
+            document.body.classList.toggle('dark', !light);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${light?'moon':'sun'}" width="18" height="18"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+
         // Initialize Call
         resize();
         resetScene(); // This will also save the initial state for Undo
         updateLanguage();
+        if(window.lucide) lucide.createIcons();
 
     </script>
 </body>
