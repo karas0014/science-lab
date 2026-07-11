@@ -3,13 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bilingual Microscope Simulator</title>
-  
-  <!-- 僅保留 Tailwind CSS 用於介面美化 -->
+  <title>顯微鏡模擬器 · Microscope</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={darkMode:'class'}</script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --ac:#14b8a6; }
+    body{ font-family:'Noto Sans HK', sans-serif; transition: background-color .3s, color .3s; }
+    body.dark{ background-color:#0a1626 !important;
+        background-image:
+            linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+            linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+            linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+            linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+        background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+    }
+    .serif-font{ font-family:'Noto Serif HK', serif; }
+    .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+    .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+    body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+    body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
+    /* Light-mode overrides (dark-first sim); the eyepiece view (bg-black) stays dark in both */
+    body.light{ background-color:#eaeef3;
+        background-image:
+            linear-gradient(rgba(20,184,166,.05) 1px,transparent 1px),
+            linear-gradient(90deg,rgba(20,184,166,.05) 1px,transparent 1px),
+            linear-gradient(rgba(20,184,166,.09) 1px,transparent 1px),
+            linear-gradient(90deg,rgba(20,184,166,.09) 1px,transparent 1px);
+        background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        color:#1e293b;
+    }
+    body.light .bg-slate-900{ background-color:#ffffff !important; }
+    body.light .bg-slate-800{ background-color:#ffffff !important; }
+    body.light .bg-slate-700{ background-color:#e2e8f0 !important; }
+    body.light .bg-slate-600{ background-color:#cbd5e1 !important; }
+    body.light .text-slate-100,body.light .text-slate-200,body.light .text-slate-300{ color:#1e293b !important; }
+    body.light .text-slate-400{ color:#64748b !important; }
+    body.light .border-slate-700,body.light .border-slate-600{ border-color:#cbd5e1 !important; }
+  </style>
 </head>
-<body class="bg-slate-900 overflow-x-hidden text-slate-100 font-sans selection:bg-green-500 selection:text-white">
-<a id="__backlink" href="../../biology.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bg-slate-900 overflow-x-hidden text-slate-100 font-sans selection:bg-green-500 selection:text-white">
+    <a href="../../biology.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:2147483647">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式" style="width:auto"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+    </div>
 
   <!-- 課後評估 Modal 視窗 -->
   <div id="quiz-modal" class="hidden fixed inset-0 bg-black/85 flex items-center justify-center z-50 p-4 md:p-8 backdrop-blur-sm">
@@ -22,10 +63,10 @@
     </div>
   </div>
 
-  <div class="max-w-6xl mx-auto p-4 md:p-8">
+  <div class="max-w-6xl mx-auto p-4 md:p-8" style="padding-top:3.25rem">
     <header class="mb-6 border-b border-slate-700 pb-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-bold text-green-400 flex items-center gap-3">
+        <h1 class="serif-font text-3xl font-bold text-green-400 flex items-center gap-3">
           <svg class="w-8 h-8 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
           <span id="txt-title"></span>
         </h1>
@@ -660,9 +701,19 @@
     document.getElementById('open-quiz-btn').addEventListener('click', () => quizModal.classList.remove('hidden'));
     document.getElementById('close-quiz-btn').addEventListener('click', () => quizModal.classList.add('hidden'));
 
+    // --- 主題切換 (dark-first) ---
+    window.toggleTheme = () => {
+        const toLight = document.body.classList.contains('dark');
+        document.body.classList.toggle('dark', !toLight);
+        document.body.classList.toggle('light', toLight);
+        document.getElementById('theme-ic').innerHTML = `<i data-lucide="${toLight?'moon':'sun'}" width="15" height="15"></i>`;
+        if(window.lucide) lucide.createIcons();
+    };
+
     // --- 初始化執行 ---
     renderSVGStructure();
     updateView();
+    if(window.lucide) lucide.createIcons();
 
   </script>
 </body>
