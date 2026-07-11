@@ -3,31 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>遺傳學挑戰模擬器 - 中三同學專用</title>
+    <title>遺傳學挑戰 · Genetics Challenge</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; }
-        .lock-animation { animation: pulse 1s infinite; }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
+        :root{ --ac:#14b8a6; }
+        body { font-family: 'Noto Sans HK','Noto Sans TC', sans-serif; background-color:#eaeef3;
+            background-image:
+                linear-gradient(rgba(20,184,166,.05) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(20,184,166,.05) 1px,transparent 1px),
+                linear-gradient(rgba(20,184,166,.09) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(20,184,166,.09) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+            transition:background-color .3s,color .3s;
         }
+        body.dark{ color:#cbd5e1; background-color:#0a1626 !important;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .serif-font{ font-family:'Noto Serif HK', serif; }
+        .lock-animation { animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         .correct-btn { background-color: #d1fae5; border-color: #10b981; }
         .wrong-btn { background-color: #fee2e2; border-color: #ef4444; }
+
+        /* Blueprint buttons */
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
+        /* Dark-mode overrides for Tailwind surfaces */
+        body.dark .bg-white{ background-color:#0d192b !important; }
+        body.dark .bg-slate-50{ background-color:#131f33 !important; }
+        body.dark .bg-indigo-50{ background-color:#101a33 !important; }
+        body.dark .bg-amber-50{ background-color:#2a2110 !important; }
+        body.dark .bg-blue-50{ background-color:#0d1b2e !important; }
+        body.dark .bg-rose-50{ background-color:#2a1416 !important; }
+        body.dark .bg-emerald-50{ background-color:#0f2417 !important; }
+        body.dark .bg-emerald-100{ background-color:#12321f !important; }
+        body.dark .text-slate-800,body.dark .text-slate-700{ color:#e2e8f0 !important; }
+        body.dark .text-slate-600,body.dark .text-slate-500,body.dark .text-slate-400{ color:#94a3b8 !important; }
+        body.dark .border-slate-100,body.dark .border-slate-200,body.dark .border-emerald-200,body.dark .border-rose-200{ border-color:#2c3e57 !important; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen p-4 md:p-8 flex flex-col items-center">
-<a id="__backlink" href="../../biology.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bg-slate-50 min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <a href="../../biology.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:2147483647" class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式" style="width:auto"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+        <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language" style="width:auto"><i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span></button>
+    </div>
 
     <!-- Header -->
-    <header class="max-w-3xl w-full mb-8 text-center">
-        <h1 class="text-3xl md:text-4xl font-bold text-indigo-700 flex items-center justify-center gap-3">
+    <header class="max-w-3xl w-full mb-8 text-center" style="margin-top:2.5rem">
+        <h1 class="serif-font text-3xl md:text-4xl font-bold text-teal-700 flex items-center justify-center gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/><path d="M8 15h6"/></svg>
-            遺傳學挑戰模擬器
+            <span data-zh="遺傳學挑戰模擬器" data-en="Genetics Challenge">遺傳學挑戰模擬器</span>
         </h1>
-        <p class="text-slate-500 mt-2">中三同學專用：V4 完整版 (HTML)</p>
+        <p class="text-slate-500 mt-2" data-zh="中三同學專用：V4 完整版 (HTML)" data-en="For S3 students · V4 full version (HTML)">中三同學專用：V4 完整版 (HTML)</p>
     </header>
 
     <!-- Main Game Container -->
@@ -36,71 +78,75 @@
     </main>
 
     <footer class="mt-8 text-center text-slate-400 text-sm">
-        <p>題庫包含 60 條關於 DNA、蛋白功能、血型計算及 HOT 挑戰題</p>
-        <p class="mt-1 text-indigo-400 font-medium">重點：基因透過控制蛋白合成來展現性狀</p>
-        <p class="mt-1">© 2024 遺傳學自主學習工具 HTML 版</p>
+        <p data-zh="題庫包含 60 條關於 DNA、蛋白功能、血型計算及 HOT 挑戰題" data-en="Question bank of 60+ items on DNA, protein function, blood-type calculations and HOT challenge questions">題庫包含 60 條關於 DNA、蛋白功能、血型計算及 HOT 挑戰題</p>
+        <p class="mt-1 text-teal-500 font-medium" data-zh="重點：基因透過控制蛋白合成來展現性狀" data-en="Key idea: genes express traits by controlling protein synthesis">重點：基因透過控制蛋白合成來展現性狀</p>
+        <p class="mt-1" data-zh="© 2024 遺傳學自主學習工具 HTML 版" data-en="© 2024 Genetics self-study tool · HTML edition">© 2024 遺傳學自主學習工具 HTML 版</p>
     </footer>
 
     <script>
-        // 題庫定義 (60 題)
+        /* ---- Language helpers ---- */
+        let LANG = 'zh';
+        function L(o){ return (o && typeof o === 'object' && 'zh' in o) ? o[LANG] : o; }
+
+        // 題庫定義 (bilingual)
         const QUESTION_POOL = [
-            { q: "DNA 分子的基本單位是什麼？", o: ["核苷酸", "蛋白質", "氨基酸", "葡萄糖"], a: 0, e: "DNA 是由許多核苷酸（Nucleotides）連接而成的多核苷酸鏈。" },
-            { q: "在 DNA 分子中，腺嘌呤 (A) 總是與哪種鹼基配對？", o: ["鳥嘌呤 (G)", "胞嘧啶 (C)", "胸腺嘧啶 (T)", "尿嘧啶 (U)"], a: 2, e: "根據鹼基互補配對原則，A 與 T 配對，C 與 G 配對。" },
-            { q: "人類體細胞中含有多少對染色體？", o: ["23 對", "46 對", "22 對", "48 對"], a: 0, e: "人類有 23 對染色體，其中 22 對是常染色體，1 對是性染色體。" },
-            { q: "決定個體性狀的基本遺傳單位是？", o: ["細胞核", "染色體", "基因", "等位基因"], a: 2, e: "基因是位於染色體上的 DNA 片段，是遺傳的基本單位。" },
-            { q: "下列哪一項屬於連續變異 (Continuous Variation)？", o: ["血型", "身高", "捲舌能力", "耳垂形狀"], a: 1, e: "身高在群體中呈現連續的特徵範圍，屬於連續變異。" },
-            { q: "當一個個體擁有兩個相同的等位基因時，我們稱之為？", o: ["雜合子", "純合子", "顯性個體", "隱性個體"], a: 1, e: "純合子指擁有兩個相同等位基因的個體（如 TT 或 tt）。" },
-            { q: "高莖 (T) 對矮莖 (t) 為顯性。雜合子 (Tt) 的表現型是？", o: ["中等高度", "矮莖", "高莖", "部分高部分矮"], a: 2, e: "顯性等位基因會遮蓋隱性等位基因的表達，因此 Tt 表現為高莖。" },
-            { q: "人類男性的性染色體組合是？", o: ["XX", "XY", "YY", "XO"], a: 1, e: "男性具有一條 X 染色體和一條 Y 染色體 (XY)。" },
-            { q: "ABO 血型系統中，哪兩個等位基因表現出等顯性 (Co-dominance)？", o: ["IA 和 i", "IB 和 i", "IA 和 IB", "只有 i"], a: 2, e: "IA 和 IB 同時存在時都會表達，產生 AB 血型。" },
-            { q: "若父母均為雜合子高莖 (Tt)，其後代出現矮莖 (tt) 的概率是多少？", o: ["0%", "25%", "50%", "75%"], a: 1, e: "Tt x Tt 的配對中，基因型比例為 1 TT : 2 Tt : 1 tt，矮莖概率為 1/4 (25%)。" },
-            { q: "DNA 分子的結構通常被描述為？", o: ["單鏈結構", "三螺旋結構", "雙螺旋結構", "球狀結構"], a: 2, e: "華生和克拉克提出的 DNA 模型是雙螺旋（Double Helix）結構。" },
-            { q: "遺傳信息由 DNA 轉移到 mRNA 的過程稱為？", o: ["轉錄", "轉譯", "複製", "突變"], a: 0, e: "轉錄是指以 DNA 為模板合成 mRNA 的過程，發生在細胞核內。" },
-            { q: "構成 DNA 骨幹 (Backbone) 的成分是？", o: ["鹼基與糖", "磷酸鹽與糖", "鹼基與磷酸鹽", "蛋白質與糖"], a: 1, e: "DNA 鏈的骨幹由脫氧核糖和磷酸基團交替連接組成。" },
-            { q: "性別是由哪一個細胞確定的？", o: ["卵子", "精子", "體細胞", "紅血球"], a: 1, e: "精子可能攜帶 X 或 Y 染色體，因此決定了受精卵的性別。" },
-            { q: "下列哪項不是不連續變異的特徵？", o: ["性狀界限分明", "受環境影響很大", "受單一基因控制", "呈現階梯狀分佈"], a: 1, e: "不連續變異通常受基因控制，受環境影響較小。" },
-            { q: "基因主要透過控制什麼分子的合成來決定性狀？", o: ["蛋白質", "葡萄糖", "脂肪", "礦物質"], a: 0, e: "基因是合成蛋白質的藍圖，而蛋白質是執行生命功能、決定性狀的主要分子。" },
-            { q: "表現型 (Phenotype) 是指？", o: ["個體的基因組合", "個體可觀察到的特徵", "染色體的數量", "DNA 序列"], a: 1, e: "表現型是基因型與環境相互作用後表現出來的性狀。" },
-            { q: "血型為 O 型的人，其基因型必定是？", o: ["IAIA", "IBIB", "IAIB", "ii"], a: 3, e: "O 型血是由兩個隱性等位基因 (ii) 組成的純合子。" },
-            { q: "在遺傳圖譜中，方框通常代表？", o: ["女性", "男性", "患者", "攜帶者"], a: 1, e: "在標準遺傳學系譜圖中，方框代表男性，圓圈代表女性。" },
-            { q: "下列哪種人類特徵屬於不連續變異？", o: ["體重", "膚色深淺", "能否捲舌", "智力"], a: 2, e: "能否捲舌只有「能」或「不能」兩種明顯區別，屬於不連續變異。" },
-            { q: "地中海貧血症是一種什麼樣的遺傳病？", o: ["常染色體顯性", "常染色體隱性", "性連鎖隱性", "傳染病"], a: 1, e: "地中海貧血是常染色體隱性遺傳病，父母皆為攜帶者時可能生下患兒。" },
-            { q: "胞嘧啶 (C) 與鳥嘌呤 (G) 之間通過什麼連接？", o: ["離子鍵", "共價鍵", "氫鍵", "肽鍵"], a: 2, e: "DNA 雙鏈之間的鹼基對是通過氫鍵結合的。" },
-            { q: "若一對夫婦血型分別為 AB 型和 O 型，後代不可能出現哪種血型？", o: ["A 型", "B 型", "AB 型", "O 型"], a: 2, e: "後代基因型只能是 IAi 或 IBi，因此只會是 A 或 B 型，不會是 AB 或 O。" },
-            { q: "在真核細胞中，蛋白質的合成（轉譯）主要發生在？", o: ["細胞核", "核糖體", "細胞膜", "線粒體"], a: 1, e: "轉譯是在核糖體上將 mRNA 的信息解碼為蛋白質的過程。" },
-            { q: "下列哪項屬於遺傳特徵？", o: ["染色的頭髮", "傷疤", "天然捲髮", "運動後的肌肉"], a: 2, e: "只有由遺傳物質決定的特徵才能遺傳給下一代。" },
-            { q: "正常膚色夫婦 (Aa) 生下一個白化病孩子 (aa)，概率是多少？", o: ["0%", "25%", "50%", "75%"], a: 1, e: "Aa x Aa 的配對中，出現 aa 的概率為 1/4 (25%)。" },
-            { q: "人類的前 22 對染色體稱為？", o: ["性染色體", "常染色體", "同源染色體", "單倍體"], a: 1, e: "前 22 對在男女中相同，稱為常染色體。" },
-            { q: "孟德爾通過研究什麼生物發現了遺傳規律？", o: ["果蠅", "小白鼠", "豌豆", "大腸桿菌"], a: 2, e: "孟德爾利用豌豆進行了著名的單基因遺傳實驗。" },
-            { q: "雜合子 (Ee) 雜交，後代出現隱性性狀 (ee) 的概率是？", o: ["1/2", "1/4", "3/4", "0"], a: 1, e: "Ee x Ee -> 1 EE : 2 Ee : 1 ee。隱性性狀佔 1/4。" },
-            { q: "顯性等位基因是指？", o: ["最強大的基因", "在雜合子中能表達其性狀的基因", "最常見的基因", "父母傳下來的基因"], a: 1, e: "顯性基因只要存在一個就能表達出對應的性狀。" },
-            { q: "白化病是由於缺乏哪種蛋白質催化黑色素合成？", o: ["血紅蛋白", "酪氨酸酶", "胰島素", "抗體"], a: 1, e: "酪氨酸酶負責將原料轉化為黑色素，缺乏此酶會導致白化病。" },
-            { q: "同種生物個體之間的特徵差異稱為？", o: ["遺傳", "變異", "進化", "突變"], a: 1, e: "變異 (Variation) 是指生物個體間存在的差異。" },
-            { q: "基因型為 Aa 的個體產生的配子種類比例？", o: ["100% A", "100% a", "A:a = 1:1", "A:a = 3:1"], a: 2, e: "分離定律指出，等位基因在產生配子時會彼此分離。" },
-            { q: "DNA 鹼基配對正確的是？", o: ["A-G", "C-T", "A-T", "C-A"], a: 2, e: "A 與 T 配對，C 與 G 配對。" },
-            { q: "同源染色體通常來自？", o: ["都來自父親", "都來自母親", "一條來自父，一條來自母", "隨機產生"], a: 2, e: "同源染色體對是由父母雙方各提供一條組成的。" },
-            { q: "紅血球表面的血型抗原本質上是？", o: ["脂肪", "蛋白質或糖蛋白", "維生素", "純水"], a: 1, e: "血型抗原是細胞膜上的功能性蛋白結構。" },
-            { q: "豌豆綠色種子 (y) 為隱性。yy 的種子顏色是？", o: ["黃色", "綠色", "白色", "藍色"], a: 1, e: "隱性性狀只有在純合子 (yy) 時才會表現。" },
-            { q: "表現型受到哪些因素影響？", o: ["僅基因", "僅環境", "基因與環境共同作用", "都不受影響"], a: 2, e: "生物的性狀是遺傳物質與環境互動的結果。" },
-            { q: "DNA 全稱中的「脫氧核糖」是指？", o: ["一種蛋白質", "一種五碳糖", "一種鹼基", "一種磷酸"], a: 1, e: "DNA 的糖部分是脫氧核糖。" },
-            { q: "父母血型為 A (IAi) 和 B (IBi)，孩子血型可能是？", o: ["只有 A 或 B", "只有 AB", "A, B, AB, O 都有可能", "只有 O"], a: 2, e: "這對父母可以提供 IA, i, IB, i 四種配子組合。" },
-            { q: "IAi x IBi 產生 O 型血孩子的概率？", o: ["0%", "25%", "50%", "100%"], a: 1, e: "只有 ii 組合是 O 型，概率為 1/4 (25%)。" },
-            { q: "轉錄發生的位置是在？", o: ["細胞核", "細胞質", "核糖體", "細胞膜"], a: 0, e: "DNA 儲存在核內，故轉錄在核內完成。" },
-            { q: "唐氏綜合症是因為哪對染色體異常？", o: ["第 13 對", "第 18 對", "第 21 對", "性染色體"], a: 2, e: "唐氏綜合症是第 21 對染色體多了一條。" },
-            { q: "DNA 的主要功能不包括？", o: ["儲存遺傳信息", "指導蛋白合成", "提供能量", "傳遞特徵"], a: 2, e: "DNA 不是能源物質，葡萄糖才是。" },
-            { q: "連續變異通常呈現什麼分佈？", o: ["階梯狀", "正態分佈 (鐘形)", "只有兩極", "完全隨機"], a: 1, e: "如身高、體重，大多數人在中間，少數在兩頭。" },
-            { q: "「F1」代表雜交後的？", o: ["父母", "第一代子代", "第二代子代", "祖先"], a: 1, e: "F1 是 First Filial generation 的縮寫。" },
-            { q: "HOT：正常夫婦生下白化病女兒，再生一個正常兒子的概率？", o: ["25%", "37.5%", "50%", "75%"], a: 1, e: "正常機率 3/4 * 男生機率 1/2 = 3/8 (37.5%)。" },
-            { q: "同卵雙胞胎基因組？", o: ["完全相同", "完全不同", "50% 相同", "與父母相同"], a: 0, e: "來自同一個受精卵，遺傳物質一致。" },
-            { q: "智力屬於哪種變異？", o: ["不連續變異", "連續變異", "不遺傳變異", "環境變異"], a: 1, e: "受多基因控制且受環境影響大，呈現連續分佈。" },
-            { q: "基因與蛋白質關係？", o: ["基因就是蛋白質", "一個基因攜帶合成一條多肽鏈密碼", "蛋白產生基因", "兩者無關"], a: 1, e: "基因是指令，蛋白質是產品。" },
-            { q: "轉譯過程產生的鏈狀分子是？", o: ["多糖", "多肽鏈", "脂肪酸", "DNA 鏈"], a: 1, e: "多肽鏈摺疊後形成功能性蛋白質。" },
-            { q: "酶的主要功能？", o: ["儲能", "催化生物化學反應", "構成細胞骨架", "傳遞指令"], a: 1, e: "大多數酶是蛋白，負責控制代謝。" },
-            { q: "DNA 序列改變如何影響性狀？", o: ["沒影響", "可能改變蛋白結構影響功能", "改變環境", "改變性別"], a: 1, e: "指令變了，產品功能就可能出錯。" },
-            { q: "不同組織功能不同是因為？", o: ["DNA 不同", "表達了不同基因產生不同蛋白", "沒有蛋白", "純粹環境影響"], a: 1, e: "所有細胞 DNA 相同，但開啟的基因不同。" },
-            { q: "胰島素基因受損會導致？", o: ["感冒", "糖尿病", "白化病", "色盲"], a: 1, e: "胰島素蛋白無法正常合成，血糖失控。" },
-            { q: "mRNA 指導蛋白合成的工廠是？", o: ["細胞核", "核糖體", "溶酶體", "高爾基體"], a: 1, e: "核糖體是轉譯的場所。" },
-            { q: "HOT：酶在低溫活性高，眼睛顏色變深。這說明？", o: ["基因決定一切", "環境與基因共同影響表現型", "蛋白不受環境影響", "基因只在低溫複製"], a: 1, e: "表現型 = 基因型 + 環境因素。" }
+            { q:{zh:"DNA 分子的基本單位是什麼？",en:"What is the basic unit of a DNA molecule?"}, o:{zh:["核苷酸","蛋白質","氨基酸","葡萄糖"],en:["Nucleotide","Protein","Amino acid","Glucose"]}, a:0, e:{zh:"DNA 是由許多核苷酸（Nucleotides）連接而成的多核苷酸鏈。",en:"DNA is a polynucleotide chain made of many linked nucleotides."} },
+            { q:{zh:"在 DNA 分子中，腺嘌呤 (A) 總是與哪種鹼基配對？",en:"In DNA, adenine (A) always pairs with which base?"}, o:{zh:["鳥嘌呤 (G)","胞嘧啶 (C)","胸腺嘧啶 (T)","尿嘧啶 (U)"],en:["Guanine (G)","Cytosine (C)","Thymine (T)","Uracil (U)"]}, a:2, e:{zh:"根據鹼基互補配對原則，A 與 T 配對，C 與 G 配對。",en:"By complementary base pairing, A pairs with T and C pairs with G."} },
+            { q:{zh:"人類體細胞中含有多少對染色體？",en:"How many pairs of chromosomes are in a human body cell?"}, o:{zh:["23 對","46 對","22 對","48 對"],en:["23 pairs","46 pairs","22 pairs","48 pairs"]}, a:0, e:{zh:"人類有 23 對染色體，其中 22 對是常染色體，1 對是性染色體。",en:"Humans have 23 pairs of chromosomes: 22 pairs of autosomes and 1 pair of sex chromosomes."} },
+            { q:{zh:"決定個體性狀的基本遺傳單位是？",en:"The basic hereditary unit that determines an organism's traits is the?"}, o:{zh:["細胞核","染色體","基因","等位基因"],en:["Nucleus","Chromosome","Gene","Allele"]}, a:2, e:{zh:"基因是位於染色體上的 DNA 片段，是遺傳的基本單位。",en:"A gene is a segment of DNA on a chromosome and is the basic unit of heredity."} },
+            { q:{zh:"下列哪一項屬於連續變異 (Continuous Variation)？",en:"Which of the following is an example of continuous variation?"}, o:{zh:["血型","身高","捲舌能力","耳垂形狀"],en:["Blood type","Height","Tongue-rolling ability","Earlobe shape"]}, a:1, e:{zh:"身高在群體中呈現連續的特徵範圍，屬於連續變異。",en:"Height shows a continuous range of values across a population, so it is continuous variation."} },
+            { q:{zh:"當一個個體擁有兩個相同的等位基因時，我們稱之為？",en:"When an individual has two identical alleles, it is called?"}, o:{zh:["雜合子","純合子","顯性個體","隱性個體"],en:["Heterozygote","Homozygote","Dominant individual","Recessive individual"]}, a:1, e:{zh:"純合子指擁有兩個相同等位基因的個體（如 TT 或 tt）。",en:"A homozygote has two identical alleles (e.g. TT or tt)."} },
+            { q:{zh:"高莖 (T) 對矮莖 (t) 為顯性。雜合子 (Tt) 的表現型是？",en:"Tall (T) is dominant over short (t). What is the phenotype of the heterozygote (Tt)?"}, o:{zh:["中等高度","矮莖","高莖","部分高部分矮"],en:["Medium height","Short","Tall","Partly tall, partly short"]}, a:2, e:{zh:"顯性等位基因會遮蓋隱性等位基因的表達，因此 Tt 表現為高莖。",en:"The dominant allele masks the recessive one, so Tt is tall."} },
+            { q:{zh:"人類男性的性染色體組合是？",en:"What are the sex chromosomes of a human male?"}, o:{zh:["XX","XY","YY","XO"],en:["XX","XY","YY","XO"]}, a:1, e:{zh:"男性具有一條 X 染色體和一條 Y 染色體 (XY)。",en:"A male has one X and one Y chromosome (XY)."} },
+            { q:{zh:"ABO 血型系統中，哪兩個等位基因表現出等顯性 (Co-dominance)？",en:"In the ABO blood group system, which two alleles show co-dominance?"}, o:{zh:["IA 和 i","IB 和 i","IA 和 IB","只有 i"],en:["IA and i","IB and i","IA and IB","Only i"]}, a:2, e:{zh:"IA 和 IB 同時存在時都會表達，產生 AB 血型。",en:"When IA and IB are both present, both are expressed, giving blood type AB."} },
+            { q:{zh:"若父母均為雜合子高莖 (Tt)，其後代出現矮莖 (tt) 的概率是多少？",en:"If both parents are heterozygous tall (Tt), what is the probability of short (tt) offspring?"}, o:{zh:["0%","25%","50%","75%"],en:["0%","25%","50%","75%"]}, a:1, e:{zh:"Tt x Tt 的配對中，基因型比例為 1 TT : 2 Tt : 1 tt，矮莖概率為 1/4 (25%)。",en:"Tt x Tt gives 1 TT : 2 Tt : 1 tt, so the chance of short (tt) is 1/4 (25%)."} },
+            { q:{zh:"DNA 分子的結構通常被描述為？",en:"The structure of a DNA molecule is usually described as?"}, o:{zh:["單鏈結構","三螺旋結構","雙螺旋結構","球狀結構"],en:["Single-stranded","Triple helix","Double helix","Globular"]}, a:2, e:{zh:"華生和克拉克提出的 DNA 模型是雙螺旋（Double Helix）結構。",en:"The DNA model proposed by Watson and Crick is a double helix."} },
+            { q:{zh:"遺傳信息由 DNA 轉移到 mRNA 的過程稱為？",en:"The process transferring genetic information from DNA to mRNA is called?"}, o:{zh:["轉錄","轉譯","複製","突變"],en:["Transcription","Translation","Replication","Mutation"]}, a:0, e:{zh:"轉錄是指以 DNA 為模板合成 mRNA 的過程，發生在細胞核內。",en:"Transcription synthesises mRNA using DNA as a template and occurs in the nucleus."} },
+            { q:{zh:"構成 DNA 骨幹 (Backbone) 的成分是？",en:"What makes up the backbone of DNA?"}, o:{zh:["鹼基與糖","磷酸鹽與糖","鹼基與磷酸鹽","蛋白質與糖"],en:["Bases and sugar","Phosphate and sugar","Bases and phosphate","Protein and sugar"]}, a:1, e:{zh:"DNA 鏈的骨幹由脫氧核糖和磷酸基團交替連接組成。",en:"The DNA backbone is made of alternating deoxyribose sugars and phosphate groups."} },
+            { q:{zh:"性別是由哪一個細胞確定的？",en:"Which cell determines the sex of the offspring?"}, o:{zh:["卵子","精子","體細胞","紅血球"],en:["Egg","Sperm","Body cell","Red blood cell"]}, a:1, e:{zh:"精子可能攜帶 X 或 Y 染色體，因此決定了受精卵的性別。",en:"The sperm may carry an X or a Y chromosome, so it determines the sex of the zygote."} },
+            { q:{zh:"下列哪項不是不連續變異的特徵？",en:"Which is NOT a feature of discontinuous variation?"}, o:{zh:["性狀界限分明","受環境影響很大","受單一基因控制","呈現階梯狀分佈"],en:["Clear-cut categories","Strongly affected by environment","Controlled by a single gene","Shows a stepped distribution"]}, a:1, e:{zh:"不連續變異通常受基因控制，受環境影響較小。",en:"Discontinuous variation is usually gene-controlled and little affected by the environment."} },
+            { q:{zh:"基因主要透過控制什麼分子的合成來決定性狀？",en:"Genes determine traits mainly by controlling the synthesis of which molecule?"}, o:{zh:["蛋白質","葡萄糖","脂肪","礦物質"],en:["Protein","Glucose","Fat","Minerals"]}, a:0, e:{zh:"基因是合成蛋白質的藍圖，而蛋白質是執行生命功能、決定性狀的主要分子。",en:"Genes are blueprints for making proteins, and proteins carry out functions and determine traits."} },
+            { q:{zh:"表現型 (Phenotype) 是指？",en:"What is the phenotype?"}, o:{zh:["個體的基因組合","個體可觀察到的特徵","染色體的數量","DNA 序列"],en:["An individual's set of genes","An individual's observable characteristics","The number of chromosomes","The DNA sequence"]}, a:1, e:{zh:"表現型是基因型與環境相互作用後表現出來的性狀。",en:"The phenotype is the trait shown after the genotype interacts with the environment."} },
+            { q:{zh:"血型為 O 型的人，其基因型必定是？",en:"A person with blood type O must have the genotype?"}, o:{zh:["IAIA","IBIB","IAIB","ii"],en:["IAIA","IBIB","IAIB","ii"]}, a:3, e:{zh:"O 型血是由兩個隱性等位基因 (ii) 組成的純合子。",en:"Type O blood is homozygous for two recessive alleles (ii)."} },
+            { q:{zh:"在遺傳圖譜中，方框通常代表？",en:"In a pedigree chart, a square usually represents?"}, o:{zh:["女性","男性","患者","攜帶者"],en:["Female","Male","Affected person","Carrier"]}, a:1, e:{zh:"在標準遺傳學系譜圖中，方框代表男性，圓圈代表女性。",en:"In a standard pedigree, squares represent males and circles represent females."} },
+            { q:{zh:"下列哪種人類特徵屬於不連續變異？",en:"Which human characteristic is an example of discontinuous variation?"}, o:{zh:["體重","膚色深淺","能否捲舌","智力"],en:["Body weight","Skin-colour shade","Ability to roll the tongue","Intelligence"]}, a:2, e:{zh:"能否捲舌只有「能」或「不能」兩種明顯區別，屬於不連續變異。",en:"Tongue-rolling has only two distinct categories (can or cannot), so it is discontinuous variation."} },
+            { q:{zh:"地中海貧血症是一種什麼樣的遺傳病？",en:"Thalassaemia is what kind of genetic disease?"}, o:{zh:["常染色體顯性","常染色體隱性","性連鎖隱性","傳染病"],en:["Autosomal dominant","Autosomal recessive","Sex-linked recessive","An infectious disease"]}, a:1, e:{zh:"地中海貧血是常染色體隱性遺傳病，父母皆為攜帶者時可能生下患兒。",en:"Thalassaemia is an autosomal recessive disease; two carrier parents may have an affected child."} },
+            { q:{zh:"胞嘧啶 (C) 與鳥嘌呤 (G) 之間通過什麼連接？",en:"Cytosine (C) and guanine (G) are joined by what?"}, o:{zh:["離子鍵","共價鍵","氫鍵","肽鍵"],en:["Ionic bonds","Covalent bonds","Hydrogen bonds","Peptide bonds"]}, a:2, e:{zh:"DNA 雙鏈之間的鹼基對是通過氫鍵結合的。",en:"Base pairs between the two DNA strands are held together by hydrogen bonds."} },
+            { q:{zh:"若一對夫婦血型分別為 AB 型和 O 型，後代不可能出現哪種血型？",en:"If one parent is type AB and the other is type O, which blood type CANNOT appear in the offspring?"}, o:{zh:["A 型","B 型","AB 型","O 型"],en:["Type A","Type B","Type AB","Type O"]}, a:2, e:{zh:"後代基因型只能是 IAi 或 IBi，因此只會是 A 或 B 型，不會是 AB 或 O。",en:"Offspring can only be IAi or IBi, so they are type A or B, never AB or O."} },
+            { q:{zh:"在真核細胞中，蛋白質的合成（轉譯）主要發生在？",en:"In a eukaryotic cell, protein synthesis (translation) mainly occurs at the?"}, o:{zh:["細胞核","核糖體","細胞膜","線粒體"],en:["Nucleus","Ribosome","Cell membrane","Mitochondrion"]}, a:1, e:{zh:"轉譯是在核糖體上將 mRNA 的信息解碼為蛋白質的過程。",en:"Translation decodes mRNA into protein on the ribosome."} },
+            { q:{zh:"下列哪項屬於遺傳特徵？",en:"Which of the following is an inherited characteristic?"}, o:{zh:["染色的頭髮","傷疤","天然捲髮","運動後的肌肉"],en:["Dyed hair","A scar","Naturally curly hair","Muscles built by exercise"]}, a:2, e:{zh:"只有由遺傳物質決定的特徵才能遺傳給下一代。",en:"Only characteristics determined by genetic material can be passed to the next generation."} },
+            { q:{zh:"正常膚色夫婦 (Aa) 生下一個白化病孩子 (aa)，概率是多少？",en:"Two normally pigmented parents (both Aa) — what is the chance of an albino child (aa)?"}, o:{zh:["0%","25%","50%","75%"],en:["0%","25%","50%","75%"]}, a:1, e:{zh:"Aa x Aa 的配對中，出現 aa 的概率為 1/4 (25%)。",en:"Aa x Aa gives aa with a probability of 1/4 (25%)."} },
+            { q:{zh:"人類的前 22 對染色體稱為？",en:"The first 22 pairs of human chromosomes are called?"}, o:{zh:["性染色體","常染色體","同源染色體","單倍體"],en:["Sex chromosomes","Autosomes","Homologous chromosomes","Haploid"]}, a:1, e:{zh:"前 22 對在男女中相同，稱為常染色體。",en:"The first 22 pairs are the same in males and females and are called autosomes."} },
+            { q:{zh:"孟德爾通過研究什麼生物發現了遺傳規律？",en:"Mendel discovered the laws of inheritance by studying which organism?"}, o:{zh:["果蠅","小白鼠","豌豆","大腸桿菌"],en:["Fruit flies","Mice","Pea plants","E. coli"]}, a:2, e:{zh:"孟德爾利用豌豆進行了著名的單基因遺傳實驗。",en:"Mendel carried out his famous single-gene experiments using pea plants."} },
+            { q:{zh:"雜合子 (Ee) 雜交，後代出現隱性性狀 (ee) 的概率是？",en:"Crossing heterozygotes (Ee x Ee), what is the chance of the recessive trait (ee)?"}, o:{zh:["1/2","1/4","3/4","0"],en:["1/2","1/4","3/4","0"]}, a:1, e:{zh:"Ee x Ee -> 1 EE : 2 Ee : 1 ee。隱性性狀佔 1/4。",en:"Ee x Ee → 1 EE : 2 Ee : 1 ee, so the recessive trait is 1/4."} },
+            { q:{zh:"顯性等位基因是指？",en:"A dominant allele is one that?"}, o:{zh:["最強大的基因","在雜合子中能表達其性狀的基因","最常見的基因","父母傳下來的基因"],en:["Is the strongest gene","Expresses its trait even in a heterozygote","Is the most common gene","Is passed from the parents"]}, a:1, e:{zh:"顯性基因只要存在一個就能表達出對應的性狀。",en:"A dominant allele expresses its trait even when only one copy is present."} },
+            { q:{zh:"白化病是由於缺乏哪種蛋白質催化黑色素合成？",en:"Albinism results from a lack of which protein that catalyses melanin synthesis?"}, o:{zh:["血紅蛋白","酪氨酸酶","胰島素","抗體"],en:["Haemoglobin","Tyrosinase","Insulin","Antibody"]}, a:1, e:{zh:"酪氨酸酶負責將原料轉化為黑色素，缺乏此酶會導致白化病。",en:"Tyrosinase converts precursors into melanin; without it, albinism results."} },
+            { q:{zh:"同種生物個體之間的特徵差異稱為？",en:"Differences in characteristics between individuals of the same species are called?"}, o:{zh:["遺傳","變異","進化","突變"],en:["Heredity","Variation","Evolution","Mutation"]}, a:1, e:{zh:"變異 (Variation) 是指生物個體間存在的差異。",en:"Variation refers to the differences that exist between individual organisms."} },
+            { q:{zh:"基因型為 Aa 的個體產生的配子種類比例？",en:"What is the ratio of gamete types produced by an Aa individual?"}, o:{zh:["100% A","100% a","A:a = 1:1","A:a = 3:1"],en:["100% A","100% a","A : a = 1 : 1","A : a = 3 : 1"]}, a:2, e:{zh:"分離定律指出，等位基因在產生配子時會彼此分離。",en:"By the law of segregation, the alleles separate into gametes, giving A : a = 1 : 1."} },
+            { q:{zh:"DNA 鹼基配對正確的是？",en:"Which is a correct DNA base pairing?"}, o:{zh:["A-G","C-T","A-T","C-A"],en:["A-G","C-T","A-T","C-A"]}, a:2, e:{zh:"A 與 T 配對，C 與 G 配對。",en:"A pairs with T, and C pairs with G."} },
+            { q:{zh:"同源染色體通常來自？",en:"A homologous pair of chromosomes usually comes from?"}, o:{zh:["都來自父親","都來自母親","一條來自父，一條來自母","隨機產生"],en:["Both from the father","Both from the mother","One from the father and one from the mother","Produced randomly"]}, a:2, e:{zh:"同源染色體對是由父母雙方各提供一條組成的。",en:"A homologous pair consists of one chromosome from each parent."} },
+            { q:{zh:"紅血球表面的血型抗原本質上是？",en:"Blood-group antigens on the surface of red blood cells are essentially?"}, o:{zh:["脂肪","蛋白質或糖蛋白","維生素","純水"],en:["Fats","Proteins or glycoproteins","Vitamins","Pure water"]}, a:1, e:{zh:"血型抗原是細胞膜上的功能性蛋白結構。",en:"Blood-group antigens are functional protein structures on the cell membrane."} },
+            { q:{zh:"豌豆綠色種子 (y) 為隱性。yy 的種子顏色是？",en:"In peas, green seed (y) is recessive. What colour is a yy seed?"}, o:{zh:["黃色","綠色","白色","藍色"],en:["Yellow","Green","White","Blue"]}, a:1, e:{zh:"隱性性狀只有在純合子 (yy) 時才會表現。",en:"A recessive trait only shows in the homozygote (yy)."} },
+            { q:{zh:"表現型受到哪些因素影響？",en:"The phenotype is affected by which factors?"}, o:{zh:["僅基因","僅環境","基因與環境共同作用","都不受影響"],en:["Genes only","Environment only","Both genes and environment","Neither"]}, a:2, e:{zh:"生物的性狀是遺傳物質與環境互動的結果。",en:"An organism's traits result from the interaction of genes and environment."} },
+            { q:{zh:"DNA 全稱中的「脫氧核糖」是指？",en:"The 'deoxyribose' in DNA refers to?"}, o:{zh:["一種蛋白質","一種五碳糖","一種鹼基","一種磷酸"],en:["A protein","A five-carbon sugar","A base","A phosphate"]}, a:1, e:{zh:"DNA 的糖部分是脫氧核糖。",en:"The sugar in DNA is deoxyribose, a five-carbon sugar."} },
+            { q:{zh:"父母血型為 A (IAi) 和 B (IBi)，孩子血型可能是？",en:"Parents are type A (IAi) and type B (IBi). The children may be?"}, o:{zh:["只有 A 或 B","只有 AB","A, B, AB, O 都有可能","只有 O"],en:["Only A or B","Only AB","A, B, AB or O are all possible","Only O"]}, a:2, e:{zh:"這對父母可以提供 IA, i, IB, i 四種配子組合。",en:"These parents provide IA, i, IB and i gametes, so all four blood types are possible."} },
+            { q:{zh:"IAi x IBi 產生 O 型血孩子的概率？",en:"IAi x IBi — what is the chance of a type O child?"}, o:{zh:["0%","25%","50%","100%"],en:["0%","25%","50%","100%"]}, a:1, e:{zh:"只有 ii 組合是 O 型，概率為 1/4 (25%)。",en:"Only the ii combination is type O, with a probability of 1/4 (25%)."} },
+            { q:{zh:"轉錄發生的位置是在？",en:"Where does transcription take place?"}, o:{zh:["細胞核","細胞質","核糖體","細胞膜"],en:["Nucleus","Cytoplasm","Ribosome","Cell membrane"]}, a:0, e:{zh:"DNA 儲存在核內，故轉錄在核內完成。",en:"DNA is stored in the nucleus, so transcription occurs there."} },
+            { q:{zh:"唐氏綜合症是因為哪對染色體異常？",en:"Down syndrome is caused by an abnormality of which chromosome pair?"}, o:{zh:["第 13 對","第 18 對","第 21 對","性染色體"],en:["Pair 13","Pair 18","Pair 21","The sex chromosomes"]}, a:2, e:{zh:"唐氏綜合症是第 21 對染色體多了一條。",en:"Down syndrome results from an extra copy of chromosome 21."} },
+            { q:{zh:"DNA 的主要功能不包括？",en:"Which is NOT a main function of DNA?"}, o:{zh:["儲存遺傳信息","指導蛋白合成","提供能量","傳遞特徵"],en:["Storing genetic information","Directing protein synthesis","Providing energy","Passing on characteristics"]}, a:2, e:{zh:"DNA 不是能源物質，葡萄糖才是。",en:"DNA is not an energy source; glucose is."} },
+            { q:{zh:"連續變異通常呈現什麼分佈？",en:"Continuous variation usually shows what kind of distribution?"}, o:{zh:["階梯狀","正態分佈 (鐘形)","只有兩極","完全隨機"],en:["Stepped","A normal (bell-shaped) distribution","Only two extremes","Completely random"]}, a:1, e:{zh:"如身高、體重，大多數人在中間，少數在兩頭。",en:"Like height and weight, most individuals are in the middle with few at the extremes."} },
+            { q:{zh:"「F1」代表雜交後的？",en:"'F1' refers to?"}, o:{zh:["父母","第一代子代","第二代子代","祖先"],en:["The parents","The first generation of offspring","The second generation of offspring","The ancestors"]}, a:1, e:{zh:"F1 是 First Filial generation 的縮寫。",en:"F1 stands for the First Filial generation."} },
+            { q:{zh:"HOT：正常夫婦生下白化病女兒，再生一個正常兒子的概率？",en:"HOT: A normal couple has an albino daughter. What is the chance their next child is a normal son?"}, o:{zh:["25%","37.5%","50%","75%"],en:["25%","37.5%","50%","75%"]}, a:1, e:{zh:"正常機率 3/4 * 男生機率 1/2 = 3/8 (37.5%)。",en:"Normal chance 3/4 × male chance 1/2 = 3/8 (37.5%)."} },
+            { q:{zh:"同卵雙胞胎基因組？",en:"The genomes of identical twins are?"}, o:{zh:["完全相同","完全不同","50% 相同","與父母相同"],en:["Completely identical","Completely different","50% identical","Same as the parents"]}, a:0, e:{zh:"來自同一個受精卵，遺傳物質一致。",en:"They come from the same fertilised egg, so their genetic material is identical."} },
+            { q:{zh:"智力屬於哪種變異？",en:"Intelligence is which type of variation?"}, o:{zh:["不連續變異","連續變異","不遺傳變異","環境變異"],en:["Discontinuous variation","Continuous variation","Non-heritable variation","Environmental variation"]}, a:1, e:{zh:"受多基因控制且受環境影響大，呈現連續分佈。",en:"It is controlled by many genes and strongly affected by the environment, giving a continuous distribution."} },
+            { q:{zh:"基因與蛋白質關係？",en:"What is the relationship between genes and proteins?"}, o:{zh:["基因就是蛋白質","一個基因攜帶合成一條多肽鏈密碼","蛋白產生基因","兩者無關"],en:["A gene is a protein","A gene carries the code to make one polypeptide chain","Proteins produce genes","They are unrelated"]}, a:1, e:{zh:"基因是指令，蛋白質是產品。",en:"A gene is the instruction; the protein is the product."} },
+            { q:{zh:"轉譯過程產生的鏈狀分子是？",en:"Translation produces which chain-like molecule?"}, o:{zh:["多糖","多肽鏈","脂肪酸","DNA 鏈"],en:["A polysaccharide","A polypeptide chain","A fatty acid","A DNA strand"]}, a:1, e:{zh:"多肽鏈摺疊後形成功能性蛋白質。",en:"The polypeptide chain folds to form a functional protein."} },
+            { q:{zh:"酶的主要功能？",en:"What is the main function of enzymes?"}, o:{zh:["儲能","催化生物化學反應","構成細胞骨架","傳遞指令"],en:["Store energy","Catalyse biochemical reactions","Form the cytoskeleton","Carry instructions"]}, a:1, e:{zh:"大多數酶是蛋白，負責控制代謝。",en:"Most enzymes are proteins that control metabolic reactions."} },
+            { q:{zh:"DNA 序列改變如何影響性狀？",en:"How can a change in DNA sequence affect a trait?"}, o:{zh:["沒影響","可能改變蛋白結構影響功能","改變環境","改變性別"],en:["No effect","It may change the protein's structure and affect its function","It changes the environment","It changes the sex"]}, a:1, e:{zh:"指令變了，產品功能就可能出錯。",en:"If the instruction changes, the resulting protein may not work properly."} },
+            { q:{zh:"不同組織功能不同是因為？",en:"Different tissues have different functions because?"}, o:{zh:["DNA 不同","表達了不同基因產生不同蛋白","沒有蛋白","純粹環境影響"],en:["Their DNA differs","They express different genes and make different proteins","They have no proteins","It is purely environmental"]}, a:1, e:{zh:"所有細胞 DNA 相同，但開啟的基因不同。",en:"All cells have the same DNA, but different genes are switched on."} },
+            { q:{zh:"胰島素基因受損會導致？",en:"Damage to the insulin gene can lead to?"}, o:{zh:["感冒","糖尿病","白化病","色盲"],en:["A cold","Diabetes","Albinism","Colour blindness"]}, a:1, e:{zh:"胰島素蛋白無法正常合成，血糖失控。",en:"Insulin protein cannot be made properly, so blood sugar is no longer controlled."} },
+            { q:{zh:"mRNA 指導蛋白合成的工廠是？",en:"The 'factory' where mRNA directs protein synthesis is the?"}, o:{zh:["細胞核","核糖體","溶酶體","高爾基體"],en:["Nucleus","Ribosome","Lysosome","Golgi apparatus"]}, a:1, e:{zh:"核糖體是轉譯的場所。",en:"The ribosome is the site of translation."} },
+            { q:{zh:"HOT：酶在低溫活性高，眼睛顏色變深。這說明？",en:"HOT: An enzyme is more active at low temperature, making eye colour darker. This shows?"}, o:{zh:["基因決定一切","環境與基因共同影響表現型","蛋白不受環境影響","基因只在低溫複製"],en:["Genes decide everything","Environment and genes together affect the phenotype","Proteins are unaffected by the environment","Genes only replicate at low temperature"]}, a:1, e:{zh:"表現型 = 基因型 + 環境因素。",en:"Phenotype = genotype + environmental factors."} }
         ];
 
         // 遊戲狀態變量
@@ -124,11 +170,11 @@
             score = 0;
             gameState = 'PLAYING';
             startTime = Date.now();
-            
+
             // 開啟全域計時器顯示
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(updateTimerDisplay, 100);
-            
+
             loadQuestion();
         }
 
@@ -139,10 +185,10 @@
             }
         }
 
-        // 加載題目
+        // 加載題目 — store option index so re-render (e.g. language switch) keeps the shuffle
         function loadQuestion() {
             const q = questions[currentIndex];
-            const opts = q.o.map((text, idx) => ({ text, isCorrect: idx === q.a }));
+            const opts = q.o.zh.map((_, idx) => ({ origIndex: idx, isCorrect: idx === q.a }));
             shuffledOptions = opts.sort(() => Math.random() - 0.5);
             render();
         }
@@ -164,12 +210,12 @@
                 gameState = 'WRONG_LOCK';
                 lockTimer = 10;
                 render();
-                
+
                 const countdown = setInterval(() => {
                     lockTimer--;
                     const lockEl = document.getElementById('lock-countdown');
                     if (lockEl) lockEl.innerText = lockTimer;
-                    
+
                     if (lockTimer <= 0) {
                         clearInterval(countdown);
                         gameState = 'PLAYING';
@@ -195,14 +241,15 @@
                             <div class="text-amber-500 mb-4 flex justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-800">準備好接受挑戰嗎？</h2>
+                            <h2 class="text-2xl font-bold text-slate-800">${LANG==='zh'?'準備好接受挑戰嗎？':'Ready to take on the challenge?'}</h2>
                             <p class="text-slate-600 mt-2">
-                                規則：隨機抽取問題，最快答對 <b>10 題</b> 的同學獲勝！<br/>
-                                注意：答錯會被鎖定 <b>10 秒</b> 閱讀解釋，請小心作答。
+                                ${LANG==='zh'
+                                    ? '規則：隨機抽取問題，最快答對 <b>10 題</b> 的同學獲勝！<br/>注意：答錯會被鎖定 <b>10 秒</b> 閱讀解釋，請小心作答。'
+                                    : 'Rules: questions are drawn at random — the first to answer <b>10 correctly</b> wins!<br/>Note: a wrong answer locks you out for <b>10 seconds</b> to read the explanation, so answer carefully.'}
                             </p>
                         </div>
-                        <button onclick="initGame()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-105 active:scale-95">
-                             開始挑戰
+                        <button onclick="initGame()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-105 active:scale-95">
+                             ${LANG==='zh'?'開始挑戰':'Start challenge'}
                         </button>
                     </div>
                 `;
@@ -212,25 +259,25 @@
                     <div class="p-6 md:p-8">
                         <div class="flex justify-between items-center mb-6">
                             <div class="flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-sm font-bold">
-                                分數: ${score} / 10
+                                ${LANG==='zh'?'分數':'Score'}: ${score} / 10
                             </div>
                             <div class="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">
-                                用時: <span id="live-timer">0.0s</span>
+                                ${LANG==='zh'?'用時':'Time'}: <span id="live-timer">0.0s</span>
                             </div>
                         </div>
 
                         <div class="mb-8">
                             <h3 class="text-xl font-bold text-slate-800 leading-relaxed">
-                                <span class="text-indigo-600 mr-2">Q.</span>
-                                ${q.q}
+                                <span class="text-teal-600 mr-2">Q.</span>
+                                ${L(q.q)}
                             </h3>
                         </div>
 
                         <div class="grid grid-cols-1 gap-3">
-                            ${shuffledOptions.map((opt, i) => `
-                                <button onclick="handleAnswer(${opt.isCorrect})" class="w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-indigo-300 hover:bg-indigo-50 transition-all group flex items-center justify-between">
-                                    <span class="text-slate-700 font-medium">${opt.text}</span>
-                                    <div class="w-6 h-6 rounded-full border-2 border-slate-200 group-hover:border-indigo-400"></div>
+                            ${shuffledOptions.map((opt) => `
+                                <button onclick="handleAnswer(${opt.isCorrect})" class="w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-teal-300 hover:bg-teal-50 transition-all group flex items-center justify-between">
+                                    <span class="text-slate-700 font-medium">${L(q.o)[opt.origIndex]}</span>
+                                    <div class="w-6 h-6 rounded-full border-2 border-slate-200 group-hover:border-teal-400"></div>
                                 </button>
                             `).join('')}
                         </div>
@@ -243,62 +290,85 @@
                         <div class="text-rose-500 mb-4 lock-animation">
                             <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                         </div>
-                        <h2 class="text-2xl font-bold text-rose-700 mb-2">答錯了！</h2>
-                        
+                        <h2 class="text-2xl font-bold text-rose-700 mb-2">${LANG==='zh'?'答錯了！':'Wrong!'}</h2>
+
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-rose-200 w-full mb-6">
                             <div class="flex items-start gap-3 text-slate-800 mb-4">
                                 <div class="bg-emerald-100 text-emerald-700 p-1 rounded">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 </div>
                                 <div>
-                                    <p class="font-bold text-emerald-700">正確答案：</p>
-                                    <p class="text-lg">${q.o[q.a]}</p>
+                                    <p class="font-bold text-emerald-700">${LANG==='zh'?'正確答案：':'Correct answer:'}</p>
+                                    <p class="text-lg">${L(q.o)[q.a]}</p>
                                 </div>
                             </div>
-                            
+
                             <div class="flex items-start gap-3 text-slate-700 italic border-t pt-4">
-                                <p>${q.e}</p>
+                                <p>${L(q.e)}</p>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-3 bg-rose-600 text-white px-6 py-3 rounded-full font-bold">
-                            鎖定中... <span id="lock-countdown">10</span> 秒後繼續
+                            ${LANG==='zh'?'鎖定中...':'Locked...'} <span id="lock-countdown">10</span> ${LANG==='zh'?'秒後繼續':'s to continue'}
                         </div>
                     </div>
                 `;
             } else if (gameState === 'FINISHED') {
-                const comment = finalTime < 35 ? "這速度太驚人了！你對蛋白質與性狀的關係瞭如指掌！" : 
-                                finalTime < 70 ? "非常棒！你已經掌握了遺傳學的核心概念。" :
-                                "挑戰完成！建議再玩一次，把那些「蛋白功能」的題目練熟。";
+                const comment = LANG==='zh'
+                    ? (finalTime < 35 ? "這速度太驚人了！你對蛋白質與性狀的關係瞭如指掌！" :
+                       finalTime < 70 ? "非常棒！你已經掌握了遺傳學的核心概念。" :
+                       "挑戰完成！建議再玩一次，把那些「蛋白功能」的題目練熟。")
+                    : (finalTime < 35 ? "Incredible speed! You know the link between proteins and traits inside out!" :
+                       finalTime < 70 ? "Excellent! You have grasped the core concepts of genetics." :
+                       "Challenge complete! Try again and practise those 'protein function' questions.");
                 container.innerHTML = `
                     <div class="p-8 text-center space-y-6 bg-emerald-50">
                         <div class="p-8">
                             <div class="text-amber-400 flex justify-center mb-4">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
                             </div>
-                            <h2 class="text-3xl font-extrabold text-slate-800 mt-6">挑戰成功！</h2>
+                            <h2 class="text-3xl font-extrabold text-slate-800 mt-6">${LANG==='zh'?'挑戰成功！':'Challenge complete!'}</h2>
                             <div class="grid grid-cols-2 gap-4 mt-8">
                                 <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200">
-                                    <p class="text-slate-500 text-sm">最終用時</p>
-                                    <p class="text-2xl font-bold text-indigo-600">${finalTime.toFixed(2)}s</p>
+                                    <p class="text-slate-500 text-sm">${LANG==='zh'?'最終用時':'Final time'}</p>
+                                    <p class="text-2xl font-bold text-teal-600">${finalTime.toFixed(2)}s</p>
                                 </div>
                                 <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200">
-                                    <p class="text-slate-500 text-sm">答對題數</p>
+                                    <p class="text-slate-500 text-sm">${LANG==='zh'?'答對題數':'Correct answers'}</p>
                                     <p class="text-2xl font-bold text-emerald-600">10 / 10</p>
                                 </div>
                             </div>
                             <p class="text-slate-600 mt-6 leading-relaxed">${comment}</p>
                         </div>
-                        <button onclick="gameState='START'; render();" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all">
-                             重新挑戰
+                        <button onclick="gameState='START'; render();" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all">
+                             ${LANG==='zh'?'重新挑戰':'Play again'}
                         </button>
                     </div>
                 `;
             }
         }
 
+        /* ---- Theme & Language toggles ---- */
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+
+        function toggleLang(){
+            LANG = LANG === 'zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = LANG === 'zh' ? 'EN' : '中';
+            document.querySelectorAll('[data-zh][data-en]').forEach(el=>{
+                el.textContent = el.getAttribute(LANG === 'zh' ? 'data-zh' : 'data-en');
+            });
+            render(); // refresh the JS-built UI in the new language
+            if(window.lucide) lucide.createIcons();
+        }
+
         // 初始化頁面
         render();
+        if(window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>
