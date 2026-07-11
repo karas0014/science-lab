@@ -3,10 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>生物科實驗：黑藻光合作用多組數據模擬器 (Bilingual & HOT)</title>
+    <title>光合作用模擬器 · Photosynthesis</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root{ --ac:#14b8a6; }
+        body { font-family: 'Noto Sans HK', sans-serif; transition: background-color .3s, color .3s; }
+        body.dark{ color:#cbd5e1; background-color:#0a1626 !important;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .serif-font{ font-family:'Noto Serif HK', serif; }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
+        /* Dark-mode Tailwind surface overrides */
+        body.dark .bg-white{ background-color:#0d192b !important; }
+        body.dark .bg-slate-50{ background-color:#131f33 !important; }
+        body.dark .bg-slate-100{ background-color:#0a1626 !important; }
+        body.dark .text-slate-800,body.dark .text-slate-700{ color:#e2e8f0 !important; }
+        body.dark .text-slate-600,body.dark .text-slate-500,body.dark .text-slate-400{ color:#94a3b8 !important; }
+        body.dark .border-slate-100,body.dark .border-slate-200{ border-color:#2c3e57 !important; }
+
         @keyframes bubbleInPipette {
             0% { transform: translateY(0) scale(0.5); opacity: 0; }
             15% { opacity: 1; }
@@ -26,19 +53,23 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
-<a id="__backlink" href="../../biology.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
-    <div class="max-w-7xl mx-auto p-4 lg:p-6">
+<body class="dark bg-slate-100 min-h-screen font-sans text-slate-800">
+    <a href="../../biology.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div class="max-w-7xl mx-auto p-4 lg:p-6" style="padding-top:3.25rem">
         <!-- 頂部標題與語言選擇 -->
         <header class="bg-emerald-900 text-white p-6 rounded-3xl shadow-xl mb-6 flex flex-col md:flex-row justify-between items-center border-b-8 border-emerald-950">
             <div class="mb-4 md:mb-0">
-                <h1 class="text-2xl font-bold flex items-center" id="title-text">
+                <h1 class="serif-font text-2xl font-bold flex items-center" id="title-text">
                     <span class="bg-white text-emerald-900 px-3 py-1 rounded-lg mr-3 text-lg" id="badge-exp">實驗</span>
                     探究影響光合作用速率的因素 (對比模式)
                 </h1>
                 <p class="text-emerald-200 text-sm mt-1 font-medium italic" id="hint-text">老師提示：改變參數後點擊「開始新實驗組」來對比曲線</p>
             </div>
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-4">
+                <!-- 主題切換 -->
+                <button onclick="toggleTheme()" class="bg-emerald-800 border border-white/10 rounded-xl px-3 py-1.5 text-emerald-100 hover:bg-emerald-700 transition-all" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
                 <!-- 語言切換按鈕 -->
                 <div class="flex bg-emerald-800 rounded-xl p-1 border border-white/10">
                     <button id="lang-zh" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white text-emerald-900">中文</button>
@@ -536,11 +567,41 @@
             chart.update();
         };
 
+        // 主題切換 + 圖表主題
+        function applyChartTheme() {
+            if (!chart) return;
+            const dark = document.body.classList.contains('dark');
+            const tick = dark ? '#94a3b8' : '#666';
+            const grid = dark ? 'rgba(148,163,184,0.15)' : 'rgba(0,0,0,0.1)';
+            const titleCol = dark ? '#cbd5e1' : '#333';
+            ['x','y'].forEach(ax => {
+                const s = chart.options.scales[ax] = chart.options.scales[ax] || {};
+                s.ticks = s.ticks || {}; s.ticks.color = tick;
+                s.grid = s.grid || {}; s.grid.color = grid;
+                s.title = s.title || {}; s.title.color = titleCol;
+            });
+            chart.options.plugins = chart.options.plugins || {};
+            chart.options.plugins.legend = chart.options.plugins.legend || {};
+            chart.options.plugins.legend.labels = chart.options.plugins.legend.labels || {};
+            chart.options.plugins.legend.labels.color = dark ? '#cbd5e1' : '#333';
+            chart.update();
+        }
+
+        window.toggleTheme = () => {
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            applyChartTheme();
+            if(window.lucide) lucide.createIcons();
+        };
+
         // 初始啟動
         updateSimulation();
         updateUI();
         startNewGroup();
+        applyChartTheme();
         requestAnimationFrame(animate);
+        if(window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>
