@@ -3,22 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DSE 遺傳圖模擬器 - 自包含下載版</title>
-    <!-- 只保留 Tailwind CSS 用於排版，完全移除 Babel, React 及任何多餘的 CDN -->
+    <title>遺傳圖模擬器 · Genetic Diagram</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
+        :root{ --ac:#14b8a6; }
+        body { font-family: 'Noto Sans HK','Noto Sans TC', sans-serif; background-color: #f1f5f9; transition: background-color .3s, color .3s; }
+        body.dark{ color:#cbd5e1; background-color:#0a1626;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .serif-font{ font-family:'Noto Serif HK', serif; }
         .animate-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        /* 隱藏滾動條但保留功能 */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Blueprint buttons */
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
+        /* Dark-mode overrides for JS-rendered Tailwind surfaces */
+        body.dark .bg-white{ background-color:#0d192b !important; }
+        body.dark .bg-slate-50{ background-color:#131f33 !important; }
+        body.dark .bg-slate-100{ background-color:#131f33 !important; }
+        body.dark .bg-blue-50{ background-color:#0d1b2e !important; }
+        body.dark .bg-pink-50{ background-color:#2a1220 !important; }
+        body.dark .bg-amber-50{ background-color:#2a2110 !important; }
+        body.dark .bg-gray-50{ background-color:#131f33 !important; }
+        body.dark .text-gray-800,body.dark .text-slate-800,body.dark .text-slate-700,body.dark .text-gray-700{ color:#e2e8f0 !important; }
+        body.dark .text-gray-600,body.dark .text-gray-500,body.dark .text-slate-600,body.dark .text-slate-500,body.dark .text-slate-400,body.dark .text-gray-400{ color:#94a3b8 !important; }
+        body.dark .border-gray-100,body.dark .border-gray-200,body.dark .border-slate-100,body.dark .border-slate-200,body.dark .border-blue-100,body.dark .border-pink-100,body.dark .border-blue-50{ border-color:#2c3e57 !important; }
     </style>
 </head>
-<body>
-<a id="__backlink" href="../../biology.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
-    <div id="root"></div>
+<body class="dark">
+    <a href="../../biology.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:2147483647">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式" style="width:auto"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+    </div>
+    <div id="root" style="padding-top:2.5rem"></div>
 
     <script>
         // --- 狀態管理 (State) ---
@@ -504,7 +537,7 @@
                         <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
                             <div class="bg-slate-900 p-6 text-white flex justify-between items-center">
                                 <div>
-                                    <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">${Icon('flask', 24, "text-blue-400")} ${t.title}</h1>
+                                    <h1 class="serif-font text-xl md:text-2xl font-bold flex items-center gap-2">${Icon('flask', 24, "text-blue-400")} ${t.title}</h1>
                                     <p class="text-slate-400 text-xs mt-1">${t.subtitle}</p>
                                 </div>
                                 <div class="flex items-center gap-4">
@@ -529,9 +562,18 @@
             `;
         };
 
+        // --- 主題切換 ---
+        window.toggleTheme = () => {
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        };
+
         // --- 初始化應用 ---
         document.addEventListener('DOMContentLoaded', () => {
             window.renderApp();
+            if(window.lucide) lucide.createIcons();
         });
     </script>
 </body>
