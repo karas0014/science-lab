@@ -3,10 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>酸鹼中和滴定模擬器</title>
-    <!-- 引入 Tailwind CSS 以進行樣式設計 -->
+    <title>酸鹼中和滴定模擬器 · Acid–Base Titration</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root{ --ac:#3b82f6; }
+        body { font-family: 'Noto Sans HK', sans-serif; transition:background-color .3s,color .3s; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+        .bp-surface{
+            background-color:#eaeef3;
+            background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        body.dark .bp-surface{
+            background-color:#0a1626;
+            background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
         /* 自定義動畫，用於模擬滴水 */
         @keyframes drop {
             0% { transform: translateY(-10px); opacity: 0; }
@@ -43,30 +64,39 @@
             background: #e2e8f0;
             border-radius: 4px;
         }
+        body.dark input[type=range]::-webkit-slider-runnable-track { background:#1e293b; }
     </style>
 </head>
-<body class="min-h-screen bg-slate-50 p-2 md:p-8 font-sans text-slate-800">
-<a id="__backlink" href="../../chemistry.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bp-surface min-h-screen p-2 md:p-8 font-sans text-slate-800 dark:text-slate-200">
 
-    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-        
+    <a href="../../chemistry.html" class="bp-btn" style="position:fixed;top:14px;left:14px;z-index:50" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:14px;right:14px;z-index:50" class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+        <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language"><i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span></button>
+    </div>
+
+    <div class="max-w-6xl mx-auto bg-white dark:bg-[#0d192b]/70 rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700 mt-12">
+
         <!-- Header -->
-        <div class="bg-slate-800 text-white p-4 md:p-6 text-center">
-            <h1 class="text-2xl md:text-3xl font-bold mb-2">酸鹼中和滴定模擬器</h1>
-            <p class="text-sm md:text-base text-slate-300">
+        <div class="bg-slate-800 dark:bg-[#0a1424] text-white p-4 md:p-6 text-center">
+            <div class="mono text-[11px] font-bold tracking-[0.18em] uppercase mb-1" style="color:#93c5fd">CHEM · TITRATION</div>
+            <h1 class="serif-font text-2xl md:text-3xl font-bold mb-2" data-zh="酸鹼中和滴定模擬器" data-en="Acid–Base Titration Simulator">酸鹼中和滴定模擬器</h1>
+            <p class="text-sm md:text-base text-slate-300" data-zh="將 0.1M 氫氯酸 (HCl) 逐漸加入 25.0mL 的 0.12M 氫氧化鈉 (NaOH) 溶液中" data-en="Gradually add 0.1 M hydrochloric acid (HCl) into 25.0 mL of 0.12 M sodium hydroxide (NaOH) solution">
                 將 0.1M 氫氯酸 (HCl) 逐漸加入 25.0mL 的 0.12M 氫氧化鈉 (NaOH) 溶液中
             </p>
         </div>
 
         <div class="flex flex-col md:flex-row p-4 md:p-6 gap-6 md:gap-8">
-            
+
             <!-- Left Column: Visual Simulation -->
-            <div class="w-full md:w-1/3 flex flex-col items-center justify-center bg-slate-100 rounded-xl p-6 border border-slate-200 relative">
-                
+            <div class="w-full md:w-1/3 flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800/40 rounded-xl p-6 border border-slate-200 dark:border-slate-700 relative">
+
                 <!-- Burette (滴定管) -->
                 <div class="relative flex flex-col items-center mb-2">
-                    <div class="w-6 h-48 bg-slate-200/50 border-2 border-slate-300 rounded-t-md relative flex justify-center">
-                        <div id="burette-liquid" class="absolute bottom-0 w-full bg-slate-100/80 transition-all duration-300" style="height: 100%;"></div>
+                    <div class="w-6 h-48 bg-slate-200/50 dark:bg-slate-700/50 border-2 border-slate-300 dark:border-slate-600 rounded-t-md relative flex justify-center">
+                        <div id="burette-liquid" class="absolute bottom-0 w-full bg-slate-100/80 dark:bg-slate-500/40 transition-all duration-300" style="height: 100%;"></div>
                         <!-- Scale markings generated via JS -->
                         <div id="burette-scales" class="absolute w-full h-full top-0 left-0"></div>
                     </div>
@@ -75,7 +105,7 @@
                         <div class="w-10 h-2 bg-slate-500 rounded-full"></div>
                     </div>
                     <!-- Tip -->
-                    <div class="w-2 h-6 bg-slate-200 border-x border-slate-300 relative">
+                    <div class="w-2 h-6 bg-slate-200 dark:bg-slate-600 border-x border-slate-300 dark:border-slate-500 relative">
                         <!-- Droplet Animation Container -->
                         <div id="droplet" class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-slate-400 opacity-0 hidden">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
@@ -84,11 +114,11 @@
                 </div>
 
                 <!-- Beaker (燒杯) -->
-                <div class="relative w-40 h-48 border-4 border-t-0 border-white bg-slate-200/30 rounded-b-3xl shadow-inner mt-4 overflow-hidden flex items-end justify-center backdrop-blur-sm">
+                <div class="relative w-40 h-48 border-4 border-t-0 border-white dark:border-slate-600 bg-slate-200/30 dark:bg-slate-700/30 rounded-b-3xl shadow-inner mt-4 overflow-hidden flex items-end justify-center backdrop-blur-sm">
                     <div class="absolute top-4 left-2 text-xs text-slate-400 font-bold z-10">200mL</div>
-                    <div class="absolute top-1/2 left-2 w-4 h-0.5 bg-slate-300 z-10"></div>
-                    <div class="absolute top-1/4 left-2 w-4 h-0.5 bg-slate-300 z-10"></div>
-                    <div class="absolute bottom-1/4 left-2 w-4 h-0.5 bg-slate-300 z-10"></div>
+                    <div class="absolute top-1/2 left-2 w-4 h-0.5 bg-slate-300 dark:bg-slate-500 z-10"></div>
+                    <div class="absolute top-1/4 left-2 w-4 h-0.5 bg-slate-300 dark:bg-slate-500 z-10"></div>
+                    <div class="absolute bottom-1/4 left-2 w-4 h-0.5 bg-slate-300 dark:bg-slate-500 z-10"></div>
 
                     <!-- Liquid inside -->
                     <div id="beaker-liquid" class="w-full fade-transition relative" style="height: 30%; background-color: rgb(248, 250, 252); opacity: 0.5;">
@@ -96,21 +126,21 @@
                         <div class="absolute top-0 left-0 w-full h-2 bg-white/30 rounded-full blur-[1px]"></div>
                     </div>
                 </div>
-                
+
                 <div class="mt-6 w-full max-w-[220px] mx-auto text-center">
-                    <div class="flex flex-col items-start gap-1 mb-4 p-3 bg-white rounded-lg border border-slate-200 shadow-sm">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">選擇指示劑</label>
-                        <select id="indicator-select" class="w-full p-2 bg-slate-50 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer">
-                            <option value="none">無指示劑</option>
-                            <option value="universal">通用指示劑</option>
-                            <option value="phenolphthalein">酚酞 (Phenolphthalein)</option>
-                            <option value="methyl_orange">甲基橙 (Methyl Orange)</option>
+                    <div class="flex flex-col items-start gap-1 mb-4 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <label class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-zh="選擇指示劑" data-en="Choose indicator">選擇指示劑</label>
+                        <select id="indicator-select" class="w-full p-2 bg-slate-50 dark:bg-slate-900 rounded-md border border-slate-300 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer">
+                            <option value="none" data-zh="無指示劑" data-en="No indicator">無指示劑</option>
+                            <option value="universal" data-zh="通用指示劑" data-en="Universal indicator">通用指示劑</option>
+                            <option value="phenolphthalein" data-zh="酚酞 (Phenolphthalein)" data-en="Phenolphthalein">酚酞 (Phenolphthalein)</option>
+                            <option value="methyl_orange" data-zh="甲基橙 (Methyl Orange)" data-en="Methyl Orange">甲基橙 (Methyl Orange)</option>
                         </select>
                     </div>
-                    
+
                     <div class="flex items-center gap-2 justify-center">
-                        <div id="preview-dot" class="w-6 h-6 rounded-full shadow-inner border border-dashed border-slate-300 bg-slate-50 transition-colors duration-300"></div>
-                        <span class="font-mono font-bold text-lg">pH <span id="ph-display">13.00</span></span>
+                        <div id="preview-dot" class="w-6 h-6 rounded-full shadow-inner border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 transition-colors duration-300"></div>
+                        <span class="mono font-bold text-lg">pH <span id="ph-display">13.00</span></span>
                     </div>
                     <p id="color-note" class="text-xs text-slate-400 mt-1 h-4">(無色)</p>
                 </div>
@@ -118,20 +148,20 @@
 
             <!-- Right Column: Chart and Controls -->
             <div class="w-full md:w-2/3 flex flex-col gap-6">
-                
+
                 <!-- Control Panel -->
-                <div class="bg-white border border-slate-200 rounded-xl p-4 md:p-6 shadow-sm">
+                <div class="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-6 shadow-sm">
                     <div class="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4">
-                        <div class="bg-slate-100 px-6 py-4 rounded-lg text-center w-full lg:w-auto">
-                            <div class="text-sm text-slate-500 font-semibold mb-1">已加入 HCl 體積</div>
-                            <div class="text-3xl font-bold font-mono text-slate-800"><span id="vol-display">0.0</span> <span class="text-lg">mL</span></div>
+                        <div class="bg-slate-100 dark:bg-slate-900/60 px-6 py-4 rounded-lg text-center w-full lg:w-auto">
+                            <div class="text-sm text-slate-500 dark:text-slate-400 font-semibold mb-1" data-zh="已加入 HCl 體積" data-en="HCl volume added">已加入 HCl 體積</div>
+                            <div class="text-3xl font-bold mono text-slate-800 dark:text-white"><span id="vol-display">0.0</span> <span class="text-lg">mL</span></div>
                         </div>
-                        
+
                         <div class="flex flex-wrap md:flex-nowrap gap-2 w-full lg:w-auto">
-                            <button onclick="addVolume(0.1)" class="add-btn flex-1 flex items-center justify-center gap-1 bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50">
+                            <button onclick="addVolume(0.1)" class="add-btn flex-1 flex items-center justify-center gap-1 bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-200 hover:bg-blue-100 px-3 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg> 0.1
                             </button>
-                            <button onclick="addVolume(1)" class="add-btn flex-1 flex items-center justify-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50">
+                            <button onclick="addVolume(1)" class="add-btn flex-1 flex items-center justify-center gap-1 bg-blue-100 dark:bg-blue-500/30 text-blue-800 dark:text-blue-100 hover:bg-blue-200 px-3 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg> 1 mL
                             </button>
                             <button onclick="addVolume(5)" class="add-btn w-full md:w-auto flex-1 flex items-center justify-center gap-1 bg-blue-600 text-white hover:bg-blue-700 px-3 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50">
@@ -141,31 +171,31 @@
                     </div>
 
                     <div class="mb-2">
-                        <label class="flex justify-between text-sm font-semibold text-slate-600 mb-4">
-                            <span>快速拖曳控制</span>
+                        <label class="flex justify-between text-sm font-semibold text-slate-600 dark:text-slate-300 mb-4">
+                            <span data-zh="快速拖曳控制" data-en="Quick drag control">快速拖曳控制</span>
                             <span id="vol-slider-label">0.0 / 100 mL</span>
                         </label>
-                        <input 
+                        <input
                             id="vol-slider"
-                            type="range" 
-                            min="0" 
-                            max="100" 
-                            step="0.1" 
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="0.1"
                             value="0"
                             class="w-full"
                         />
                     </div>
 
-                    <div class="flex justify-end mt-4 pt-4 border-t border-slate-100">
-                        <button onclick="resetTitration()" class="flex items-center gap-2 text-slate-500 hover:text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-100 transition-colors font-semibold">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> 重新開始
+                    <div class="flex justify-end mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <button onclick="resetTitration()" class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> <span data-zh="重新開始" data-en="Restart">重新開始</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Chart Area -->
-                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm w-full overflow-x-auto">
-                    <h3 class="text-center font-bold text-slate-700 mb-2">滴定曲線 (Titration Curve)</h3>
+                <div class="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm w-full overflow-x-auto">
+                    <h3 class="text-center font-bold text-slate-700 dark:text-slate-200 mb-2" data-zh="滴定曲線 (Titration Curve)" data-en="Titration Curve">滴定曲線 (Titration Curve)</h3>
                     <div id="chart-container" class="min-w-[450px]">
                         <!-- SVG chart will be injected here by JS -->
                     </div>
@@ -173,10 +203,11 @@
 
             </div>
         </div>
-        
+
         <!-- Information footer -->
-        <div class="bg-slate-50 p-4 md:p-6 border-t border-slate-200 text-sm text-slate-600 leading-relaxed">
-            <strong class="text-slate-800">原理解釋：</strong> 初始溶液為強鹼 (NaOH)，含有高濃度的氫氧根離子 (OH<sup>-</sup>)，因此 pH 值極高。隨著加入強酸 (HCl)，酸中的氫離子 (H<sup>+</sup>) 會與 OH<sup>-</sup> 反應生成水 (H<sub>2</sub>O)。在達到<strong>等當點 (30 mL)</strong> 時，所有的 NaOH 皆被中和，溶液變為中性食鹽水，pH 值瞬間掉落至 7。繼續加入 HCl 會使溶液中充滿過量的 H<sup>+</sup>，導致 pH 值持續下降變為強酸性。
+        <div class="bg-slate-50 dark:bg-slate-900/40 p-4 md:p-6 border-t border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            <span class="lang-zh"><strong class="text-slate-800 dark:text-white">原理解釋：</strong> 初始溶液為強鹼 (NaOH)，含有高濃度的氫氧根離子 (OH<sup>-</sup>)，因此 pH 值極高。隨著加入強酸 (HCl)，酸中的氫離子 (H<sup>+</sup>) 會與 OH<sup>-</sup> 反應生成水 (H<sub>2</sub>O)。在達到<strong>等當點 (30 mL)</strong> 時，所有的 NaOH 皆被中和，溶液變為中性食鹽水，pH 值瞬間掉落至 7。繼續加入 HCl 會使溶液中充滿過量的 H<sup>+</sup>，導致 pH 值持續下降變為強酸性。</span>
+            <span class="lang-en" style="display:none"><strong class="text-slate-800 dark:text-white">How it works:</strong> The initial solution is a strong base (NaOH) with a high concentration of hydroxide ions (OH<sup>-</sup>), so the pH is very high. As strong acid (HCl) is added, its hydrogen ions (H<sup>+</sup>) react with OH<sup>-</sup> to form water (H<sub>2</sub>O). At the <strong>equivalence point (30 mL)</strong>, all the NaOH is neutralised, the solution becomes neutral salt water, and the pH drops sharply to 7. Adding more HCl floods the solution with excess H<sup>+</sup>, so the pH keeps falling and turns strongly acidic.</span>
         </div>
 
     </div>
@@ -186,6 +217,14 @@
         // --- 狀態變數 ---
         let hclVolume = 0; // 0 到 100 mL
         let indicator = 'none';
+        let __lang = 'zh';
+
+        const STR = {
+            colorless: { zh:'(無色)', en:'(colourless)' },
+            xAxis:     { zh:'加入的 HCl 體積 (mL)', en:'Volume of HCl added (mL)' },
+            yAxis:     { zh:'酸鹼度 (pH 值)', en:'pH value' },
+            eqPoint:   { zh:'等當點 (pH=7)', en:'Equivalence point (pH=7)' }
+        };
 
         // --- 常數 ---
         const C_base = 0.12; // 0.12 M NaOH
@@ -227,7 +266,7 @@
 
         function getSolutionColor(ph, type) {
             const clear = { bg: 'rgb(248, 250, 252)', opacity: 0.5, name: '(無色)' };
-            
+
             if (type === 'none') return clear;
 
             const interpolate = (phVal, lowerPh, upperPh, color1, color2) => {
@@ -235,8 +274,8 @@
                 const r = Math.round(color1[0] + t * (color2[0] - color1[0]));
                 const g = Math.round(color1[1] + t * (color2[1] - color1[1]));
                 const b = Math.round(color1[2] + t * (color2[2] - color1[2]));
-                const a = color1[3] !== undefined && color2[3] !== undefined 
-                        ? color1[3] + t * (color2[3] - color1[3]) 
+                const a = color1[3] !== undefined && color2[3] !== undefined
+                        ? color1[3] + t * (color2[3] - color1[3])
                         : 0.85;
                 return { bg: `rgb(${r}, ${g}, ${b})`, opacity: a, name: '' };
             };
@@ -255,13 +294,13 @@
 
             if (type === 'universal') {
                 const stops = [
-                    { ph: 0, c: [220, 38, 38] },   
-                    { ph: 3, c: [234, 88, 12] },   
-                    { ph: 5, c: [250, 204, 21] },  
-                    { ph: 7, c: [34, 197, 94] },   
-                    { ph: 9, c: [59, 130, 246] },  
-                    { ph: 11, c: [147, 51, 234] }, 
-                    { ph: 14, c: [88, 28, 135] }   
+                    { ph: 0, c: [220, 38, 38] },
+                    { ph: 3, c: [234, 88, 12] },
+                    { ph: 5, c: [250, 204, 21] },
+                    { ph: 7, c: [34, 197, 94] },
+                    { ph: 9, c: [59, 130, 246] },
+                    { ph: 11, c: [147, 51, 234] },
+                    { ph: 14, c: [88, 28, 135] }
                 ];
                 let lower = stops[0];
                 let upper = stops[stops.length - 1];
@@ -289,7 +328,15 @@
         const scaleX = (v) => svgConfig.margin.left + (v / 100) * graphWidth;
         const scaleY = (ph) => svgConfig.margin.top + graphHeight - (ph / 14) * graphHeight;
 
+        function chartColors(){
+            const dark = document.body.classList.contains('dark');
+            return dark
+                ? { grid:'#1e2d44', tick:'#94a3b8', label:'#cbd5e1', curve:'#64748b' }
+                : { grid:'#f1f5f9', tick:'#64748b', label:'#475569', curve:'#94a3b8' };
+        }
+
         function renderStaticChart() {
+            const col = chartColors();
             // 生成曲線資料
             let pathData = "";
             let isFirst = true;
@@ -309,13 +356,13 @@
 
             // 構建 SVG HTML
             let svgHTML = `<svg width="100%" height="${svgConfig.height}" viewBox="0 0 ${svgConfig.width} ${svgConfig.height}">`;
-            
+
             // Grid Y
             [0, 2, 4, 6, 7, 8, 10, 12, 14].forEach(ph => {
                 const isEq = ph === 7;
                 svgHTML += `
-                    <line x1="${svgConfig.margin.left}" y1="${scaleY(ph)}" x2="${svgConfig.width - svgConfig.margin.right}" y2="${scaleY(ph)}" stroke="#f1f5f9" stroke-width="1" />
-                    <text x="${svgConfig.margin.left - 10}" y="${scaleY(ph) + 4}" text-anchor="end" font-size="12" fill="${isEq ? '#059669' : '#64748b'}" font-weight="${isEq ? 'bold' : 'normal'}">${ph}</text>
+                    <line x1="${svgConfig.margin.left}" y1="${scaleY(ph)}" x2="${svgConfig.width - svgConfig.margin.right}" y2="${scaleY(ph)}" stroke="${col.grid}" stroke-width="1" />
+                    <text x="${svgConfig.margin.left - 10}" y="${scaleY(ph) + 4}" text-anchor="end" font-size="12" fill="${isEq ? '#059669' : col.tick}" font-weight="${isEq ? 'bold' : 'normal'}">${ph}</text>
                 `;
             });
 
@@ -323,24 +370,24 @@
             [0, 10, 20, 30, 40, 60, 80, 100].forEach(v => {
                 const isEq = v === 30;
                 svgHTML += `
-                    <line x1="${scaleX(v)}" y1="${svgConfig.margin.top}" x2="${scaleX(v)}" y2="${svgConfig.height - svgConfig.margin.bottom}" stroke="#f1f5f9" stroke-width="1" />
-                    <text x="${scaleX(v)}" y="${svgConfig.height - svgConfig.margin.bottom + 20}" text-anchor="middle" font-size="12" fill="${isEq ? '#2563eb' : '#64748b'}" font-weight="${isEq ? 'bold' : 'normal'}">${v}</text>
+                    <line x1="${scaleX(v)}" y1="${svgConfig.margin.top}" x2="${scaleX(v)}" y2="${svgConfig.height - svgConfig.margin.bottom}" stroke="${col.grid}" stroke-width="1" />
+                    <text x="${scaleX(v)}" y="${svgConfig.height - svgConfig.margin.bottom + 20}" text-anchor="middle" font-size="12" fill="${isEq ? '#2563eb' : col.tick}" font-weight="${isEq ? 'bold' : 'normal'}">${v}</text>
                 `;
             });
 
             // Labels
             svgHTML += `
-                <text x="${svgConfig.margin.left + graphWidth / 2}" y="${svgConfig.height - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="#475569">加入的 HCl 體積 (mL)</text>
-                <text x="-${svgConfig.margin.top + graphHeight / 2}" y="15" transform="rotate(-90)" text-anchor="middle" font-size="14" font-weight="bold" fill="#475569">酸鹼度 (pH 值)</text>
-                <path d="${pathData}" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linejoin="round" />
+                <text x="${svgConfig.margin.left + graphWidth / 2}" y="${svgConfig.height - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="${col.label}">${STR.xAxis[__lang]}</text>
+                <text x="-${svgConfig.margin.top + graphHeight / 2}" y="15" transform="rotate(-90)" text-anchor="middle" font-size="14" font-weight="bold" fill="${col.label}">${STR.yAxis[__lang]}</text>
+                <path d="${pathData}" fill="none" stroke="${col.curve}" stroke-width="3" stroke-linejoin="round" />
             `;
 
             // 動態元素佔位符
             svgHTML += `
-                <line id="chart-highlight-line" x1="${scaleX(0)}" y1="${svgConfig.margin.top}" x2="${scaleX(0)}" y2="${svgConfig.height - svgConfig.margin.bottom}" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4" />
+                <line id="chart-highlight-line" x1="${scaleX(0)}" y1="${svgConfig.margin.top}" x2="${scaleX(0)}" y2="${svgConfig.height - svgConfig.margin.bottom}" stroke="${col.tick}" stroke-width="2" stroke-dasharray="4 4" />
                 <circle cx="${scaleX(30)}" cy="${scaleY(7)}" r="4" fill="#10b981" />
-                <text x="${scaleX(30) + 10}" y="${scaleY(7)}" font-size="12" fill="#10b981" font-weight="bold" alignment-baseline="middle">等當點 (pH=7)</text>
-                <circle id="chart-current-dot" cx="${scaleX(0)}" cy="${scaleY(13)}" r="6" fill="#94a3b8" stroke="#fff" stroke-width="2" style="transition: all 0.3s ease-out;" />
+                <text x="${scaleX(30) + 10}" y="${scaleY(7)}" font-size="12" fill="#10b981" font-weight="bold" alignment-baseline="middle">${STR.eqPoint[__lang]}</text>
+                <circle id="chart-current-dot" cx="${scaleX(0)}" cy="${scaleY(13)}" r="6" fill="${col.curve}" stroke="#fff" stroke-width="2" style="transition: all 0.3s ease-out;" />
             </svg>`;
 
             elements.chartContainer.innerHTML = svgHTML;
@@ -359,7 +406,7 @@
         function updateUI() {
             // 安全限制
             hclVolume = Math.min(100, Math.max(0, hclVolume));
-            
+
             const currentPH = getPH(hclVolume);
             const colorData = getSolutionColor(currentPH, indicator);
 
@@ -370,7 +417,7 @@
             elements.volSlider.value = hclVolume;
 
             if (colorData.opacity <= 0.5) {
-                elements.colorNote.innerText = "(無色)";
+                elements.colorNote.innerText = STR.colorless[__lang];
             } else {
                 elements.colorNote.innerText = "";
             }
@@ -380,15 +427,15 @@
             elements.beakerLiquid.style.height = `${liquidHeightPercent}%`;
             elements.beakerLiquid.style.backgroundColor = colorData.bg;
             elements.beakerLiquid.style.opacity = colorData.opacity;
-            
+
             elements.buretteLiquid.style.height = `${100 - hclVolume}%`;
 
             // 更新顏色預覽點
             elements.previewDot.style.backgroundColor = colorData.bg;
             if (indicator !== 'none' && colorData.opacity > 0.6) {
-                elements.previewDot.className = "w-6 h-6 rounded-full shadow-inner border border-slate-300 transition-colors duration-300";
+                elements.previewDot.className = "w-6 h-6 rounded-full shadow-inner border border-slate-300 dark:border-slate-600 transition-colors duration-300";
             } else {
-                elements.previewDot.className = "w-6 h-6 rounded-full shadow-inner border border-dashed border-slate-300 bg-slate-50 transition-colors duration-300";
+                elements.previewDot.className = "w-6 h-6 rounded-full shadow-inner border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 transition-colors duration-300";
             }
 
             // 更新 SVG 動態元素
@@ -399,8 +446,8 @@
                 const cy = scaleY(currentPH);
                 currentDot.setAttribute('cx', cx);
                 currentDot.setAttribute('cy', cy);
-                currentDot.setAttribute('fill', indicator === 'none' || colorData.opacity <= 0.5 ? '#94a3b8' : colorData.bg);
-                
+                currentDot.setAttribute('fill', indicator === 'none' || colorData.opacity <= 0.5 ? chartColors().curve : colorData.bg);
+
                 highlightLine.setAttribute('x1', cx);
                 highlightLine.setAttribute('x2', cx);
             }
@@ -428,7 +475,7 @@
             elements.droplet.classList.remove('anim-drop');
             void elements.droplet.offsetWidth; // 觸發重繪 (Reflow) 以重啟動畫
             elements.droplet.classList.add('anim-drop');
-            
+
             clearTimeout(dropTimeout);
             dropTimeout = setTimeout(() => {
                 elements.droplet.classList.add('hidden');
@@ -451,10 +498,37 @@
             updateUI();
         });
 
+        // --- 主題 / 語言切換 ---
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+            renderStaticChart();
+            updateUI();
+        }
+        function applyLang(){
+            // Text-swap elements (headers, labels, buttons, options)
+            document.querySelectorAll('[data-zh][data-en]').forEach(el=>{
+                el.textContent = el.getAttribute(__lang==='zh'?'data-zh':'data-en');
+            });
+            // Rich-HTML footer paragraphs: show/hide by language class
+            document.querySelectorAll('.lang-zh').forEach(el=>{ el.style.display = __lang==='zh' ? '' : 'none'; });
+            document.querySelectorAll('.lang-en').forEach(el=>{ el.style.display = __lang==='en' ? '' : 'none'; });
+            renderStaticChart();
+            updateUI();
+        }
+        function toggleLang(){
+            __lang = __lang==='zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = __lang==='zh' ? 'EN' : '中';
+            applyLang();
+        }
+
         // --- 初始化 ---
         renderBuretteScales();
         renderStaticChart();
         updateUI();
+        if(window.lucide) lucide.createIcons();
 
     </script>
 </body>
