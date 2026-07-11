@@ -3,56 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DSE 生物摘星之旅 (地獄級特訓版)</title>
+    <title>植物摘星成長之旅 · Plant Star Journey</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700;900&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;700;900&display=swap');
-        
+        :root{ --ac:#14b8a6; }
         body {
             font-family: 'Noto Sans HK', sans-serif;
             background: linear-gradient(to bottom, #87CEFA 0%, #228B22 100%);
             overflow-x: hidden;
             min-height: 100vh;
             color: #1a202c;
+            transition: color .3s;
         }
+        body.dark {
+            color:#cbd5e1;
+            background:#0a1626;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+            background-attachment: fixed;
+        }
+        .serif-font{ font-family:'Noto Serif HK', serif; }
 
         .track-container {
             background-color: rgba(62, 39, 35, 0.95);
-            position: relative;
-            height: 130px;
-            border-radius: 20px;
+            position: relative; height: 130px; border-radius: 20px;
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0,0,0,0.8);
-            border: 4px solid #5D4037;
-            overflow: hidden;
+            border: 4px solid #5D4037; overflow: hidden;
         }
-
         .soil-layer {
             position: absolute; bottom: 0; left: 0; right: 0; height: 35%;
             background: repeating-linear-gradient(45deg, #4E342E, #4E342E 10px, #3E2723 10px, #3E2723 20px);
-            border-top: 3px solid #3E2723;
-            z-index: 5;
+            border-top: 3px solid #3E2723; z-index: 5;
         }
-
         .player {
             position: absolute; bottom: 25%; transform: translateX(-50%);
             transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 10;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
+            z-index: 10; display: flex; align-items: flex-end; justify-content: center;
         }
-
         .finish-star {
             position: absolute; right: 20px; top: 40%; transform: translateY(-50%);
             font-size: 3.5rem; filter: drop-shadow(0 0 15px #FFD700);
             animation: pulseStar 1.5s infinite alternate; z-index: 8;
         }
-
         @keyframes pulseStar {
             from { transform: translateY(-50%) scale(1); filter: drop-shadow(0 0 10px #FFD700); }
             to { transform: translateY(-50%) scale(1.2); filter: drop-shadow(0 0 30px #FFD700); }
         }
-
         .floating-text {
             position: absolute; font-weight: bold; font-size: 1.8rem;
             animation: floatUpFade 1s forwards; pointer-events: none; z-index: 50;
@@ -61,51 +64,77 @@
             0% { opacity: 1; transform: translateY(0) scale(1); }
             100% { opacity: 0; transform: translateY(-50px) scale(1.3); }
         }
-
         .option-btn { transition: all 0.2s ease; border-radius: 12px; }
         .option-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 12px -2px rgba(0,0,0,0.15); }
         .option-btn:active:not(:disabled) { transform: translateY(0); }
         .menu-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .menu-btn:hover { transform: scale(1.03); box-shadow: 0 20px 30px -5px rgba(0,0,0,0.3); }
-        
+
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        body.dark .glass-panel{ background: rgba(13,25,43,.92); }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+
+        /* Blueprint buttons */
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
+        /* Dark-mode Tailwind surface overrides */
+        body.dark .text-gray-800,body.dark .text-gray-700{ color:#e2e8f0 !important; }
+        body.dark .text-gray-600,body.dark .text-gray-500{ color:#94a3b8 !important; }
+        body.dark .bg-white{ background-color:#0f1a2e !important; }
+        body.dark .bg-green-50{ background-color:#0f2417 !important; }
+        body.dark .bg-red-50,body.dark .bg-red-50\/50{ background-color:#2a1416 !important; }
+        body.dark .bg-gray-200{ background-color:#1e293b !important; }
+        body.dark .border-gray-200,body.dark .border-green-200,body.dark .border-red-200,body.dark .border-red-100,body.dark .border-green-100{ border-color:#2c3e57 !important; }
     </style>
 </head>
-<body class="flex flex-col items-center py-8 px-4">
-<a id="__backlink" href="../../biology.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark flex flex-col items-center py-8 px-4">
+
+    <a href="../../biology.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:2147483647" class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式" style="width:auto"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+        <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language" style="width:auto"><i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span></button>
+    </div>
 
     <!-- 主選單畫面 -->
     <div id="menuScreen" class="w-full max-w-4xl glass-panel text-gray-800 p-8 md:p-12 rounded-3xl shadow-2xl border-t-8 border-green-600 flex flex-col items-center text-center mt-6 relative">
         <div class="text-7xl mb-4 animate-bounce">🌱</div>
-        <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500 mb-4 tracking-tight">植物摘星成長之旅</h1>
+        <h1 class="serif-font text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500 mb-4 tracking-tight" data-zh="植物摘星成長之旅" data-en="Plant Star-Reaching Journey">植物摘星成長之旅</h1>
         <p class="text-lg text-gray-600 mb-8 font-medium max-w-3xl leading-relaxed">
-            專為 DSE Paper 1A 打造的生物特訓！涵蓋植物生長、營養繁殖及內分泌。<br>
+            <span class="lang-zh">專為 DSE Paper 1A 打造的生物特訓！涵蓋植物生長、營養繁殖及內分泌。<br>
             <span class="text-sm">答對 <b class="text-green-600">長高 2 米</b> | 答錯 <b class="text-red-500">萎縮 1 米</b></span><br>
             <span class="text-emerald-700 font-bold mt-2 block">💡 系統特點：前半段為極短選項基礎題，後半段湧現 DSE 級長文字陷阱題！</span>
-            <span class="text-red-600 font-bold mt-3 block text-xl bg-red-50 py-2 rounded-lg border border-red-200">⚠️ 極限條件：必須在 36 題內長成參天大樹！</span>
+            <span class="text-red-600 font-bold mt-3 block text-xl bg-red-50 py-2 rounded-lg border border-red-200">⚠️ 極限條件：必須在 36 題內長成參天大樹！</span></span>
+            <span class="lang-en" style="display:none">Biology drills built for DSE Paper 1A! Covering plant growth, vegetative propagation and endocrine control.<br>
+            <span class="text-sm">Correct answer <b class="text-green-600">grow 2 m taller</b> | Wrong answer <b class="text-red-500">shrink 1 m</b></span><br>
+            <span class="text-emerald-700 font-bold mt-2 block">💡 Feature: the first half is short basic questions, the second half is DSE-level long-text trap questions!</span>
+            <span class="text-red-600 font-bold mt-3 block text-xl bg-red-50 py-2 rounded-lg border border-red-200">⚠️ Limit: you must grow into a towering tree within 36 questions!</span></span>
         </p>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
             <button onclick="startGame('beginner')" class="menu-btn bg-gradient-to-b from-green-400 to-green-600 text-white rounded-2xl p-6 border-b-4 border-green-700 hover:scale-105 transition transform">
                 <div class="text-3xl mb-2">🌰</div>
-                <h2 class="text-2xl font-black mb-1">幼苗萌發</h2>
-                <div class="text-green-100 font-bold mb-3">目標：20 米</div>
-                <p class="text-xs">全是 10 字以內基礎題<br>適合鞏固觀念與熱身！</p>
+                <h2 class="text-2xl font-black mb-1" data-zh="幼苗萌發" data-en="Seedling Sprouts">幼苗萌發</h2>
+                <div class="text-green-100 font-bold mb-3" data-zh="目標：20 米" data-en="Goal: 20 m">目標：20 米</div>
+                <p class="text-xs"><span class="lang-zh">全是 10 字以內基礎題<br>適合鞏固觀念與熱身！</span><span class="lang-en" style="display:none">All short basic questions<br>Great for warming up and revision!</span></p>
             </button>
             <button onclick="startGame('intermediate')" class="menu-btn bg-gradient-to-b from-yellow-500 to-yellow-600 text-white rounded-2xl p-6 border-b-4 border-yellow-700 hover:scale-105 transition transform">
                 <div class="text-3xl mb-2">🌿</div>
-                <h2 class="text-2xl font-black mb-1">茁壯成長</h2>
-                <div class="text-yellow-100 font-bold mb-3">目標：40 米</div>
-                <p class="text-xs">循序漸進增加文字陷阱<br>考驗你的知識穩定性！</p>
+                <h2 class="text-2xl font-black mb-1" data-zh="茁壯成長" data-en="Growing Strong">茁壯成長</h2>
+                <div class="text-yellow-100 font-bold mb-3" data-zh="目標：40 米" data-en="Goal: 40 m">目標：40 米</div>
+                <p class="text-xs"><span class="lang-zh">循序漸進增加文字陷阱<br>考驗你的知識穩定性！</span><span class="lang-en" style="display:none">Text traps ramp up gradually<br>Tests how solid your knowledge is!</span></p>
             </button>
             <button onclick="startGame('advanced')" class="menu-btn bg-gradient-to-b from-emerald-700 to-emerald-900 text-white rounded-2xl p-6 border-b-4 border-emerald-950 hover:scale-105 transition transform">
                 <div class="text-3xl mb-2">🌳</div>
-                <h2 class="text-2xl font-black mb-1">參天大樹</h2>
-                <div class="text-emerald-100 font-bold mb-3">目標：50 米</div>
-                <p class="text-xs">大量高難度地獄陷阱題<br>真正的 DSE 奪星挑戰！</p>
+                <h2 class="text-2xl font-black mb-1" data-zh="參天大樹" data-en="Towering Tree">參天大樹</h2>
+                <div class="text-emerald-100 font-bold mb-3" data-zh="目標：50 米" data-en="Goal: 50 m">目標：50 米</div>
+                <p class="text-xs"><span class="lang-zh">大量高難度地獄陷阱題<br>真正的 DSE 奪星挑戰！</span><span class="lang-en" style="display:none">Lots of brutal high-difficulty trap questions<br>The real DSE star challenge!</span></p>
             </button>
         </div>
     </div>
@@ -114,25 +143,25 @@
     <div id="gameScreen" class="w-full max-w-4xl hidden flex-col items-center">
         <div class="w-full flex justify-between items-center glass-panel text-gray-800 p-4 rounded-xl shadow-lg border-b-4 border-green-600 mb-6 relative">
             <div>
-                <h1 class="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">🌳 植物成長之旅</h1>
+                <h1 class="serif-font text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500" data-zh="🌳 植物成長之旅" data-en="🌳 Plant Growth Journey">🌳 植物成長之旅</h1>
                 <p class="text-xs md:text-sm text-gray-500 font-bold mt-1" id="goalText">目標：50米</p>
             </div>
-            <button onclick="backToMenu()" class="absolute left-1/2 transform -translate-x-1/2 top-4 bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs font-bold py-1 px-3 rounded-full transition">
+            <button onclick="backToMenu()" class="absolute left-1/2 transform -translate-x-1/2 top-4 bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs font-bold py-1 px-3 rounded-full transition" data-zh="放棄返回" data-en="Give up">
                 放棄返回
             </button>
             <div class="text-right bg-green-50 px-4 md:px-6 py-2 rounded-lg border border-green-200">
-                <div class="text-xs text-green-600 font-black tracking-wider uppercase">成長高度</div>
+                <div class="text-xs text-green-600 font-black tracking-wider uppercase" data-zh="成長高度" data-en="Growth height">成長高度</div>
                 <div id="scoreDisplay" class="text-3xl md:text-4xl font-black text-green-700 leading-none">0</div>
             </div>
         </div>
 
         <div class="w-full mb-8 relative drop-shadow-2xl">
             <div class="flex justify-between text-xs md:text-sm font-bold text-white drop-shadow-md mb-3 px-2">
-                <span class="bg-emerald-800/80 px-3 md:px-4 py-1 rounded-full shadow-sm border border-emerald-600">🌰 泥土 (0m)</span>
+                <span class="bg-emerald-800/80 px-3 md:px-4 py-1 rounded-full shadow-sm border border-emerald-600" data-zh="🌰 泥土 (0m)" data-en="🌰 Soil (0m)">🌰 泥土 (0m)</span>
                 <span id="progressText" class="bg-gradient-to-r from-green-500 to-emerald-400 text-white px-4 md:px-5 py-1 rounded-full shadow-md border-2 border-green-200">目前高度: 0 / 50</span>
-                <span class="bg-emerald-800/80 px-3 md:px-4 py-1 rounded-full shadow-sm border border-emerald-600">🌟 星空 (<span id="finishLineText">50</span>m)</span>
+                <span class="bg-emerald-800/80 px-3 md:px-4 py-1 rounded-full shadow-sm border border-emerald-600"><span class="lang-zh">🌟 星空 (</span><span class="lang-en" style="display:none">🌟 Stars (</span><span id="finishLineText">50</span>m)</span>
             </div>
-            
+
             <div class="track-container w-full" id="trackArea">
                 <div class="soil-layer"></div>
                 <div id="player" class="player" style="left: 5%;">
@@ -145,7 +174,7 @@
         <div id="questionContainer" class="w-full glass-panel text-gray-800 p-6 md:p-10 rounded-2xl shadow-2xl border-t-4 border-green-500 relative">
             <div class="flex justify-between items-center mb-6">
                 <span class="bg-green-100 text-green-800 text-sm font-black px-4 py-2 rounded-full uppercase tracking-wide border-2 border-green-300">
-                    難關 <span id="qNumber" class="text-green-900 ml-1">1 / 36</span>
+                    <span data-zh="難關" data-en="Stage">難關</span> <span id="qNumber" class="text-green-900 ml-1">1 / 36</span>
                 </span>
                 <span id="difficultyBadge" class="text-xs font-bold px-2 py-1 rounded shadow-sm border"></span>
             </div>
@@ -155,9 +184,9 @@
             <div id="optionsContainer" class="grid grid-cols-1 gap-4">
                 <!-- 選項生成區 -->
             </div>
-            
+
             <div id="nextBtnContainer" class="hidden mt-8 text-center animate-pulse">
-                <button onclick="nextTurn()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg w-full md:w-1/2 transition transform hover:scale-105">
+                <button onclick="nextTurn()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg w-full md:w-1/2 transition transform hover:scale-105" data-zh="我已看清楚正確概念，繼續下一題" data-en="I've read the correct concept — next question">
                     我已看清楚正確概念，繼續下一題
                 </button>
             </div>
@@ -169,18 +198,18 @@
         <div class="glass-panel text-gray-800 p-6 md:p-10 rounded-3xl max-w-2xl w-full text-center shadow-2xl relative flex flex-col max-h-[90vh]">
             <div class="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 flex-shrink-0"></div>
             <div class="text-6xl md:text-7xl mb-2 flex-shrink-0 animate-bounce">🌳🌟</div>
-            <h2 class="text-2xl md:text-3xl font-black text-gray-800 mb-2 flex-shrink-0">成功長成大樹！</h2>
-            <p class="text-gray-600 mb-4 font-medium flex-shrink-0">你已成功在限時內吸收足夠知識，突破天際！</p>
-            
+            <h2 class="text-2xl md:text-3xl font-black text-gray-800 mb-2 flex-shrink-0" data-zh="成功長成大樹！" data-en="Grown into a tall tree!">成功長成大樹！</h2>
+            <p class="text-gray-600 mb-4 font-medium flex-shrink-0" data-zh="你已成功在限時內吸收足夠知識，突破天際！" data-en="You absorbed enough knowledge in time and reached the sky!">你已成功在限時內吸收足夠知識，突破天際！</p>
+
             <div class="bg-green-50 p-4 rounded-2xl mb-4 border-2 border-green-200 relative flex-shrink-0">
-                <div class="text-sm text-green-600 font-bold mb-1 uppercase tracking-widest">最終高度</div>
+                <div class="text-sm text-green-600 font-bold mb-1 uppercase tracking-widest" data-zh="最終高度" data-en="Final height">最終高度</div>
                 <div id="finalScore" class="text-4xl md:text-5xl font-black text-green-800 drop-shadow-sm">100</div>
             </div>
 
             <!-- 答錯題目回顧區 -->
             <div id="mistakesListVic" class="overflow-y-auto custom-scrollbar flex-1 mb-6 text-left bg-white rounded-xl border border-gray-200 p-4 shadow-inner"></div>
 
-            <button onclick="backToMenu()" class="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-4 px-6 rounded-xl hover:from-green-600 hover:to-emerald-600 transition shadow-lg text-lg flex-shrink-0">
+            <button onclick="backToMenu()" class="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-4 px-6 rounded-xl hover:from-green-600 hover:to-emerald-600 transition shadow-lg text-lg flex-shrink-0" data-zh="🔄 返回森林" data-en="🔄 Back to forest">
                 🔄 返回森林
             </button>
         </div>
@@ -191,127 +220,131 @@
         <div class="glass-panel text-gray-800 p-6 md:p-10 rounded-3xl max-w-2xl w-full text-center shadow-2xl relative flex flex-col max-h-[90vh]">
             <div class="absolute top-0 left-0 w-full h-4 bg-red-600 flex-shrink-0"></div>
             <div class="text-6xl md:text-7xl mb-2 flex-shrink-0">🥀</div>
-            <h2 class="text-2xl md:text-3xl font-black text-gray-800 mb-2 flex-shrink-0">成長中斷！</h2>
-            <p class="text-gray-600 mb-4 font-medium flex-shrink-0">36 題養分已耗盡，幼苗未能長成大樹...</p>
-            
+            <h2 class="text-2xl md:text-3xl font-black text-gray-800 mb-2 flex-shrink-0" data-zh="成長中斷！" data-en="Growth interrupted!">成長中斷！</h2>
+            <p class="text-gray-600 mb-4 font-medium flex-shrink-0" data-zh="36 題養分已耗盡，幼苗未能長成大樹..." data-en="The 36 questions of nutrients ran out; the seedling could not become a tree...">36 題養分已耗盡，幼苗未能長成大樹...</p>
+
             <div class="bg-red-50 p-4 rounded-2xl mb-4 border-2 border-red-200 relative flex-shrink-0">
-                <div class="text-sm text-red-600 font-bold mb-1 uppercase tracking-widest">最終高度 / 目標</div>
-                <div class="text-3xl md:text-4xl font-black text-red-800 drop-shadow-sm"><span id="defeatPosition">0</span> 米 / <span id="defeatScore">0</span> 米</div>
+                <div class="text-sm text-red-600 font-bold mb-1 uppercase tracking-widest" data-zh="最終高度 / 目標" data-en="Final height / Goal">最終高度 / 目標</div>
+                <div class="text-3xl md:text-4xl font-black text-red-800 drop-shadow-sm"><span id="defeatPosition">0</span> <span class="lang-zh">米</span><span class="lang-en" style="display:none">m</span> / <span id="defeatScore">0</span> <span class="lang-zh">米</span><span class="lang-en" style="display:none">m</span></div>
             </div>
 
             <!-- 答錯題目回顧區 -->
             <div id="mistakesListDef" class="overflow-y-auto custom-scrollbar flex-1 mb-6 text-left bg-white rounded-xl border border-gray-200 p-4 shadow-inner"></div>
 
-            <button onclick="backToMenu()" class="w-full bg-gradient-to-r from-slate-600 to-gray-800 text-white font-bold py-4 px-6 rounded-xl hover:from-slate-700 hover:to-gray-900 transition shadow-lg text-lg flex-shrink-0">
+            <button onclick="backToMenu()" class="w-full bg-gradient-to-r from-slate-600 to-gray-800 text-white font-bold py-4 px-6 rounded-xl hover:from-slate-700 hover:to-gray-900 transition shadow-lg text-lg flex-shrink-0" data-zh="🔄 重新播種" data-en="🔄 Sow again">
                 🔄 重新播種
             </button>
         </div>
     </div>
 
     <script>
-        // --- DSE 特訓題庫 ---
-        // 格式: [ "問題內容", [ "選項A", "選項B", "選項C", "選項D" ], 正確答案索引(0-3), 難度(1-3) ]
-        
+        /* ---- Language helpers ---- */
+        let LANG = 'zh';
+        function L(o){ return (o && typeof o === 'object' && 'zh' in o) ? o[LANG] : o; }
+
+        // --- DSE 特訓題庫 (bilingual) ---
+        // 格式: [ {zh,en}, {zh:[4],en:[4]}, 正確答案索引(0-3), 難度(1-3) ]
         const fullQB = [
-            // === Level 1: 基礎低難度 (植物) - 選項 < 10字 ===
-            [ "進行光合作用的主要細胞器？", ["葉綠體", "線粒體", "液泡", "細胞核"], 0, 1 ],
-            [ "植物細胞壁的主要成分？", ["纖維素", "澱粉質", "蛋白質", "磷脂分子"], 0, 1 ],
-            [ "運送水份從根部到葉片的管道？", ["木質部", "韌皮部", "氣孔", "伴細胞"], 0, 1 ],
-            [ "運送光合作用產物(如蔗糖)的構造？", ["韌皮部", "木質部", "形成層", "皮層"], 0, 1 ],
-            [ "控制植物氣孔開關的細胞？", ["保衛細胞", "表皮細胞", "葉肉細胞", "導管細胞"], 0, 1 ],
-            [ "種子萌發必需的環境條件？", ["水、氧氣、適溫", "陽光、泥土、肥料", "高溫、無氧、乾燥", "光照、氧氣、水"], 0, 1 ],
-            [ "幼莖向光生長的反應稱為？", ["正向光性", "負向光性", "正向地性", "向水性"], 0, 1 ],
-            [ "根部向下生長的反應稱為？", ["正向地性", "負向光性", "負向地性", "向觸性"], 0, 1 ],
-            [ "控制植物向光生長的主要激素？", ["生長素", "乙烯", "細胞分裂素", "脫落酸"], 0, 1 ],
-            [ "光合作用的主要產物？", ["葡萄糖和氧氣", "二氧化碳和水", "澱粉和水", "能量和二氧化碳"], 0, 1 ],
-            [ "檢測綠葉中澱粉的化學試劑？", ["碘液", "本氏液", "雙縮脲試劑", "酒精"], 0, 1 ],
-            [ "生態系統中綠色植物的角色？", ["生產者", "初級消費者", "分解者", "寄生者"], 0, 1 ],
-            [ "吸收泥土水份的主要根部構造？", ["根毛", "根冠", "伸長區", "表皮"], 0, 1 ],
-            [ "缺乏哪種礦物質導致葉片變黃？", ["鎂", "鈣", "磷", "鉀"], 0, 1 ],
-            [ "驅動水份在導管上升的動力？", ["蒸騰拉力", "根壓", "主動轉運", "光合推力"], 0, 1 ],
-            [ "花朵中負責產生花粉的構造？", ["花藥", "柱頭", "子房", "花萼"], 0, 1 ],
-            [ "花粉轉移至雌蕊柱頭的過程？", ["授粉作用", "受精作用", "萌發", "傳播"], 0, 1 ],
-            [ "哪種生殖能保留親本優良特徵？", ["營養繁殖", "有性生殖", "蟲媒授粉", "風媒授粉"], 0, 1 ],
-            [ "泡狀蒸騰計實際量度的是甚麼？", ["吸水率", "蒸騰率", "光合率", "呼吸率"], 0, 1 ],
-            [ "植物分生組織主要位於何處？", ["根尖和莖尖", "葉肉中央", "樹皮表面", "花瓣邊緣"], 0, 1 ],
-            [ "氣孔主要分佈在葉片的哪一面？", ["下表皮", "上表皮", "葉肉層", "葉脈"], 0, 1 ],
-            [ "水份進入根毛細胞的物理過程？", ["滲透作用", "主動轉運", "簡單擴散", "蒸騰作用"], 0, 1 ],
-            [ "葉片中主要進行光合作用的組織？", ["柵狀葉肉", "上表皮", "木質部", "表皮毛"], 0, 1 ],
-            [ "暗反應主要在哪裡進行？", ["葉綠體基質", "類囊體膜", "細胞質", "線粒體"], 0, 1 ],
-            [ "植物在夜間主要釋放哪種氣體？", ["二氧化碳", "氧氣", "水蒸氣", "氮氣"], 0, 1 ],
-            [ "維管束中負責支持的死細胞？", ["木質部導管", "韌皮部篩管", "伴細胞", "保衛細胞"], 0, 1 ],
-            [ "根毛細胞有何特徵以增加吸水？", ["表面積大", "細胞壁極厚", "沒有液泡", "含有葉綠體"], 0, 1 ],
-            [ "哪種構造能減少葉片水分散失？", ["角質層", "海綿葉肉", "氣孔", "韌皮部"], 0, 1 ],
-            [ "單側光會導致莖部生長素如何？", ["背光側較多", "向光側較多", "均勻分佈", "被陽光破壞"], 0, 1 ],
-            [ "種子萌發時分解澱粉的酶是？", ["澱粉酶", "蛋白酶", "脂肪酶", "纖維素酶"], 0, 1 ],
-            [ "木質部管壁由甚麼物質加厚？", ["木質素", "纖維素", "果膠", "蛋白質"], 0, 1 ],
-            [ "海綿葉肉的細胞間隙有何功能？", ["利於氣體擴散", "儲存水份", "增加透光度", "防止蟲害"], 0, 1 ],
-            [ "光反應產生供暗反應使用的物質？", ["ATP和NADPH", "葡萄糖", "氧氣和水", "二氧化碳"], 0, 1 ],
-            [ "葉綠素主要吸收哪種顏色的光？", ["紅光和藍光", "綠光", "黃光", "所有可見光"], 0, 1 ],
-            [ "捕蠅草觸發閉合的反應屬於甚麼？", ["傾性運動", "向觸性", "向光性", "向水性"], 0, 1 ],
-            [ "韌皮部轉運有機物的方向是？", ["雙向運輸", "只能向上", "只能向下", "隨機擴散"], 0, 1 ],
-            [ "草本植物主要依賴甚麼支撐？", ["細胞膨壓", "木質素", "脂肪儲存", "風力推動"], 0, 1 ],
-            [ "光合作用的碳固定在哪發生？", ["暗反應", "光反應", "光解作用", "呼吸作用"], 0, 1 ],
-            [ "最先突破種皮的構造是？", ["胚根", "胚芽", "子葉", "真葉"], 0, 1 ],
-            [ "植物呼吸作用發生的地點？", ["線粒體", "葉綠體", "液泡", "細胞核"], 0, 1 ],
+            // === Level 1 ===
+            [ {zh:"進行光合作用的主要細胞器？",en:"Which organelle mainly carries out photosynthesis?"}, {zh:["葉綠體","線粒體","液泡","細胞核"],en:["Chloroplast","Mitochondrion","Vacuole","Nucleus"]}, 0, 1 ],
+            [ {zh:"植物細胞壁的主要成分？",en:"Main component of a plant cell wall?"}, {zh:["纖維素","澱粉質","蛋白質","磷脂分子"],en:["Cellulose","Starch","Protein","Phospholipids"]}, 0, 1 ],
+            [ {zh:"運送水份從根部到葉片的管道？",en:"Which vessel carries water from roots to leaves?"}, {zh:["木質部","韌皮部","氣孔","伴細胞"],en:["Xylem","Phloem","Stomata","Companion cells"]}, 0, 1 ],
+            [ {zh:"運送光合作用產物(如蔗糖)的構造？",en:"Which structure transports photosynthetic products (e.g. sucrose)?"}, {zh:["韌皮部","木質部","形成層","皮層"],en:["Phloem","Xylem","Cambium","Cortex"]}, 0, 1 ],
+            [ {zh:"控制植物氣孔開關的細胞？",en:"Which cells control the opening and closing of stomata?"}, {zh:["保衛細胞","表皮細胞","葉肉細胞","導管細胞"],en:["Guard cells","Epidermal cells","Mesophyll cells","Vessel cells"]}, 0, 1 ],
+            [ {zh:"種子萌發必需的環境條件？",en:"Environmental conditions needed for seed germination?"}, {zh:["水、氧氣、適溫","陽光、泥土、肥料","高溫、無氧、乾燥","光照、氧氣、水"],en:["Water, oxygen, suitable temperature","Sunlight, soil, fertiliser","High temperature, no oxygen, dryness","Light, oxygen, water"]}, 0, 1 ],
+            [ {zh:"幼莖向光生長的反應稱為？",en:"A young shoot growing towards light is called?"}, {zh:["正向光性","負向光性","正向地性","向水性"],en:["Positive phototropism","Negative phototropism","Positive geotropism","Hydrotropism"]}, 0, 1 ],
+            [ {zh:"根部向下生長的反應稱為？",en:"A root growing downwards is called?"}, {zh:["正向地性","負向光性","負向地性","向觸性"],en:["Positive geotropism","Negative phototropism","Negative geotropism","Thigmotropism"]}, 0, 1 ],
+            [ {zh:"控制植物向光生長的主要激素？",en:"The main hormone controlling growth towards light?"}, {zh:["生長素","乙烯","細胞分裂素","脫落酸"],en:["Auxin","Ethylene","Cytokinin","Abscisic acid"]}, 0, 1 ],
+            [ {zh:"光合作用的主要產物？",en:"Main products of photosynthesis?"}, {zh:["葡萄糖和氧氣","二氧化碳和水","澱粉和水","能量和二氧化碳"],en:["Glucose and oxygen","Carbon dioxide and water","Starch and water","Energy and carbon dioxide"]}, 0, 1 ],
+            [ {zh:"檢測綠葉中澱粉的化學試劑？",en:"Which reagent tests for starch in a green leaf?"}, {zh:["碘液","本氏液","雙縮脲試劑","酒精"],en:["Iodine solution","Benedict's solution","Biuret reagent","Ethanol"]}, 0, 1 ],
+            [ {zh:"生態系統中綠色植物的角色？",en:"The role of green plants in an ecosystem?"}, {zh:["生產者","初級消費者","分解者","寄生者"],en:["Producers","Primary consumers","Decomposers","Parasites"]}, 0, 1 ],
+            [ {zh:"吸收泥土水份的主要根部構造？",en:"Main root structure that absorbs water from soil?"}, {zh:["根毛","根冠","伸長區","表皮"],en:["Root hairs","Root cap","Elongation zone","Epidermis"]}, 0, 1 ],
+            [ {zh:"缺乏哪種礦物質導致葉片變黃？",en:"Lack of which mineral causes leaves to turn yellow?"}, {zh:["鎂","鈣","磷","鉀"],en:["Magnesium","Calcium","Phosphorus","Potassium"]}, 0, 1 ],
+            [ {zh:"驅動水份在導管上升的動力？",en:"What drives water up the xylem vessels?"}, {zh:["蒸騰拉力","根壓","主動轉運","光合推力"],en:["Transpiration pull","Root pressure","Active transport","Photosynthetic push"]}, 0, 1 ],
+            [ {zh:"花朵中負責產生花粉的構造？",en:"Which flower structure produces pollen?"}, {zh:["花藥","柱頭","子房","花萼"],en:["Anther","Stigma","Ovary","Sepal"]}, 0, 1 ],
+            [ {zh:"花粉轉移至雌蕊柱頭的過程？",en:"The transfer of pollen to the stigma is called?"}, {zh:["授粉作用","受精作用","萌發","傳播"],en:["Pollination","Fertilisation","Germination","Dispersal"]}, 0, 1 ],
+            [ {zh:"哪種生殖能保留親本優良特徵？",en:"Which type of reproduction keeps the parent's favourable traits?"}, {zh:["營養繁殖","有性生殖","蟲媒授粉","風媒授粉"],en:["Vegetative propagation","Sexual reproduction","Insect pollination","Wind pollination"]}, 0, 1 ],
+            [ {zh:"泡狀蒸騰計實際量度的是甚麼？",en:"What does a bubble potometer actually measure?"}, {zh:["吸水率","蒸騰率","光合率","呼吸率"],en:["Rate of water uptake","Rate of transpiration","Rate of photosynthesis","Rate of respiration"]}, 0, 1 ],
+            [ {zh:"植物分生組織主要位於何處？",en:"Where is plant meristematic tissue mainly located?"}, {zh:["根尖和莖尖","葉肉中央","樹皮表面","花瓣邊緣"],en:["Root and shoot tips","Centre of the mesophyll","Bark surface","Petal margins"]}, 0, 1 ],
+            [ {zh:"氣孔主要分佈在葉片的哪一面？",en:"Stomata are mainly found on which side of a leaf?"}, {zh:["下表皮","上表皮","葉肉層","葉脈"],en:["Lower epidermis","Upper epidermis","Mesophyll layer","Leaf veins"]}, 0, 1 ],
+            [ {zh:"水份進入根毛細胞的物理過程？",en:"By what process does water enter root hair cells?"}, {zh:["滲透作用","主動轉運","簡單擴散","蒸騰作用"],en:["Osmosis","Active transport","Simple diffusion","Transpiration"]}, 0, 1 ],
+            [ {zh:"葉片中主要進行光合作用的組織？",en:"Which leaf tissue carries out most photosynthesis?"}, {zh:["柵狀葉肉","上表皮","木質部","表皮毛"],en:["Palisade mesophyll","Upper epidermis","Xylem","Epidermal hairs"]}, 0, 1 ],
+            [ {zh:"暗反應主要在哪裡進行？",en:"Where do the light-independent (dark) reactions occur?"}, {zh:["葉綠體基質","類囊體膜","細胞質","線粒體"],en:["Chloroplast stroma","Thylakoid membrane","Cytoplasm","Mitochondrion"]}, 0, 1 ],
+            [ {zh:"植物在夜間主要釋放哪種氣體？",en:"Which gas do plants mainly release at night?"}, {zh:["二氧化碳","氧氣","水蒸氣","氮氣"],en:["Carbon dioxide","Oxygen","Water vapour","Nitrogen"]}, 0, 1 ],
+            [ {zh:"維管束中負責支持的死細胞？",en:"Which dead cells in vascular bundles provide support?"}, {zh:["木質部導管","韌皮部篩管","伴細胞","保衛細胞"],en:["Xylem vessels","Phloem sieve tubes","Companion cells","Guard cells"]}, 0, 1 ],
+            [ {zh:"根毛細胞有何特徵以增加吸水？",en:"What feature helps root hair cells absorb more water?"}, {zh:["表面積大","細胞壁極厚","沒有液泡","含有葉綠體"],en:["Large surface area","Very thick cell wall","No vacuole","Contain chloroplasts"]}, 0, 1 ],
+            [ {zh:"哪種構造能減少葉片水分散失？",en:"Which structure reduces water loss from a leaf?"}, {zh:["角質層","海綿葉肉","氣孔","韌皮部"],en:["Cuticle","Spongy mesophyll","Stomata","Phloem"]}, 0, 1 ],
+            [ {zh:"單側光會導致莖部生長素如何？",en:"How does one-sided light affect auxin in a shoot?"}, {zh:["背光側較多","向光側較多","均勻分佈","被陽光破壞"],en:["More on the shaded side","More on the lit side","Evenly distributed","Destroyed by sunlight"]}, 0, 1 ],
+            [ {zh:"種子萌發時分解澱粉的酶是？",en:"Which enzyme breaks down starch during germination?"}, {zh:["澱粉酶","蛋白酶","脂肪酶","纖維素酶"],en:["Amylase","Protease","Lipase","Cellulase"]}, 0, 1 ],
+            [ {zh:"木質部管壁由甚麼物質加厚？",en:"Xylem vessel walls are thickened by which substance?"}, {zh:["木質素","纖維素","果膠","蛋白質"],en:["Lignin","Cellulose","Pectin","Protein"]}, 0, 1 ],
+            [ {zh:"海綿葉肉的細胞間隙有何功能？",en:"What is the function of air spaces in spongy mesophyll?"}, {zh:["利於氣體擴散","儲存水份","增加透光度","防止蟲害"],en:["Aid gas diffusion","Store water","Increase light transmission","Prevent pests"]}, 0, 1 ],
+            [ {zh:"光反應產生供暗反應使用的物質？",en:"The light reactions produce what for the dark reactions?"}, {zh:["ATP和NADPH","葡萄糖","氧氣和水","二氧化碳"],en:["ATP and NADPH","Glucose","Oxygen and water","Carbon dioxide"]}, 0, 1 ],
+            [ {zh:"葉綠素主要吸收哪種顏色的光？",en:"Chlorophyll mainly absorbs which colours of light?"}, {zh:["紅光和藍光","綠光","黃光","所有可見光"],en:["Red and blue light","Green light","Yellow light","All visible light"]}, 0, 1 ],
+            [ {zh:"捕蠅草觸發閉合的反應屬於甚麼？",en:"A Venus flytrap snapping shut is an example of?"}, {zh:["傾性運動","向觸性","向光性","向水性"],en:["A nastic movement","Thigmotropism","Phototropism","Hydrotropism"]}, 0, 1 ],
+            [ {zh:"韌皮部轉運有機物的方向是？",en:"In which direction does phloem transport organic material?"}, {zh:["雙向運輸","只能向上","只能向下","隨機擴散"],en:["Bidirectional","Only upwards","Only downwards","Random diffusion"]}, 0, 1 ],
+            [ {zh:"草本植物主要依賴甚麼支撐？",en:"What mainly supports a herbaceous plant?"}, {zh:["細胞膨壓","木質素","脂肪儲存","風力推動"],en:["Cell turgor pressure","Lignin","Stored fat","Wind"]}, 0, 1 ],
+            [ {zh:"光合作用的碳固定在哪發生？",en:"Where does carbon fixation in photosynthesis occur?"}, {zh:["暗反應","光反應","光解作用","呼吸作用"],en:["The dark reactions","The light reactions","Photolysis","Respiration"]}, 0, 1 ],
+            [ {zh:"最先突破種皮的構造是？",en:"Which structure emerges first through the seed coat?"}, {zh:["胚根","胚芽","子葉","真葉"],en:["Radicle","Plumule","Cotyledon","True leaf"]}, 0, 1 ],
+            [ {zh:"植物呼吸作用發生的地點？",en:"Where does plant respiration take place?"}, {zh:["線粒體","葉綠體","液泡","細胞核"],en:["Mitochondrion","Chloroplast","Vacuole","Nucleus"]}, 0, 1 ],
 
-            // === Level 1: 基礎低難度 (植物營養繁殖與實驗) - 選項 < 10字 ===
-            [ "植物營養繁殖屬於哪種生殖方式？", ["無性生殖", "有性生殖", "孢子繁殖", "分裂生殖"], 0, 1 ],
-            [ "馬鈴薯主要利用甚麼構造進行繁殖？", ["塊莖", "球莖", "鱗莖", "根狀莖"], 0, 1 ],
-            [ "洋葱繁殖主要依賴的地下構造是？", ["鱗莖", "塊莖", "走莖", "塊根"], 0, 1 ],
-            [ "營養繁殖產生的後代基因特徵是？", ["與親本完全相同", "具高度遺傳變異", "只有一半染色體", "突變機率極高"], 0, 1 ],
-            [ "利用植物莖部切段培育新植株稱為？", ["扦插法", "嫁接法", "壓條法", "組織培養"], 0, 1 ],
-            [ "番薯發芽長出新植株的營養器官是？", ["塊根", "塊莖", "氣孔", "皮孔"], 0, 1 ],
-            [ "測試光合作用需要去葉綠素，為什麼？", ["消除綠色干擾", "軟化細胞壁", "溶解澱粉", "破壞酶"], 0, 1 ],
-            [ "使用熱水浸泡葉片的目的是？", ["破壞細胞膜", "提取色素", "檢測糖分", "防止萎蔫"], 0, 1 ],
-            [ "證明光合作用需要光的實驗中，如何處理葉片？", ["部分遮光", "塗抹凡士林", "置於無氧環境", "浸泡在酸液"], 0, 1 ],
-            [ "證明光合作用需要葉綠素的實驗中，應選用？", ["斑葉", "完全綠色的葉", "枯葉", "無氣孔的葉"], 0, 1 ],
+            // === Level 1: propagation & experiments ===
+            [ {zh:"植物營養繁殖屬於哪種生殖方式？",en:"Vegetative propagation is which type of reproduction?"}, {zh:["無性生殖","有性生殖","孢子繁殖","分裂生殖"],en:["Asexual reproduction","Sexual reproduction","Spore reproduction","Binary fission"]}, 0, 1 ],
+            [ {zh:"馬鈴薯主要利用甚麼構造進行繁殖？",en:"A potato reproduces mainly using which structure?"}, {zh:["塊莖","球莖","鱗莖","根狀莖"],en:["Stem tuber","Corm","Bulb","Rhizome"]}, 0, 1 ],
+            [ {zh:"洋葱繁殖主要依賴的地下構造是？",en:"An onion reproduces mainly using which underground structure?"}, {zh:["鱗莖","塊莖","走莖","塊根"],en:["Bulb","Stem tuber","Runner","Root tuber"]}, 0, 1 ],
+            [ {zh:"營養繁殖產生的後代基因特徵是？",en:"The genetic feature of offspring from vegetative propagation?"}, {zh:["與親本完全相同","具高度遺傳變異","只有一半染色體","突變機率極高"],en:["Genetically identical to the parent","Highly genetically variable","Only half the chromosomes","Very high mutation rate"]}, 0, 1 ],
+            [ {zh:"利用植物莖部切段培育新植株稱為？",en:"Growing new plants from cut stem segments is called?"}, {zh:["扦插法","嫁接法","壓條法","組織培養"],en:["Cutting","Grafting","Layering","Tissue culture"]}, 0, 1 ],
+            [ {zh:"番薯發芽長出新植株的營養器官是？",en:"Which vegetative organ lets a sweet potato sprout new plants?"}, {zh:["塊根","塊莖","氣孔","皮孔"],en:["Root tuber","Stem tuber","Stoma","Lenticel"]}, 0, 1 ],
+            [ {zh:"測試光合作用需要去葉綠素，為什麼？",en:"Why remove chlorophyll before a photosynthesis (starch) test?"}, {zh:["消除綠色干擾","軟化細胞壁","溶解澱粉","破壞酶"],en:["Remove the green colour that interferes","Soften the cell wall","Dissolve the starch","Destroy enzymes"]}, 0, 1 ],
+            [ {zh:"使用熱水浸泡葉片的目的是？",en:"Why soak a leaf in hot water before the starch test?"}, {zh:["破壞細胞膜","提取色素","檢測糖分","防止萎蔫"],en:["Break down the cell membrane","Extract pigments","Detect sugar","Prevent wilting"]}, 0, 1 ],
+            [ {zh:"證明光合作用需要光的實驗中，如何處理葉片？",en:"To show light is needed, how is the leaf treated?"}, {zh:["部分遮光","塗抹凡士林","置於無氧環境","浸泡在酸液"],en:["Partially cover it from light","Smear it with Vaseline","Place it in an oxygen-free environment","Soak it in acid"]}, 0, 1 ],
+            [ {zh:"證明光合作用需要葉綠素的實驗中，應選用？",en:"To show chlorophyll is needed, which leaf should be used?"}, {zh:["斑葉","完全綠色的葉","枯葉","無氣孔的葉"],en:["A variegated leaf","A fully green leaf","A dead leaf","A leaf with no stomata"]}, 0, 1 ],
 
-            // === Level 2: 中等進階題 (選項約 15-20 字) ===
-            ["保衛細胞在日間如何令氣孔打開？", ["主動吸鉀離子降水勢，吸水膨脹", "泵出水份使細胞疲軟並向內塌陷", "葉綠體合成澱粉增加細胞重量", "表皮細胞收縮強行拉開保衛細胞"], 0, 2],
-            ["植物幼莖向光彎曲的微觀機制？", ["背光側生長素較多，促進細胞延長", "向光側生長素多，抑制細胞延長", "陽光燒毀背光側，導致植物傾斜", "光照促使細胞壁變厚限制生長"], 0, 2],
-            ["為何種子發芽初期乾質量會下降？", ["呼吸作用消耗儲存食物以供應能量", "種皮脫落導致整體物理重量減少", "種子吸收重金屬產生毒性反應", "水份進入細胞核導致DNA降解"], 0, 2],
-            ["利用蒸騰計測量時為何需在水底切枝？", ["移除導管氣泡以重建連續水柱", "刺激植物傷口釋放更多生長素", "清除表皮細菌防止干擾實驗結果", "讓植物更易吸收水中的礦物質"], 0, 2],
-            ["光合作用實驗中，熱酒精的作用是？", ["溶解葉綠素，方便觀察碘液顏色", "殺死害蟲，確保葉片組織完整", "軟化細胞壁，讓氧氣更容易排出", "增加澱粉溶解度，縮短反應時間"], 0, 2],
-            ["木質部導管適宜運水的結構特徵？", ["管壁具木質素加厚，呈中空死細胞", "細胞含巨大液泡，主動泵送水份", "具發達細胞核，調節水流的壓力", "管腔內佈滿纖毛，加速水分子流動"], 0, 2],
-            ["韌皮部篩管與伴細胞的關係？", ["伴細胞提供代謝能量供篩管轉運", "篩管保護伴細胞免受強光傷害", "兩者共同進行光合作用製造蔗糖", "伴細胞負責吸收泥土中的礦物質"], 0, 2],
-            ["生態系統中，分解者對植物的意義？", ["轉化有機物為無機礦物質供吸收", "直接為植物提供光合作用的能量", "與草食動物競爭，減少植物受損", "利用氮氣合成蛋白質送往植物"], 0, 2],
-            ["環割實驗證明了韌皮部的甚麼功能？", ["向下運送葉片製造的有機營養物", "向上運送水份和無機鹽至葉片", "控制植物莖部向光源彎曲生長", "負責植物次級生長加粗樹幹"], 0, 2],
-            ["雙子葉植物柵狀葉肉多近上表皮的原因？", ["接收最多陽光，極大化光合作用", "保護下表皮氣孔免受強光破壞", "水份最充足，防止細胞萎蔫", "上表皮較厚，能支撐柵狀細胞"], 0, 2],
-            ["光合作用中光解水的作用是甚麼？", ["釋放電子填補葉綠素的電子空缺", "直接產生葡萄糖的碳骨架", "吸收多餘熱能防止葉片被灼傷", "將光能轉化為熱能散失到空氣"], 0, 2],
-            ["植物如何吸收泥土中低濃度的硝酸鹽？", ["根毛細胞利用ATP進行主動轉運", "透過水份的滲透作用一併吸入", "依賴泥土中的細菌直接推入根部", "透過細胞膜的簡單擴散作用"], 0, 2],
-            ["生態系統中植物作為生產者的意義？", ["將光能轉為化學能供食物鏈使用", "消耗大氣氧氣以維持氣體平衡", "分解泥土有機物釋放無機礦物質", "為食草動物提供棲息躲避場所"], 0, 2],
-            ["在澱粉測試前把葉片放入沸水的作用？", ["破壞細胞膜並終止所有酶促反應", "溶解葉綠素使其完全褪色", "軟化細胞壁以利碘液吸收", "將葉片內的巨大澱粉粒煮熟"], 0, 2],
-            ["根部表現出正向地性的原因為何？", ["重力使生長素在下側積聚抑制延長", "重力使生長素在上側積聚促進生長", "根冠細胞受地心吸力物理拉扯", "下側細胞獲得較多水份而膨脹"], 0, 2],
-            ["植物在夜間的淨氣體交換狀態是？", ["淨吸收氧氣並淨釋放二氧化碳", "淨吸收二氧化碳並釋放氧氣", "完全沒有任何氣體進出植物", "同時大量吸收氧氣和二氧化碳"], 0, 2],
-            ["探究光強對光合速率實驗加入碳酸氫鈉？", ["提供穩定二氧化碳確保不成為限制", "中和水中酸性以防破壞細胞器", "產生氧氣氣泡驅逐氮氣增加浮力", "作為合成葉綠素的人工強化劑"], 0, 2],
-            ["與有性生殖相比，營養繁殖在農業上的主要優勢？", ["快速大量繁殖並完美保留母本優良性狀", "產生大量基因變異以適應新環境", "後代能產生適應極端氣候的堅硬種子", "完全不需要消耗植物體內的任何養分"], 0, 2],
-            ["利用組織培養技術繁殖植物的主要好處是？", ["能在無菌環境中短時間培育大量無病毒植株", "能促使植物產生自然的基因重組", "不需要提供任何光照和化學營養物質", "能讓植物的根部直接進行光合作用"], 0, 2],
-            ["草莓利用走莖進行繁殖，其生長特點是？", ["水平生長於地面，在節處長出不定根和新芽", "垂直深入地底尋找水源並膨大成塊根", "纏繞其他植物生長以獲取更多陽光", "在空中散佈微小的孢子來繁衍後代"], 0, 2],
-            ["嫁接技術中，提供根系吸收水分的底部植株稱為？", ["砧木，負責提供強健根系及吸收養分", "接穗，負責產生新的花朵與果實", "插條，負責進行旺盛的光合作用", "外植體，負責在試管中發育為新個體"], 0, 2],
+            // === Level 2 ===
+            [ {zh:"保衛細胞在日間如何令氣孔打開？",en:"How do guard cells open the stomata during the day?"}, {zh:["主動吸鉀離子降水勢，吸水膨脹","泵出水份使細胞疲軟並向內塌陷","葉綠體合成澱粉增加細胞重量","表皮細胞收縮強行拉開保衛細胞"],en:["They actively take in K⁺, lowering water potential, so they absorb water and swell","They pump out water, becoming flaccid and collapsing inward","Their chloroplasts make starch, increasing cell weight","Epidermal cells contract and pull the guard cells apart"]}, 0, 2],
+            [ {zh:"植物幼莖向光彎曲的微觀機制？",en:"The microscopic mechanism of a shoot bending towards light?"}, {zh:["背光側生長素較多，促進細胞延長","向光側生長素多，抑制細胞延長","陽光燒毀背光側，導致植物傾斜","光照促使細胞壁變厚限制生長"],en:["More auxin on the shaded side promotes cell elongation there","More auxin on the lit side inhibits cell elongation","Sunlight burns the shaded side, tilting the plant","Light thickens the cell wall, limiting growth"]}, 0, 2],
+            [ {zh:"為何種子發芽初期乾質量會下降？",en:"Why does a seed's dry mass fall in early germination?"}, {zh:["呼吸作用消耗儲存食物以供應能量","種皮脫落導致整體物理重量減少","種子吸收重金屬產生毒性反應","水份進入細胞核導致DNA降解"],en:["Respiration uses up stored food to supply energy","The seed coat falls off, reducing physical weight","The seed absorbs heavy metals, causing toxicity","Water enters the nucleus and degrades DNA"]}, 0, 2],
+            [ {zh:"利用蒸騰計測量時為何需在水底切枝？",en:"Why cut the shoot underwater when setting up a potometer?"}, {zh:["移除導管氣泡以重建連續水柱","刺激植物傷口釋放更多生長素","清除表皮細菌防止干擾實驗結果","讓植物更易吸收水中的礦物質"],en:["To remove air bubbles from the xylem and keep a continuous water column","To make the wound release more auxin","To wash off surface bacteria that would spoil the result","To help the plant absorb minerals from the water"]}, 0, 2],
+            [ {zh:"光合作用實驗中，熱酒精的作用是？",en:"In a photosynthesis test, what does hot ethanol do?"}, {zh:["溶解葉綠素，方便觀察碘液顏色","殺死害蟲，確保葉片組織完整","軟化細胞壁，讓氧氣更容易排出","增加澱粉溶解度，縮短反應時間"],en:["Dissolves chlorophyll so the iodine colour is easy to see","Kills pests to keep the leaf tissue intact","Softens the cell wall so oxygen escapes more easily","Increases starch solubility to shorten the reaction"]}, 0, 2],
+            [ {zh:"木質部導管適宜運水的結構特徵？",en:"Which structural feature makes xylem vessels good at carrying water?"}, {zh:["管壁具木質素加厚，呈中空死細胞","細胞含巨大液泡，主動泵送水份","具發達細胞核，調節水流的壓力","管腔內佈滿纖毛，加速水分子流動"],en:["Lignified thickened walls forming hollow dead cells","Huge vacuoles that actively pump water","Well-developed nuclei that regulate water pressure","Cilia lining the lumen to speed up water flow"]}, 0, 2],
+            [ {zh:"韌皮部篩管與伴細胞的關係？",en:"The relationship between phloem sieve tubes and companion cells?"}, {zh:["伴細胞提供代謝能量供篩管轉運","篩管保護伴細胞免受強光傷害","兩者共同進行光合作用製造蔗糖","伴細胞負責吸收泥土中的礦物質"],en:["Companion cells supply metabolic energy for transport in the sieve tubes","Sieve tubes protect companion cells from strong light","Together they photosynthesise to make sucrose","Companion cells absorb minerals from the soil"]}, 0, 2],
+            [ {zh:"生態系統中，分解者對植物的意義？",en:"What do decomposers do for plants in an ecosystem?"}, {zh:["轉化有機物為無機礦物質供吸收","直接為植物提供光合作用的能量","與草食動物競爭，減少植物受損","利用氮氣合成蛋白質送往植物"],en:["Convert organic matter into inorganic minerals for uptake","Directly supply plants with energy for photosynthesis","Compete with herbivores to reduce plant damage","Fix nitrogen gas into protein and send it to plants"]}, 0, 2],
+            [ {zh:"環割實驗證明了韌皮部的甚麼功能？",en:"What does a ringing (girdling) experiment prove about phloem?"}, {zh:["向下運送葉片製造的有機營養物","向上運送水份和無機鹽至葉片","控制植物莖部向光源彎曲生長","負責植物次級生長加粗樹幹"],en:["It transports organic food made in the leaves downwards","It transports water and minerals up to the leaves","It controls the shoot bending towards light","It carries out secondary growth to thicken the trunk"]}, 0, 2],
+            [ {zh:"雙子葉植物柵狀葉肉多近上表皮的原因？",en:"Why is palisade mesophyll located near the upper epidermis?"}, {zh:["接收最多陽光，極大化光合作用","保護下表皮氣孔免受強光破壞","水份最充足，防止細胞萎蔫","上表皮較厚，能支撐柵狀細胞"],en:["It receives the most light, maximising photosynthesis","It protects the lower-epidermis stomata from strong light","Water is most plentiful there, preventing wilting","The upper epidermis is thick enough to support it"]}, 0, 2],
+            [ {zh:"光合作用中光解水的作用是甚麼？",en:"What is the role of photolysis of water in photosynthesis?"}, {zh:["釋放電子填補葉綠素的電子空缺","直接產生葡萄糖的碳骨架","吸收多餘熱能防止葉片被灼傷","將光能轉化為熱能散失到空氣"],en:["It releases electrons to replace those lost by chlorophyll","It directly produces the carbon skeleton of glucose","It absorbs excess heat to stop the leaf burning","It converts light energy into heat lost to the air"]}, 0, 2],
+            [ {zh:"植物如何吸收泥土中低濃度的硝酸鹽？",en:"How do plants absorb nitrate present at low concentration in soil?"}, {zh:["根毛細胞利用ATP進行主動轉運","透過水份的滲透作用一併吸入","依賴泥土中的細菌直接推入根部","透過細胞膜的簡單擴散作用"],en:["Root hair cells use ATP for active transport","It is drawn in with water by osmosis","Soil bacteria push it directly into the roots","By simple diffusion across the cell membrane"]}, 0, 2],
+            [ {zh:"生態系統中植物作為生產者的意義？",en:"What is the significance of plants being producers?"}, {zh:["將光能轉為化學能供食物鏈使用","消耗大氣氧氣以維持氣體平衡","分解泥土有機物釋放無機礦物質","為食草動物提供棲息躲避場所"],en:["They convert light energy into chemical energy for the food chain","They consume atmospheric oxygen to balance gases","They decompose soil organic matter to release minerals","They provide shelter for herbivores"]}, 0, 2],
+            [ {zh:"在澱粉測試前把葉片放入沸水的作用？",en:"Why put a leaf in boiling water before the starch test?"}, {zh:["破壞細胞膜並終止所有酶促反應","溶解葉綠素使其完全褪色","軟化細胞壁以利碘液吸收","將葉片內的巨大澱粉粒煮熟"],en:["To break the cell membranes and stop all enzyme reactions","To dissolve chlorophyll and decolourise it","To soften the cell wall for iodine uptake","To cook the large starch grains inside"]}, 0, 2],
+            [ {zh:"根部表現出正向地性的原因為何？",en:"Why do roots show positive geotropism?"}, {zh:["重力使生長素在下側積聚抑制延長","重力使生長素在上側積聚促進生長","根冠細胞受地心吸力物理拉扯","下側細胞獲得較多水份而膨脹"],en:["Gravity makes auxin accumulate on the lower side, inhibiting elongation there","Gravity makes auxin accumulate on the upper side, promoting growth","Root cap cells are physically pulled down by gravity","Lower-side cells get more water and swell"]}, 0, 2],
+            [ {zh:"植物在夜間的淨氣體交換狀態是？",en:"What is the net gas exchange of a plant at night?"}, {zh:["淨吸收氧氣並淨釋放二氧化碳","淨吸收二氧化碳並釋放氧氣","完全沒有任何氣體進出植物","同時大量吸收氧氣和二氧化碳"],en:["Net uptake of oxygen and net release of carbon dioxide","Net uptake of carbon dioxide and release of oxygen","No gases enter or leave at all","Large uptake of both oxygen and carbon dioxide"]}, 0, 2],
+            [ {zh:"探究光強對光合速率實驗加入碳酸氫鈉？",en:"Why add sodium hydrogencarbonate when studying light intensity vs photosynthesis?"}, {zh:["提供穩定二氧化碳確保不成為限制","中和水中酸性以防破壞細胞器","產生氧氣氣泡驅逐氮氣增加浮力","作為合成葉綠素的人工強化劑"],en:["To supply a steady source of CO₂ so it is not the limiting factor","To neutralise acidity and protect the organelles","To make oxygen bubbles that drive out nitrogen","As an artificial booster for chlorophyll synthesis"]}, 0, 2],
+            [ {zh:"與有性生殖相比，營養繁殖在農業上的主要優勢？",en:"Compared with sexual reproduction, the main agricultural advantage of vegetative propagation?"}, {zh:["快速大量繁殖並完美保留母本優良性狀","產生大量基因變異以適應新環境","後代能產生適應極端氣候的堅硬種子","完全不需要消耗植物體內的任何養分"],en:["Rapid mass propagation that perfectly preserves the parent's good traits","Produces lots of genetic variation to adapt to new environments","Offspring make tough seeds suited to extreme climates","It uses up none of the plant's stored nutrients"]}, 0, 2],
+            [ {zh:"利用組織培養技術繁殖植物的主要好處是？",en:"The main benefit of propagating plants by tissue culture?"}, {zh:["能在無菌環境中短時間培育大量無病毒植株","能促使植物產生自然的基因重組","不需要提供任何光照和化學營養物質","能讓植物的根部直接進行光合作用"],en:["Large numbers of virus-free plants can be grown quickly in sterile conditions","It promotes natural genetic recombination","It needs no light or chemical nutrients","It lets the roots photosynthesise directly"]}, 0, 2],
+            [ {zh:"草莓利用走莖進行繁殖，其生長特點是？",en:"Strawberries reproduce by runners — what is the growth pattern?"}, {zh:["水平生長於地面，在節處長出不定根和新芽","垂直深入地底尋找水源並膨大成塊根","纏繞其他植物生長以獲取更多陽光","在空中散佈微小的孢子來繁衍後代"],en:["They grow horizontally along the ground, forming adventitious roots and new shoots at the nodes","They grow straight down seeking water and swell into root tubers","They twine around other plants for more light","They scatter tiny spores through the air"]}, 0, 2],
+            [ {zh:"嫁接技術中，提供根系吸收水分的底部植株稱為？",en:"In grafting, the lower plant providing the root system is called?"}, {zh:["砧木，負責提供強健根系及吸收養分","接穗，負責產生新的花朵與果實","插條，負責進行旺盛的光合作用","外植體，負責在試管中發育為新個體"],en:["The rootstock, which provides a strong root system and absorbs nutrients","The scion, which produces the new flowers and fruit","The cutting, which carries out vigorous photosynthesis","The explant, which develops into a new plant in a test tube"]}, 0, 2],
 
-            // === Level 3: 地獄級陷阱題 (選項 25-30 字) ===
-            ["光補償點時，植物的生理表現是？", ["二氧化碳吸收量與釋放量完全相等，整體淨交換量為零。", "植物進入休眠狀態以節省有機儲備，停止所有酶促反應。", "光合作用產生氧氣量遠超呼吸消耗，累積過量游離氧氣。", "保衛細胞完全疲軟導致氣孔全關閉，切斷氣體擴散途徑。"], 0, 3],
-            ["根部表現正向地性的微觀機制是？", ["重力致生長素積聚下側；根對其極敏感，下側細胞延長被強烈抑制而向下彎。", "重力致生長素積聚上側；低濃度生長素強烈抑制上側細胞延長，迫使根部向下。", "地心吸力促使根部下側細胞壁嚴重木質化，透過物理重量推動根部向地心生長。", "根冠深處感測細胞敏銳感受熱力梯度，釋放電信號引導根尖向地心高溫處鑽去。"], 0, 3],
-            ["植物光合暗反應高度依賴光反應的？", ["必須持續消耗光反應產生的ATP及NADPH，才能成功將二氧化碳還原為糖分。", "絕對需要光解水產生的游離氧氣作氧化劑，推動五碳化合物合成六碳葡萄糖。", "暗反應酶群極度依賴被強光激發的葉綠素分子，直接捕捉轉移周圍剩餘熱能。", "必須等待光反應將龐大水分子以物理方式一分為二，提供游離電子填補缺口。"], 0, 3],
-            ["在進化生態學中，植物過度依賴營養繁殖會帶來甚麼潛在的滅絕風險？", ["後代基因完全相同，缺乏遺傳變異，若環境劇變或出現新病原體易集體滅亡。", "消耗過多ATP能量導致親本提早衰老，整個種群的生命週期會顯著縮短。", "這種繁殖方式會吸引大量草食性動物聚集，導致植物在發芽前被完全吃光。", "營養繁殖會導致植物細胞壁的纖維素退化，使其無法承受正常的細胞膨壓。"], 0, 3],
-            ["水浸導致農作物根部死亡的機制？", ["泥土嚴重缺氧迫使根細胞進行缺氧呼吸產生毒素乙醇，且缺乏ATP吸收礦物質。", "根部組織浸泡過度吸水，脆弱細胞壁無法承受強大膨壓，最終發生大規模爆裂。", "極高外部水壓導致木質部中空導管發生毀滅性物理內陷，阻斷水分運輸通道。", "泥土積聚過量硝酸鹽與化學肥料，嚴重改變滲透壓，引致根毛細胞質壁分離。"], 0, 3],
-            ["若暗反應中CO2供應中斷，會導致？", ["五碳化合物因無法與二氧化碳結合而大量積聚，依賴該反應的三碳化合物驟減。", "三碳化合物因無法被還原為葡萄糖而大量積聚，作為受體的五碳化合物迅速減少。", "類囊體膜上水分子光解速率因失去暗反應化學牽制，立即發生不受控爆發性倍增。", "葉綠體基質內負責推動碳固定的催化酶，因突乏底物發生結構坍塌及不可逆變性。"], 0, 3],
-            ["蒸騰計實驗中，若氣泡移動極慢代表？", ["環境空氣濕度極高或植物因缺水主動關閉氣孔，大幅降低水分蒸發產生的拉力。", "該植物正處極端活躍狀態，根部進行極旺盛主動吸水，氣泡被強大根壓推回。", "插入儀器的枝條內部木質部導管發生極嚴重物理破壞與滲漏，整體水柱斷裂。", "環境光照強度遠超植物光飽和點，導致葉片保衛細胞熱癱瘓而無法打開氣孔。"], 0, 3],
-            ["光反應電子傳遞鏈中電子的終點是？", ["最終與基質中的游離氫離子一同被輔酶NADP+接收，還原成NADPH供暗反應使用。", "最終被強行注入從氣孔吸入的氧氣分子中，結合質子後生成對細胞無害的中性水。", "釋放完所有能量後重新回到葉綠素結構中，精準填補當初被光能激發留下的空缺。", "直接與細胞質內游離的ADP分子發生強烈化學結合，釋放電能將ADP轉為ATP。"], 0, 3],
-            ["炎夏中午植物極度缺水時會發生？", ["保衛細胞因失去膨壓變疲軟，氣孔被迫關閉減少水分流失，切斷CO2嚴重減慢光合。", "為求自保，葉肉細胞主動將儲存澱粉粒轉化為液態水分子，迅速補充木質部水柱。", "深埋泥土根部立刻進行強烈缺氧呼吸產生強大根壓，將地下水強行泵上樹冠葉片。", "韌皮部篩管立刻發生逆向運輸，將根部蔗糖迅速反向運往乾燥葉片極端增加滲透壓。"], 0, 3],
-            ["韌皮部篩管細胞缺乏細胞核的意義？", ["缺乏龐大胞器令內部形成無阻礙空曠管道，極大減低高濃度有機營養液轉運時的阻力。", "使得篩管細胞能隨時根據環境變化，自由變換為負責吸水木質部導管或負責光合葉肉。", "賦予篩管細胞極強彈性，使其能像動物血管般主動節奏搏動，將樹液強行泵上幾十米。", "使得它們變得如同鋼鐵般堅硬，完全取代木質素功能，成為支撐參天大樹唯一主力結構。"], 0, 3],
-            ["關於百合的鱗莖繁殖，下列哪項微觀結構描述是精確的？", ["由極短的莖及大量肉質鱗片葉組成，鱗片葉儲存豐富養分供頂芽發育為新植株。", "由高度木質化的地下莖構成，內部充滿澱粉並透過表皮的氣孔吸收地下水。", "是一種由根部特化而成的球狀結構，完全依賴共生真菌提供發芽所需的氮源。", "其內部完全中空以儲存大量二氧化碳，確保新植株在泥土中能立刻進行暗反應。"], 0, 3],
-            ["非洲紫羅蘭可利用葉片進行扦插繁殖，在切口處最先發生的細胞學變化是甚麼？", ["切口處的成熟細胞發生脫分化，恢復分裂能力形成癒傷組織，繼而分化出不定根。", "切口處立刻進行大量的減數分裂，產生單倍體細胞以適應周圍濕潤的泥土環境。", "葉肉細胞內的葉綠體會瞬間轉化為線粒體，以提供極大能量來修復受損的細胞膜。", "切口表皮細胞會分泌大量氫氯酸來殺死泥土中的細菌，防止傷口發生嚴重感染。"], 0, 3],
-            ["農民在種植優良品種的水果（如無籽西瓜）時，為何必須採用營養繁殖？", ["因為這些水果往往缺乏可育種子，營養繁殖能確保後代百分百保留母本的優良果實特徵。", "因為有性生殖產生的花粉含有劇毒，會污染周圍環境並導致農民發生嚴重的過敏反應。", "因為營養繁殖能引發植物發生良性突變，使得下一代的果實體積成倍增長且更具甜味。", "因為這些植物的氣孔只在夜間打開，無法依賴昆蟲或風力在白天進行正常的授粉作用。"], 0, 3],
-            ["在探究葉片澱粉的實驗中，如沒有先將植物放置於黑暗環境中一段時間（暗處理），會導致甚麼後果？", ["實驗後測試的結果無法證明澱粉是實驗光照期間產生的，因可能含有實驗前已存在的澱粉。", "葉片內會累積過多葉綠素，無法完全用熱酒精溶解，影響碘液測試時的顏色觀察。", "植物細胞的呼吸作用會急劇增強，將所有光合作用產生的糖分消耗殆盡，導致無法測出澱粉。", "葉片細胞壁會變得極為堅硬，阻礙碘液滲透進入細胞內與澱粉發生反應。"], 0, 3],
-            ["未受控制的糖尿病患者尿液中會出現大量葡萄糖。這現象背後的腎臟生理學原因是甚麼？", ["超微過濾後的葡萄糖濃度，遠超近曲小管(PCT)載體蛋白質的絕對重吸收極限。", "長期高血糖嚴重腐蝕鮑氏囊脆弱微血管，令體積過大不該被濾出的葡萄糖大量漏出。", "腎臟為優先保護大腦細胞免受高滲透壓破壞，主動消耗ATP將血液葡萄糖強行泵入尿中。", "膀胱內壁上皮細胞突然發生基因突變，完全失去儲存糖原能力，導致儲存的糖分洩漏。"], 0, 3],
-            ["胰島素過度分泌（例如錯誤注射過量胰島素）會引發極危險的「胰島素休克」。這對大腦有何影響？", ["血糖急劇暴跌，腦細胞因完全依賴葡萄糖作唯一能量來源而迅速耗盡ATP，引發腦死亡。", "令大腦細胞因短時間內吸收過多游離糖分而急速膨脹，導致細胞膜無法承受水勢而爆裂。", "使大腦內部密集微血管瞬間被大量合成的糖原晶體徹底且永久堵塞，引發嚴重缺血中風。", "強制大腦皮層運動神經元產生極度混亂的逆向電流，將海馬體內所有長期記憶瞬間刪除。"], 0, 3]
+            // === Level 3 ===
+            [ {zh:"光補償點時，植物的生理表現是？",en:"At the light compensation point, the plant's physiology is?"}, {zh:["二氧化碳吸收量與釋放量完全相等，整體淨交換量為零。","植物進入休眠狀態以節省有機儲備，停止所有酶促反應。","光合作用產生氧氣量遠超呼吸消耗，累積過量游離氧氣。","保衛細胞完全疲軟導致氣孔全關閉，切斷氣體擴散途徑。"],en:["CO₂ uptake exactly equals CO₂ release, so net gas exchange is zero.","The plant goes dormant to save its reserves and stops all enzyme reactions.","Photosynthesis makes far more oxygen than respiration uses, so free oxygen builds up.","The guard cells go completely flaccid, closing all stomata and cutting off gas diffusion."]}, 0, 3],
+            [ {zh:"根部表現正向地性的微觀機制是？",en:"The microscopic mechanism of positive geotropism in roots?"}, {zh:["重力致生長素積聚下側；根對其極敏感，下側細胞延長被強烈抑制而向下彎。","重力致生長素積聚上側；低濃度生長素強烈抑制上側細胞延長，迫使根部向下。","地心吸力促使根部下側細胞壁嚴重木質化，透過物理重量推動根部向地心生長。","根冠深處感測細胞敏銳感受熱力梯度，釋放電信號引導根尖向地心高溫處鑽去。"],en:["Gravity makes auxin gather on the lower side; roots are very sensitive to it, so lower-side elongation is strongly inhibited and the root bends down.","Gravity makes auxin gather on the upper side; the low concentration strongly inhibits upper-side elongation, forcing the root down.","Gravity heavily lignifies the lower-side cell walls, physically weighing the root down towards the earth's centre.","Sensor cells deep in the root cap detect a heat gradient and send electrical signals guiding the tip towards the hot centre."]}, 0, 3],
+            [ {zh:"植物光合暗反應高度依賴光反應的？",en:"The dark reactions of photosynthesis depend heavily on the light reactions for?"}, {zh:["必須持續消耗光反應產生的ATP及NADPH，才能成功將二氧化碳還原為糖分。","絕對需要光解水產生的游離氧氣作氧化劑，推動五碳化合物合成六碳葡萄糖。","暗反應酶群極度依賴被強光激發的葉綠素分子，直接捕捉轉移周圍剩餘熱能。","必須等待光反應將龐大水分子以物理方式一分為二，提供游離電子填補缺口。"],en:["A continuous supply of ATP and NADPH from the light reactions to reduce CO₂ to sugar.","The free oxygen from photolysis as an oxidiser to turn 5-carbon compounds into glucose.","Strongly excited chlorophyll molecules to capture and transfer surrounding waste heat.","The light reactions physically splitting huge water molecules in two to fill an electron gap."]}, 0, 3],
+            [ {zh:"在進化生態學中，植物過度依賴營養繁殖會帶來甚麼潛在的滅絕風險？",en:"In evolutionary ecology, what extinction risk comes from over-relying on vegetative propagation?"}, {zh:["後代基因完全相同，缺乏遺傳變異，若環境劇變或出現新病原體易集體滅亡。","消耗過多ATP能量導致親本提早衰老，整個種群的生命週期會顯著縮短。","這種繁殖方式會吸引大量草食性動物聚集，導致植物在發芽前被完全吃光。","營養繁殖會導致植物細胞壁的纖維素退化，使其無法承受正常的細胞膨壓。"],en:["Offspring are genetically identical, so with no variation a sudden environmental change or new pathogen could wipe them all out.","It uses too much ATP, ageing the parent early and shortening the whole population's life cycle.","It attracts large numbers of herbivores that eat the plants before they can sprout.","It degrades the cellulose in cell walls so they cannot withstand normal turgor pressure."]}, 0, 3],
+            [ {zh:"水浸導致農作物根部死亡的機制？",en:"The mechanism by which waterlogging kills crop roots?"}, {zh:["泥土嚴重缺氧迫使根細胞進行缺氧呼吸產生毒素乙醇，且缺乏ATP吸收礦物質。","根部組織浸泡過度吸水，脆弱細胞壁無法承受強大膨壓，最終發生大規模爆裂。","極高外部水壓導致木質部中空導管發生毀滅性物理內陷，阻斷水分運輸通道。","泥土積聚過量硝酸鹽與化學肥料，嚴重改變滲透壓，引致根毛細胞質壁分離。"],en:["The soil becomes severely oxygen-deficient, forcing anaerobic respiration that makes toxic ethanol, and there is no ATP to absorb minerals.","The root tissue takes in too much water and the fragile cell walls burst under huge turgor pressure.","Very high external water pressure collapses the hollow xylem vessels, blocking water transport.","Excess nitrate and fertiliser build up, changing the osmotic pressure and causing plasmolysis of root hair cells."]}, 0, 3],
+            [ {zh:"若暗反應中CO2供應中斷，會導致？",en:"If the CO₂ supply to the dark reactions is cut off, what happens?"}, {zh:["五碳化合物因無法與二氧化碳結合而大量積聚，依賴該反應的三碳化合物驟減。","三碳化合物因無法被還原為葡萄糖而大量積聚，作為受體的五碳化合物迅速減少。","類囊體膜上水分子光解速率因失去暗反應化學牽制，立即發生不受控爆發性倍增。","葉綠體基質內負責推動碳固定的催化酶，因突乏底物發生結構坍塌及不可逆變性。"],en:["The 5-carbon compound builds up because it cannot combine with CO₂, and the 3-carbon compound that depends on this reaction falls sharply.","The 3-carbon compound builds up because it cannot be reduced to glucose, and the 5-carbon acceptor falls rapidly.","Photolysis of water at the thylakoid membrane, freed from chemical restraint, suddenly multiplies uncontrollably.","The carbon-fixing enzyme in the stroma collapses and denatures irreversibly for lack of substrate."]}, 0, 3],
+            [ {zh:"蒸騰計實驗中，若氣泡移動極慢代表？",en:"In a potometer experiment, a very slowly moving bubble means?"}, {zh:["環境空氣濕度極高或植物因缺水主動關閉氣孔，大幅降低水分蒸發產生的拉力。","該植物正處極端活躍狀態，根部進行極旺盛主動吸水，氣泡被強大根壓推回。","插入儀器的枝條內部木質部導管發生極嚴重物理破壞與滲漏，整體水柱斷裂。","環境光照強度遠超植物光飽和點，導致葉片保衛細胞熱癱瘓而無法打開氣孔。"],en:["The air is very humid, or the plant has closed its stomata due to water shortage, greatly reducing the pull from evaporation.","The plant is extremely active and its roots absorb water so vigorously that root pressure pushes the bubble back.","The xylem in the cut shoot is badly damaged and leaking, so the water column has broken.","Light intensity far exceeds the plant's saturation point, heat-paralysing the guard cells so the stomata cannot open."]}, 0, 3],
+            [ {zh:"光反應電子傳遞鏈中電子的終點是？",en:"What is the final destination of electrons in the light-reaction electron transport chain?"}, {zh:["最終與基質中的游離氫離子一同被輔酶NADP+接收，還原成NADPH供暗反應使用。","最終被強行注入從氣孔吸入的氧氣分子中，結合質子後生成對細胞無害的中性水。","釋放完所有能量後重新回到葉綠素結構中，精準填補當初被光能激發留下的空缺。","直接與細胞質內游離的ADP分子發生強烈化學結合，釋放電能將ADP轉為ATP。"],en:["They are accepted by NADP⁺ together with free hydrogen ions in the stroma, forming NADPH for the dark reactions.","They are forced into oxygen molecules taken in through the stomata, joining protons to form harmless neutral water.","After releasing all their energy they return to chlorophyll, exactly filling the gap left when it was excited by light.","They bind directly with free ADP in the cytoplasm, releasing electrical energy that converts ADP to ATP."]}, 0, 3],
+            [ {zh:"炎夏中午植物極度缺水時會發生？",en:"On a hot summer noon when a plant is severely short of water, what happens?"}, {zh:["保衛細胞因失去膨壓變疲軟，氣孔被迫關閉減少水分流失，切斷CO2嚴重減慢光合。","為求自保，葉肉細胞主動將儲存澱粉粒轉化為液態水分子，迅速補充木質部水柱。","深埋泥土根部立刻進行強烈缺氧呼吸產生強大根壓，將地下水強行泵上樹冠葉片。","韌皮部篩管立刻發生逆向運輸，將根部蔗糖迅速反向運往乾燥葉片極端增加滲透壓。"],en:["The guard cells lose turgor and become flaccid, forcing the stomata shut to reduce water loss, which cuts off CO₂ and greatly slows photosynthesis.","To save itself, the mesophyll actively turns stored starch grains into liquid water to top up the xylem column.","The deep roots immediately do vigorous anaerobic respiration to build huge root pressure that pumps groundwater up to the canopy.","The phloem instantly reverses, rapidly sending root sucrose to the dry leaves to raise their osmotic pressure."]}, 0, 3],
+            [ {zh:"韌皮部篩管細胞缺乏細胞核的意義？",en:"Why is it significant that phloem sieve-tube cells lack a nucleus?"}, {zh:["缺乏龐大胞器令內部形成無阻礙空曠管道，極大減低高濃度有機營養液轉運時的阻力。","使得篩管細胞能隨時根據環境變化，自由變換為負責吸水木質部導管或負責光合葉肉。","賦予篩管細胞極強彈性，使其能像動物血管般主動節奏搏動，將樹液強行泵上幾十米。","使得它們變得如同鋼鐵般堅硬，完全取代木質素功能，成為支撐參天大樹唯一主力結構。"],en:["Losing the bulky organelle leaves an unobstructed open channel, greatly reducing resistance to transporting concentrated sap.","It lets the sieve tube freely turn into a water-carrying xylem vessel or photosynthetic mesophyll as conditions change.","It gives the sieve tube great elasticity so it can pulse like an animal blood vessel and pump sap up tens of metres.","It makes them steel-hard, replacing lignin as the sole support structure of a tall tree."]}, 0, 3],
+            [ {zh:"關於百合的鱗莖繁殖，下列哪項微觀結構描述是精確的？",en:"Which microscopic description of lily bulb propagation is accurate?"}, {zh:["由極短的莖及大量肉質鱗片葉組成，鱗片葉儲存豐富養分供頂芽發育為新植株。","由高度木質化的地下莖構成，內部充滿澱粉並透過表皮的氣孔吸收地下水。","是一種由根部特化而成的球狀結構，完全依賴共生真菌提供發芽所需的氮源。","其內部完全中空以儲存大量二氧化碳，確保新植株在泥土中能立刻進行暗反應。"],en:["It consists of a very short stem and many fleshy scale leaves that store food for the terminal bud to grow into a new plant.","It is a heavily lignified underground stem full of starch that absorbs groundwater through epidermal stomata.","It is a ball-shaped structure from specialised roots that relies entirely on symbiotic fungi for nitrogen to germinate.","It is completely hollow to store CO₂ so the new plant can immediately do the dark reactions underground."]}, 0, 3],
+            [ {zh:"非洲紫羅蘭可利用葉片進行扦插繁殖，在切口處最先發生的細胞學變化是甚麼？",en:"An African violet propagates from a leaf cutting — what is the first cell change at the cut?"}, {zh:["切口處的成熟細胞發生脫分化，恢復分裂能力形成癒傷組織，繼而分化出不定根。","切口處立刻進行大量的減數分裂，產生單倍體細胞以適應周圍濕潤的泥土環境。","葉肉細胞內的葉綠體會瞬間轉化為線粒體，以提供極大能量來修復受損的細胞膜。","切口表皮細胞會分泌大量氫氯酸來殺死泥土中的細菌，防止傷口發生嚴重感染。"],en:["Mature cells at the cut dedifferentiate, regain the ability to divide and form callus, then differentiate into adventitious roots.","Cells at the cut immediately undergo mass meiosis, making haploid cells to suit the moist soil.","Chloroplasts in the mesophyll instantly turn into mitochondria to power repair of the damaged membrane.","Epidermal cells at the cut secrete lots of hydrochloric acid to kill soil bacteria and prevent infection."]}, 0, 3],
+            [ {zh:"農民在種植優良品種的水果（如無籽西瓜）時，為何必須採用營養繁殖？",en:"Why must farmers use vegetative propagation for premium fruit like seedless watermelon?"}, {zh:["因為這些水果往往缺乏可育種子，營養繁殖能確保後代百分百保留母本的優良果實特徵。","因為有性生殖產生的花粉含有劇毒，會污染周圍環境並導致農民發生嚴重的過敏反應。","因為營養繁殖能引發植物發生良性突變，使得下一代的果實體積成倍增長且更具甜味。","因為這些植物的氣孔只在夜間打開，無法依賴昆蟲或風力在白天進行正常的授粉作用。"],en:["Such fruits often lack fertile seeds, and vegetative propagation guarantees offspring keep 100% of the parent's superior fruit traits.","The pollen from sexual reproduction is highly toxic, polluting the environment and causing severe allergies in farmers.","Vegetative propagation triggers beneficial mutations that double the next generation's fruit size and sweetness.","Their stomata only open at night, so they cannot be pollinated by insects or wind during the day."]}, 0, 3],
+            [ {zh:"在探究葉片澱粉的實驗中，如沒有先將植物放置於黑暗環境中一段時間（暗處理），會導致甚麼後果？",en:"In a leaf-starch experiment, what happens if the plant is not first de-starched in the dark?"}, {zh:["實驗後測試的結果無法證明澱粉是實驗光照期間產生的，因可能含有實驗前已存在的澱粉。","葉片內會累積過多葉綠素，無法完全用熱酒精溶解，影響碘液測試時的顏色觀察。","植物細胞的呼吸作用會急劇增強，將所有光合作用產生的糖分消耗殆盡，導致無法測出澱粉。","葉片細胞壁會變得極為堅硬，阻礙碘液滲透進入細胞內與澱粉發生反應。"],en:["The result cannot prove the starch was made during the experiment, because starch present beforehand may remain.","Too much chlorophyll builds up and cannot be fully dissolved by hot ethanol, spoiling the iodine colour.","Respiration surges and uses up all the sugar made by photosynthesis, so no starch can be detected.","The cell walls become extremely hard, stopping iodine from reaching the starch inside."]}, 0, 3],
+            [ {zh:"未受控制的糖尿病患者尿液中會出現大量葡萄糖。這現象背後的腎臟生理學原因是甚麼？",en:"An uncontrolled diabetic has much glucose in the urine. What is the kidney-physiology reason?"}, {zh:["超微過濾後的葡萄糖濃度，遠超近曲小管(PCT)載體蛋白質的絕對重吸收極限。","長期高血糖嚴重腐蝕鮑氏囊脆弱微血管，令體積過大不該被濾出的葡萄糖大量漏出。","腎臟為優先保護大腦細胞免受高滲透壓破壞，主動消耗ATP將血液葡萄糖強行泵入尿中。","膀胱內壁上皮細胞突然發生基因突變，完全失去儲存糖原能力，導致儲存的糖分洩漏。"],en:["After ultrafiltration the glucose concentration far exceeds the reabsorption limit of the carrier proteins in the proximal convoluted tubule.","Chronic high blood sugar corrodes the fragile capillaries of Bowman's capsule, so oversized glucose leaks out.","To protect brain cells from high osmotic pressure, the kidney uses ATP to actively pump blood glucose into the urine.","Epithelial cells of the bladder mutate and lose the ability to store glycogen, leaking their stored sugar."]}, 0, 3],
+            [ {zh:"胰島素過度分泌（例如錯誤注射過量胰島素）會引發極危險的「胰島素休克」。這對大腦有何影響？",en:"Excess insulin (e.g. an overdose) causes dangerous 'insulin shock'. How does it affect the brain?"}, {zh:["血糖急劇暴跌，腦細胞因完全依賴葡萄糖作唯一能量來源而迅速耗盡ATP，引發腦死亡。","令大腦細胞因短時間內吸收過多游離糖分而急速膨脹，導致細胞膜無法承受水勢而爆裂。","使大腦內部密集微血管瞬間被大量合成的糖原晶體徹底且永久堵塞，引發嚴重缺血中風。","強制大腦皮層運動神經元產生極度混亂的逆向電流，將海馬體內所有長期記憶瞬間刪除。"],en:["Blood sugar crashes, and brain cells — which rely on glucose as their only energy source — rapidly run out of ATP, causing brain death.","Brain cells absorb too much free sugar too fast and swell until their membranes burst under the water pressure.","The dense capillaries in the brain are instantly and permanently blocked by glycogen crystals, causing an ischaemic stroke.","It forces cortical motor neurons to fire chaotic reverse currents that instantly delete all long-term memory in the hippocampus."]}, 0, 3]
         ];
 
         let wrongAnswers = [];
         let GP = 50, MQ = 36;
         let cPos = 0, score = 0, cQIdx = 0, qPlay = [], cDiff = '';
+        let answered = false;
 
         const mS = document.getElementById('menuScreen');
         const gS = document.getElementById('gameScreen');
@@ -333,16 +366,23 @@
             return a;
         }
 
+        function goalStr(){ return LANG==='zh' ? `目標：${GP} 米` : `Goal: ${GP} m`; }
+        function diffText(d){
+            if(d===1) return LANG==='zh' ? '難度: 基礎 (Level 1)' : 'Difficulty: Basic (Level 1)';
+            if(d===2) return LANG==='zh' ? '難度: 進階 (Level 2)' : 'Difficulty: Intermediate (Level 2)';
+            return LANG==='zh' ? '難度: 挑戰 (Level 3)' : 'Difficulty: Challenge (Level 3)';
+        }
+
         function startGame(m) {
             cDiff = m;
             wrongAnswers = [];
-            
+
             const goalEl = document.getElementById('goalText');
-            
+
             let level1 = fullQB.filter(q => q[3] === 1);
             let level2 = fullQB.filter(q => q[3] === 2);
             let level3 = fullQB.filter(q => q[3] === 3);
-            
+
             level1 = shuffle(level1);
             level2 = shuffle(level2);
             level3 = shuffle(level3);
@@ -350,28 +390,22 @@
             qPlay = [];
 
             if (m === 'beginner') {
-                GP = 20; 
-                if (goalEl) goalEl.innerText = "目標：20 米";
-                // 幼苗篇：全部使用基礎 Level 1 短題
+                GP = 20;
                 qPlay = level1.slice(0, MQ);
                 while (qPlay.length < MQ) { qPlay = qPlay.concat(shuffle(level1)); }
                 qPlay = qPlay.slice(0, MQ);
-            } 
+            }
             else if (m === 'intermediate') {
-                GP = 40; 
-                if (goalEl) goalEl.innerText = "目標：40 米";
-                // 成長篇：前半(18題)基礎進階，後半(18題)地獄挑戰
+                GP = 40;
                 let half = Math.floor(MQ / 2);
                 let p1 = shuffle([...level1.slice(0, 10), ...level2.slice(0, 10)]);
                 let p2 = level3.slice(0, MQ - half);
                 while (p1.length < half) { p1 = p1.concat(shuffle([...level1, ...level2])); }
                 while (p2.length < (MQ - half)) { p2 = p2.concat(shuffle(level3)); }
                 qPlay = [...p1.slice(0, half), ...p2.slice(0, MQ - half)];
-            } 
+            }
             else {
-                GP = 50; 
-                if (goalEl) goalEl.innerText = "目標：50 米";
-                // 大樹篇：極短熱身(前8題 L1)，後續全為地獄高難度 L3 (28題)
+                GP = 50;
                 let easyCount = 8;
                 let hardCount = MQ - easyCount;
                 let p1 = level1.slice(0, easyCount);
@@ -380,10 +414,12 @@
                 while (p2.length < hardCount) { p2 = p2.concat(shuffle(level3)); }
                 qPlay = [...p1.slice(0, easyCount), ...p2.slice(0, hardCount)];
             }
-            
+
+            if (goalEl) goalEl.innerText = goalStr();
+
             cPos = score = cQIdx = 0;
             if (fTxt) fTxt.innerText = GP;
-            
+
             mS.classList.add('hidden'); vS.classList.add('hidden'); dS.classList.add('hidden'); nBtnCon.classList.add('hidden');
             gS.classList.remove('hidden'); gS.classList.add('flex');
             updateUI(); loadQ();
@@ -396,39 +432,42 @@
         }
 
         function loadQ() {
-            nBtnCon.classList.add('hidden'); 
+            answered = false;
+            nBtnCon.classList.add('hidden');
             const q = qPlay[cQIdx];
             if(qNum) qNum.innerText = `${cQIdx + 1} / ${MQ}`;
-            if(qTxt) qTxt.innerText = q[0];
-            
+            if(qTxt) qTxt.innerText = L(q[0]);
+
             const dBad = document.getElementById('difficultyBadge');
-            let dcls="", dtxt="";
-            if(q[3]===1){ dcls="bg-green-50 text-green-700 border-green-200"; dtxt="難度: 基礎 (Level 1)"; }
-            else if(q[3]===2){ dcls="bg-yellow-50 text-yellow-700 border-yellow-200"; dtxt="難度: 進階 (Level 2)"; }
-            else { dcls="bg-red-50 text-red-700 border-red-200"; dtxt="難度: 挑戰 (Level 3)"; }
-            
+            let dcls="";
+            if(q[3]===1){ dcls="bg-green-50 text-green-700 border-green-200"; }
+            else if(q[3]===2){ dcls="bg-yellow-50 text-yellow-700 border-yellow-200"; }
+            else { dcls="bg-red-50 text-red-700 border-red-200"; }
+
             if(dBad) {
                 dBad.className = `text-xs font-bold px-2 py-1 rounded shadow-sm border ${dcls}`;
-                dBad.innerText = dtxt;
+                dBad.innerText = diffText(q[3]);
             }
 
             if(oCon) {
                 oCon.innerHTML = '';
-                let opts = q[1].map((text, index) => ({ text, isCorrect: index === q[2] }));
+                let opts = L(q[1]).map((text, index) => ({ oi: index, isCorrect: index === q[2] }));
                 opts = shuffle(opts);
-                
+
                 opts.forEach((o, i) => {
                     const b = document.createElement('button');
                     b.className = "option-btn w-full text-left bg-white border-2 border-gray-200 py-4 px-6 shadow-sm disabled:opacity-80";
-                    b.innerHTML = `<div class="flex items-start"><span class="font-black text-green-600 mr-4 text-xl">${String.fromCharCode(65+i)}.</span> <span class="leading-relaxed text-sm md:text-base font-medium">${o.text}</span></div>`;
+                    b.dataset.oi = o.oi;
+                    b.innerHTML = `<div class="flex items-start"><span class="font-black text-green-600 mr-4 text-xl">${String.fromCharCode(65+i)}.</span> <span class="opt-text leading-relaxed text-sm md:text-base font-medium">${L(q[1])[o.oi]}</span></div>`;
                     if(o.isCorrect) { b.dataset.correct = "true"; }
-                    b.onclick = () => checkAns(o.isCorrect, b, q, o.text);
+                    b.onclick = () => checkAns(o.isCorrect, b, q, o.oi);
                     oCon.appendChild(b);
                 });
             }
         }
 
-        function checkAns(isCorrect, el, originalQ, userText) {
+        function checkAns(isCorrect, el, originalQ, userIdx) {
+            answered = true;
             const bs = oCon.querySelectorAll('button');
             bs.forEach(b => b.disabled = true);
 
@@ -438,24 +477,24 @@
                 score += 2; cPos += 2;
                 showFT("+2", "text-green-500");
                 updateUI();
-                setTimeout(nextTurn, 1000); 
+                setTimeout(nextTurn, 1000);
             } else {
-                wrongAnswers.push({ q: originalQ[0], userOpt: userText, correctOpt: originalQ[1][originalQ[2]] });
-                
+                wrongAnswers.push({ qRef: originalQ, userIdx: userIdx });
+
                 el.classList.remove('bg-white', 'border-gray-200');
                 el.classList.add('border-red-500', 'bg-red-50', 'ring-2', 'ring-red-400');
-                
+
                 bs.forEach((b) => {
                     if(b.dataset.correct === "true") {
                          b.classList.remove('bg-white', 'border-gray-200');
                          b.classList.add('border-green-500', 'bg-green-50', 'ring-2', 'ring-green-400');
                     }
                 });
-                
+
                 score -= 1; cPos -= 1; if(cPos < 0) cPos = 0;
                 showFT("-1", "text-red-500");
                 updateUI();
-                nBtnCon.classList.remove('hidden'); 
+                nBtnCon.classList.remove('hidden');
             }
         }
 
@@ -471,8 +510,8 @@
         function updateUI() {
             if(sDisp) sDisp.innerText = score;
             const pTextEl = document.getElementById('progressText');
-            if(pTextEl) pTextEl.innerText = `目前高度: ${cPos} / ${GP} 米`;
-            let pct = (cPos / GP) * 85; if(pct > 85) pct = 85; 
+            if(pTextEl) pTextEl.innerText = LANG==='zh' ? `目前高度: ${cPos} / ${GP} 米` : `Height: ${cPos} / ${GP} m`;
+            let pct = (cPos / GP) * 85; if(pct > 85) pct = 85;
             if(player) player.style.left = `${pct}%`;
 
             if(plantEmoji) {
@@ -498,21 +537,28 @@
         function renderMistakes(containerId) {
             const container = document.getElementById(containerId);
             if(!container) return;
-            
+
             if (wrongAnswers.length === 0) {
-                container.innerHTML = '<div class="text-center py-4"><p class="text-green-600 font-black text-xl mb-2">🎉 完美通關！</p><p class="text-gray-600 font-medium">你沒有答錯任何一題，概念極度扎實！</p></div>';
+                container.innerHTML = LANG==='zh'
+                    ? '<div class="text-center py-4"><p class="text-green-600 font-black text-xl mb-2">🎉 完美通關！</p><p class="text-gray-600 font-medium">你沒有答錯任何一題，概念極度扎實！</p></div>'
+                    : '<div class="text-center py-4"><p class="text-green-600 font-black text-xl mb-2">🎉 Perfect run!</p><p class="text-gray-600 font-medium">You got every question right — rock-solid concepts!</p></div>';
                 return;
             }
-            
-            let html = `<h3 class="text-lg font-black text-gray-800 mb-3 border-b-2 border-gray-200 pb-2 flex items-center justify-between"><span>📝 答錯題目概念回顧</span><span class="text-sm text-red-500 bg-red-100 px-2 py-1 rounded-full">共錯 ${wrongAnswers.length} 題</span></h3><div class="space-y-4">`;
-            
+
+            const head = LANG==='zh' ? '📝 答錯題目概念回顧' : '📝 Review of missed concepts';
+            const countLabel = LANG==='zh' ? `共錯 ${wrongAnswers.length} 題` : `${wrongAnswers.length} wrong`;
+            let html = `<h3 class="text-lg font-black text-gray-800 mb-3 border-b-2 border-gray-200 pb-2 flex items-center justify-between"><span>${head}</span><span class="text-sm text-red-500 bg-red-100 px-2 py-1 rounded-full">${countLabel}</span></h3><div class="space-y-4">`;
+
+            const yourLabel = LANG==='zh' ? '你的答案:' : 'Your answer:';
+            const rightLabel = LANG==='zh' ? '✓ 正確概念:' : '✓ Correct concept:';
             wrongAnswers.forEach((item) => {
+                const q = item.qRef;
                 html += `
                     <div class="bg-red-50/50 p-4 rounded-xl border border-red-100">
-                        <p class="font-bold text-gray-800 mb-2 leading-relaxed"><span class="text-red-500 mr-1">Q:</span>${item.q}</p>
+                        <p class="font-bold text-gray-800 mb-2 leading-relaxed"><span class="text-red-500 mr-1">Q:</span>${L(q[0])}</p>
                         <div class="space-y-2 text-sm">
-                            <p class="text-gray-600 line-through decoration-red-400 decoration-2"><span class="font-bold text-gray-700 mr-1">你的答案:</span> ${item.userOpt}</p>
-                            <p class="text-green-800 font-bold bg-green-100 p-2 rounded-md border border-green-300"><span class="mr-1">✓ 正確概念:</span> ${item.correctOpt}</p>
+                            <p class="text-gray-600 line-through decoration-red-400 decoration-2"><span class="font-bold text-gray-700 mr-1">${yourLabel}</span> ${L(q[1])[item.userIdx]}</p>
+                            <p class="text-green-800 font-bold bg-green-100 p-2 rounded-md border border-green-300"><span class="mr-1">${rightLabel}</span> ${L(q[1])[q[2]]}</p>
                         </div>
                     </div>
                 `;
@@ -536,6 +582,50 @@
             renderMistakes('mistakesListDef');
             if(dS) dS.classList.remove('hidden');
         }
+
+        /* ---- Theme & Language toggles ---- */
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+
+        function retranslateQuestion() {
+            if(gS.classList.contains('hidden')) return;
+            const q = qPlay[cQIdx];
+            if(!q) return;
+            if(qTxt) qTxt.innerText = L(q[0]);
+            const dBad = document.getElementById('difficultyBadge');
+            if(dBad) dBad.innerText = diffText(q[3]);
+            // Re-translate each option in place (keeps shuffle order and answered state)
+            oCon.querySelectorAll('button').forEach(b=>{
+                const oi = parseInt(b.dataset.oi);
+                const span = b.querySelector('.opt-text');
+                if(span) span.innerText = L(q[1])[oi];
+            });
+        }
+
+        function toggleLang(){
+            LANG = LANG === 'zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = LANG === 'zh' ? 'EN' : '中';
+            document.querySelectorAll('[data-zh][data-en]').forEach(el=>{
+                el.textContent = el.getAttribute(LANG === 'zh' ? 'data-zh' : 'data-en');
+            });
+            document.querySelectorAll('.lang-zh').forEach(el=>{ el.style.display = LANG === 'zh' ? '' : 'none'; });
+            document.querySelectorAll('.lang-en').forEach(el=>{ el.style.display = LANG === 'en' ? '' : 'none'; });
+
+            const goalEl = document.getElementById('goalText');
+            if(goalEl && !gS.classList.contains('hidden')) goalEl.innerText = goalStr();
+            updateUI();
+            retranslateQuestion();
+            if(!vS.classList.contains('hidden')) renderMistakes('mistakesListVic');
+            if(!dS.classList.contains('hidden')) renderMistakes('mistakesListDef');
+
+            if(window.lucide) lucide.createIcons();
+        }
+
+        if(window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>
