@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSL／HTTPS 握手 · SSL Handshake</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .msg{ padding:8px 12px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;opacity:0;transform:translateY(8px);transition:all .4s; max-width:85%; }
+ .msg.show{ opacity:1;transform:none; }
+ .msg.c2s{ align-self:flex-start;background:color-mix(in srgb,#3b82f6 14%,transparent);border:1px solid #3b82f6; }
+ .msg.s2c{ align-self:flex-end;background:color-mix(in srgb,var(--ac) 14%,transparent);border:1px solid var(--ac);text-align:right; }
+ .msg.sys{ align-self:center;background:color-mix(in srgb,#10b981 14%,transparent);border:1px solid #10b981;text-align:center; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-3xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.20</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">SSL／HTTPS 握手</span><span class="lang-en hidden">SSL Handshake</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · HTTPS Security</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="flex justify-between mono text-xs mb-3">
+      <span class="bp-btn" style="cursor:default;border-color:#3b82f6">💻 <span class="lang-zh">客戶端 Browser</span><span class="lang-en hidden">Client (Browser)</span></span>
+      <span class="bp-btn" style="cursor:default;border-color:var(--ac)"><span class="lang-zh">伺服器 Server</span><span class="lang-en hidden">Server</span> 🗄</span>
+    </div>
+
+    <div id="chat" class="bp-panel rounded p-4 flex flex-col gap-2 min-h-[300px]"></div>
+
+    <div class="flex gap-2 mt-4">
+      <button onclick="stepFwd()" id="stepbtn" class="bp-btn" style="border-color:var(--ac)"><i data-lucide="step-forward" width="14" height="14"></i><span class="lang-zh">下一步</span><span class="lang-en hidden">Next step</span></button>
+      <button onclick="play()" class="bp-btn"><i data-lucide="play" width="14" height="14"></i><span class="lang-zh">自動播放</span><span class="lang-en hidden">Auto</span></button>
+      <button onclick="reset()" class="bp-btn"><i data-lucide="rotate-ccw" width="13" height="13"></i><span class="lang-zh">重設</span><span class="lang-en hidden">Reset</span></button>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">SSL/TLS 握手</b>結合兩種加密:先用<b>公鑰</b>安全地交換一把<b>對稱工作階段密鑰</b>,之後所有資料用該對稱密鑰加密 (快)。伺服器的<b>數碼證書</b>證明其身分。完成後,網址列出現 🔒 (HTTPS)。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">The SSL/TLS handshake</b> combines both cryptography types: it uses <b>public-key</b> to safely exchange a <b>symmetric session key</b>, then encrypts all data with that fast symmetric key. The server's <b>digital certificate</b> proves its identity. When done, the address bar shows 🔒 (HTTPS).</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();rerender();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const STEPS=[
+    {dir:'c2s',zh:'Client Hello：我支援這些加密算法,這是我的隨機數',en:'Client Hello: here are my supported ciphers + a random number'},
+    {dir:'s2c',zh:'Server Hello：選用這個算法,這是我的隨機數',en:'Server Hello: chosen cipher + my random number'},
+    {dir:'s2c',zh:'📜 傳送數碼證書 (內含伺服器公鑰,由 CA 簽發)',en:'📜 Send digital certificate (server public key, signed by a CA)'},
+    {dir:'c2s',zh:'✓ 用 CA 驗證證書真確 → 產生工作階段密鑰,用伺服器公鑰加密後送出',en:'✓ Verify cert via CA → generate a session key, encrypt it with the server public key, send'},
+    {dir:'s2c',zh:'用私鑰解出工作階段密鑰。雙方現共用同一把對稱密鑰',en:'Decrypt the session key with the private key. Both now share the same symmetric key'},
+    {dir:'sys',zh:'🔒 握手完成！之後所有資料用對稱工作階段密鑰加密傳送 (HTTPS)',en:'🔒 Handshake complete! All further data is encrypted with the symmetric session key (HTTPS)'},
+  ];
+  let idx=-1, timer=null;
+  function rerender(){
+    $('chat').innerHTML='';
+    for(let i=0;i<=idx;i++){ const st=STEPS[i]; const d=document.createElement('div'); d.className='msg '+st.dir+' show';
+      d.innerHTML=`<span class="text-slate-400">${String(i+1).padStart(2,'0')}</span> ${__lang==='zh'?st.zh:st.en}`; $('chat').appendChild(d); }
+  }
+  function stepFwd(){ if(idx>=STEPS.length-1) return; idx++; const st=STEPS[idx]; const d=document.createElement('div'); d.className='msg '+st.dir;
+    d.innerHTML=`<span class="text-slate-400">${String(idx+1).padStart(2,'0')}</span> ${__lang==='zh'?st.zh:st.en}`; $('chat').appendChild(d); requestAnimationFrame(()=>d.classList.add('show')); }
+  function reset(){ if(timer){clearInterval(timer);timer=null;} idx=-1; $('chat').innerHTML=`<div class="text-slate-400 mono text-xs text-center py-10">${__lang==='zh'?'按「下一步」或「自動播放」開始握手…':'Press Next or Auto to start the handshake…'}</div>`; }
+  function play(){ reset(); $('chat').innerHTML=''; timer=setInterval(()=>{ if(idx>=STEPS.length-1){clearInterval(timer);timer=null;return;} stepFwd(); },1100); }
+  window.stepFwd=stepFwd; window.reset=reset; window.play=play; window.rerender=rerender;
+  reset();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

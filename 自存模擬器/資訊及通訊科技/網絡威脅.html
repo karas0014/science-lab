@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>網絡威脅與防護 · Network Threats &amp; Defenses</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .def{ cursor:pointer;transition:all .2s; } .def.on{ border-color:#10b981;background:color-mix(in srgb,#10b981 12%,transparent); }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-5xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.22</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">網絡威脅與防護</span><span class="lang-en hidden">Network Threats &amp; Defenses</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Security</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">① 選擇一種威脅</span><span class="lang-en hidden">① Pick a threat</span></div>
+    <div class="flex flex-wrap gap-2 mb-4" id="threatbtns"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bp-panel rounded p-4">
+        <h3 id="t-title" class="serif-font font-bold text-lg mb-1" style="color:var(--ac)"></h3>
+        <p id="t-how" class="text-sm text-slate-600 dark:text-slate-300 mb-2"></p>
+        <div class="mono text-[11px] text-amber-500" id="t-risk"></div>
+      </div>
+      <div>
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">② 開啟防護措施</span><span class="lang-en hidden">② Enable defenses</span></div>
+        <div class="grid grid-cols-2 gap-2" id="defbtns"></div>
+        <div id="status" class="mt-3 rounded p-3 mono text-center font-bold text-sm"></div>
+      </div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">縱深防禦：</b>沒有單一措施能擋所有威脅。<b>防火牆</b>過濾流量、<b>防毒軟件</b>偵測惡意程式、<b>定期更新</b>修補漏洞、<b>備份</b>對抗勒索軟件、<b>WPA</b> 保護 Wi-Fi、<b>VPN</b> 加密連線、<b>用戶警覺</b>防釣魚。組合使用才安全。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">Defence in depth:</b> no single measure stops every threat. A <b>firewall</b> filters traffic, <b>antivirus</b> detects malware, <b>updates</b> patch holes, <b>backups</b> beat ransomware, <b>WPA</b> secures Wi-Fi, a <b>VPN</b> encrypts the link, and <b>user awareness</b> stops phishing. Layer them for real security.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();renderThreat();renderStatus();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const DEFS={ firewall:['防火牆','Firewall'], antivirus:['防毒軟件','Antivirus'], updates:['定期更新','Updates'], backup:['資料備份','Backups'], wpa:['WPA Wi-Fi','WPA Wi-Fi'], vpn:['VPN','VPN'], aware:['用戶警覺','User awareness'] };
+  const THREATS={
+    virus:{zh:'電腦病毒 Virus',en:'Virus',hz:'附著在檔案/程式上,執行時感染其他檔案,需用戶執行才擴散。',he:'Attaches to files/programs; spreads by infecting others when the user runs it.',rz:'破壞或刪除檔案、拖慢系統',re:'Corrupts/deletes files, slows the system',fix:['antivirus','updates']},
+    worm:{zh:'蠕蟲 Worm',en:'Worm',hz:'自我複製,經網絡自動擴散,無需用戶執行。',he:'Self-replicates and spreads across the network automatically, no user action needed.',rz:'耗盡網絡頻寬、快速大規模感染',re:'Exhausts bandwidth, rapid mass infection',fix:['firewall','antivirus','updates']},
+    trojan:{zh:'木馬 Trojan',en:'Trojan',hz:'偽裝成有用軟件誘使安裝,暗中開後門。',he:'Disguised as useful software to trick installation, secretly opening a backdoor.',rz:'讓攻擊者遠端控制、竊取資料',re:'Lets attackers control remotely, steal data',fix:['antivirus','aware']},
+    spyware:{zh:'間諜軟件 Spyware',en:'Spyware',hz:'暗中監視使用者,記錄按鍵、瀏覽紀錄。',he:'Secretly monitors the user, logging keystrokes and browsing.',rz:'洩露密碼、私隱',re:'Leaks passwords and privacy',fix:['antivirus','aware']},
+    ransomware:{zh:'勒索軟件 Ransomware',en:'Ransomware',hz:'加密受害者檔案,勒索贖金換取解密。',he:'Encrypts the victim\'s files and demands a ransom to decrypt.',rz:'資料被鎖、無法存取',re:'Files locked, data inaccessible',fix:['backup','antivirus','aware']},
+    dos:{zh:'拒絕服務 DoS',en:'DoS attack',hz:'以海量請求淹沒伺服器,令合法用戶無法使用。',he:'Floods a server with massive requests so legitimate users cannot access it.',rz:'服務癱瘓、網站停擺',re:'Service outage, site down',fix:['firewall']},
+    phishing:{zh:'釣魚/仿冒 Phishing',en:'Phishing',hz:'偽冒可信機構的郵件/網站,誘騙提供帳密。',he:'Fake emails/sites impersonating trusted bodies to trick you into giving credentials.',rz:'帳戶被盜、金錢損失',re:'Account theft, financial loss',fix:['aware']},
+  };
+  let cur='virus', on={};
+  Object.keys(DEFS).forEach(k=>on[k]=false);
+
+  function renderThreat(){
+    const t=THREATS[cur];
+    $('t-title').textContent=__lang==='zh'?t.zh:t.en;
+    $('t-how').textContent=__lang==='zh'?t.hz:t.he;
+    $('t-risk').textContent=(__lang==='zh'?'⚠ 風險：':'⚠ Risk: ')+(__lang==='zh'?t.rz:t.re);
+    // highlight recommended defenses
+    document.querySelectorAll('#defbtns .def').forEach(el=>{ el.style.outline = t.fix.includes(el.dataset.k)?'1px dashed var(--ac)':''; });
+  }
+  function renderStatus(){
+    const t=THREATS[cur];
+    const covered=t.fix.some(f=>on[f]); const allKey=t.fix.every(f=>on[f]);
+    const s=$('status');
+    if(allKey){ s.style.background='rgba(16,185,129,.14)';s.style.color='#10b981'; s.textContent=__lang==='zh'?'✓ 已充分防護此威脅':'✓ Well protected against this threat'; }
+    else if(covered){ s.style.background='rgba(245,158,11,.14)';s.style.color='#f59e0b'; s.textContent=__lang==='zh'?'△ 部分防護 — 仍缺關鍵措施':'△ Partly protected — a key measure is missing'; }
+    else { s.style.background='rgba(239,68,68,.14)';s.style.color='#ef4444'; s.textContent=__lang==='zh'?'✗ 易受攻擊 — 開啟建議的防護 (虛線標示)':'✗ Vulnerable — enable the recommended defenses (dashed)'; }
+  }
+  window.renderThreat=renderThreat; window.renderStatus=renderStatus;
+
+  const tb=$('threatbtns');
+  Object.keys(THREATS).forEach(k=>{ const b=document.createElement('button'); b.className='bp-btn';
+    b.innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${THREATS[k].zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${THREATS[k].en}</span>`;
+    b.onclick=()=>{ cur=k; tb.querySelectorAll('button').forEach(x=>x.style.borderColor=''); b.style.borderColor='var(--ac)'; renderThreat(); renderStatus(); };
+    tb.appendChild(b);
+  });
+  tb.querySelector('button').style.borderColor='var(--ac)';
+
+  const db=$('defbtns');
+  Object.keys(DEFS).forEach(k=>{ const b=document.createElement('div'); b.className='def bp-panel rounded p-2 mono text-xs text-center'; b.dataset.k=k;
+    b.innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${DEFS[k][0]}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${DEFS[k][1]}</span>`;
+    b.onclick=()=>{ on[k]=!on[k]; b.classList.toggle('on',on[k]); renderStatus(); };
+    db.appendChild(b);
+  });
+  renderThreat(); renderStatus();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

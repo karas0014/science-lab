@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>數碼簽署與 PKI · Digital Signature &amp; PKI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ textarea.numin{ background:transparent;border:1px solid #c3ccd8;border-radius:6px;padding:8px 12px;font-family:'Noto Sans HK',sans-serif;width:100%;resize:none; } body.dark textarea.numin{ border-color:#2c3e57;color:#e2e8f0; }
+ textarea.numin:focus{ outline:none;border-color:var(--ac); }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.19</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">數碼簽署與 PKI</span><span class="lang-en hidden">Digital Signature &amp; PKI</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Authentication</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <!-- Alice signs -->
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[11px] tracking-wider uppercase mb-2" style="color:var(--ac)">Alice ✍ <span class="lang-zh">簽署</span><span class="lang-en hidden">signs</span></div>
+        <label class="mono text-[10px] text-slate-400"><span class="lang-zh">① 文件</span><span class="lang-en hidden">① Document</span></label>
+        <textarea id="doc" rows="3" class="numin mt-1" oninput="onDoc()">Transfer $500 to Bob.</textarea>
+        <div class="mt-2 mono text-xs space-y-1">
+          <div><span class="text-slate-400"><span class="lang-zh">② 雜湊 hash</span><span class="lang-en hidden">② hash</span></span> = <b id="a-hash" style="color:#3b82f6"></b></div>
+          <div><span class="text-slate-400"><span class="lang-zh">③ 用 Alice 私鑰簽署</span><span class="lang-en hidden">③ sign w/ private key</span></span> = <b id="a-sig" style="color:#f59e0b"></b></div>
+        </div>
+        <button onclick="sign()" class="bp-btn mt-3" style="border-color:var(--ac)"><i data-lucide="pen-tool" width="13" height="13"></i><span class="lang-zh">簽署並傳送</span><span class="lang-en hidden">Sign &amp; send</span></button>
+      </div>
+
+      <!-- Bob verifies -->
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[11px] tracking-wider uppercase mb-2" style="color:#10b981">Bob 🔍 <span class="lang-zh">驗證</span><span class="lang-en hidden">verifies</span></div>
+        <div class="mono text-xs space-y-1">
+          <div><span class="text-slate-400"><span class="lang-zh">④ 收到的文件雜湊</span><span class="lang-en hidden">④ hash of received doc</span></span> = <b id="b-hash" style="color:#3b82f6">–</b></div>
+          <div><span class="text-slate-400"><span class="lang-zh">⑤ 用 Alice 公鑰解簽署</span><span class="lang-en hidden">⑤ decrypt sig w/ public key</span></span> = <b id="b-dec" style="color:#f59e0b">–</b></div>
+        </div>
+        <div id="verdict" class="mt-3 rounded p-3 mono text-center font-bold text-sm">–</div>
+        <label class="mono text-xs flex items-center gap-2 cursor-pointer mt-3"><input type="checkbox" id="tamper" onchange="onDoc()"><span class="lang-zh">傳送途中竄改文件</span><span class="lang-en hidden">Tamper with the document in transit</span></label>
+        <div id="tampered" class="mono text-[11px] text-red-500 mt-1"></div>
+      </div>
+    </div>
+
+    <!-- CA / PKI -->
+    <div class="bp-panel rounded p-4 mt-4">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">但怎知 Alice 的公鑰是真的？ — 證書機構 (CA) / PKI</span><span class="lang-en hidden">But how do we trust Alice's public key? — Certificate Authority (CA) / PKI</span></div>
+      <div class="flex items-center justify-center gap-3 flex-wrap mono text-xs">
+        <span class="bp-btn" style="cursor:default">🏛 CA <span class="lang-zh">(如香港郵政 e-Cert / HK PKI)</span><span class="lang-en hidden">(e.g. Hongkong Post e-Cert / HK PKI)</span></span>
+        <i data-lucide="arrow-right" width="16"></i>
+        <span class="bp-btn" style="cursor:default;border-color:#10b981">📜 <span class="lang-zh">數碼證書</span><span class="lang-en hidden">Digital Certificate</span></span>
+        <i data-lucide="arrow-right" width="16"></i>
+        <span class="bp-btn" style="cursor:default"><span class="lang-zh">綁定「Alice ↔ 其公鑰」</span><span class="lang-en hidden">binds "Alice ↔ her public key"</span></span>
+      </div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">數碼簽署</b>反過來用鑰匙:Alice 用<b>私鑰</b>簽署文件的雜湊,任何人用她的<b>公鑰</b>驗證。若文件被改,雜湊不符 → 簽署無效,證明<b>來源真確 (認證)</b> 與<b>完整性</b>。<b>CA</b> 簽發數碼證書,擔保某公鑰確屬某人,構成公開密碼匙基礎建設 (PKI)。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">A digital signature</b> uses the keys the other way: Alice signs the document's hash with her <b>private key</b>; anyone verifies with her <b>public key</b>. If the document is altered, the hashes differ → invalid signature, proving <b>authenticity</b> and <b>integrity</b>. A <b>CA</b> issues digital certificates guaranteeing a public key really belongs to a person — this is Public Key Infrastructure (PKI).</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();verify();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  function modpow(b,e,m){ let r=1;b%=m;while(e>0){if(e&1)r=(r*b)%m;e>>=1;b=(b*b)%m;}return r; }
+  const N=187,E=7,D=23;
+  function hash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))%N; return h; }
+  let signature=null, signedDoc=null;
+
+  function onDoc(){ $('a-hash').textContent=hash($('doc').value); if(signature!==null) verify(); }
+  function sign(){ signedDoc=$('doc').value; const h=hash(signedDoc); signature=modpow(h,D,N); $('a-hash').textContent=h; $('a-sig').textContent=signature; verify(); }
+  function verify(){
+    if(signature===null){ $('a-sig').textContent='–'; return; }
+    // received document (possibly tampered)
+    let recv=signedDoc;
+    if($('tamper').checked){ recv=signedDoc.replace(/\$?\d+/,'$9000'); if(recv===signedDoc) recv=signedDoc+' (X)'; $('tampered').textContent=(__lang==='zh'?'竄改後：':'tampered → ')+recv; }
+    else $('tampered').textContent='';
+    const hRecv=hash(recv);
+    const hFromSig=modpow(signature,E,N);
+    $('b-hash').textContent=hRecv; $('b-dec').textContent=hFromSig;
+    const ok=hRecv===hFromSig;
+    const v=$('verdict');
+    if(ok){ v.style.background='rgba(16,185,129,.14)';v.style.color='#10b981'; v.textContent=(__lang==='zh'?'✓ 簽署有效 — 來源真確且未被竄改':'✓ Valid — authentic and untampered'); }
+    else { v.style.background='rgba(239,68,68,.15)';v.style.color='#ef4444'; v.textContent=(__lang==='zh'?'✗ 簽署無效 — 文件被竄改或非 Alice 所簽':'✗ Invalid — document altered or not signed by Alice'); }
+  }
+  window.onDoc=onDoc; window.sign=sign; window.verify=verify;
+  onDoc();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

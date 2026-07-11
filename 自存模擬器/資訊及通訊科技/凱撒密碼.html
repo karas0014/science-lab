@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>凱撒密碼遊樂場 · Caesar Cipher Playground</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ input.numin{ background:transparent;border:1px solid #c3ccd8;border-radius:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace;letter-spacing:.08em; } body.dark input.numin{ border-color:#2c3e57;color:#e2e8f0; }
+ input.numin:focus{ outline:none;border-color:var(--ac); }
+ input[type=range]{ -webkit-appearance:none;width:100%;height:4px;background:#c3ccd8;border-radius:2px; } body.dark input[type=range]{ background:#2c3e57; }
+ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none;height:18px;width:18px;border-radius:4px;background:#fff;border:2px solid var(--ac);cursor:pointer; }
+ .let{ display:inline-flex;width:1.35rem;height:1.6rem;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;border-radius:3px; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.21</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">凱撒密碼遊樂場</span><span class="lang-en hidden">Caesar Cipher Playground</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Encryption Basics</span>
+  </div>
+
+  <div class="p-5 sm:p-8">
+    <label class="mono text-[11px] uppercase text-slate-400 block mb-1"><span class="lang-zh">明文 / 密文</span><span class="lang-en hidden">Plain / cipher text</span></label>
+    <input id="txt" class="numin w-full uppercase" value="HELLO WORLD" oninput="render()">
+
+    <div class="flex items-center gap-4 my-5">
+      <span class="mono text-xs whitespace-nowrap text-slate-400"><span class="lang-zh">位移量</span><span class="lang-en hidden">Shift</span></span>
+      <input id="shift" type="range" min="0" max="25" value="3" oninput="render()" class="flex-grow">
+      <span id="shiftv" class="mono font-bold text-lg" style="color:var(--ac)">3</span>
+    </div>
+
+    <div class="bp-panel rounded p-4 text-center mb-4">
+      <div class="mono text-[10px] uppercase text-slate-400 mb-1"><span class="lang-zh">加密輸出 (→ 位移)</span><span class="lang-en hidden">Encrypted (→ shift)</span></div>
+      <div id="out" class="mono text-xl font-bold break-all" style="color:#f59e0b"></div>
+    </div>
+
+    <!-- alphabet mapping -->
+    <div class="bp-panel rounded p-4 overflow-x-auto">
+      <div class="mono text-[10px] uppercase text-slate-400 mb-2"><span class="lang-zh">字母對應表</span><span class="lang-en hidden">Substitution mapping</span></div>
+      <div id="mapplain" class="flex flex-nowrap gap-0.5 min-w-max"></div>
+      <div class="text-center my-1 text-slate-400"><i data-lucide="arrow-down" width="14"></i></div>
+      <div id="mapcipher" class="flex flex-nowrap gap-0.5 min-w-max"></div>
+    </div>
+
+    <!-- brute force -->
+    <div class="mt-5">
+      <button onclick="toggleBrute()" id="brutebtn" class="bp-btn"><i data-lucide="unlock" width="14" height="14"></i><span class="lang-zh">暴力破解 (試盡 26 種)</span><span class="lang-en hidden">Brute-force (all 26)</span></button>
+      <div id="brute" class="hidden mt-3 bp-panel rounded p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mono text-xs"></div>
+    </div>
+
+    <div class="mt-5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-4">
+      <span class="lang-zh"><b style="color:var(--ac)">凱撒密碼</b>把每個字母沿字母表位移固定格數。它是<b>替換式密碼</b>的例子,但金鑰只有 25 種可能,用<b>暴力破解</b>試盡所有位移便能輕易破解,故不安全。現代加密用極大的金鑰空間。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">The Caesar cipher</b> shifts each letter a fixed number of places along the alphabet. It is a <b>substitution cipher</b>, but with only 25 possible keys a <b>brute-force</b> attack trying every shift cracks it instantly — so it is insecure. Modern encryption uses an astronomically large key space.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();render();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  function enc(s,k){ return [...s.toUpperCase()].map(c=>{ const i=A.indexOf(c); return i<0?c:A[(i+k)%26]; }).join(''); }
+  function render(){
+    const s=$('txt').value, k=+$('shift').value; $('shiftv').textContent=k;
+    $('out').textContent=enc(s,k);
+    // mapping
+    $('mapplain').innerHTML=[...A].map(c=>`<span class="let" style="background:color-mix(in srgb,#3b82f6 14%,transparent);color:#3b82f6">${c}</span>`).join('');
+    $('mapcipher').innerHTML=[...A].map((c,i)=>`<span class="let" style="background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac)">${A[(i+k)%26]}</span>`).join('');
+    if(!$('brute').classList.contains('hidden')) renderBrute();
+  }
+  function renderBrute(){
+    const s=$('txt').value;
+    $('brute').innerHTML=Array.from({length:26},(_,k)=>{
+      const cur=k===+$('shift').value;
+      return `<div class="${cur?'font-bold':''}" style="${cur?'color:var(--ac)':''}"><span class="text-slate-400">k=${String(k).padStart(2,'0')}</span> ${enc(s,(26-k)%26)}</div>`;
+    }).join('');
+  }
+  window.render=render;
+  window.toggleBrute=function(){ const b=$('brute'); b.classList.toggle('hidden'); if(!b.classList.contains('hidden')) renderBrute(); };
+  render();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>
