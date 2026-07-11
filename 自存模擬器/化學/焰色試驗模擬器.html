@@ -3,131 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>✨ 實驗：焰色試驗模擬器 ✨</title>
+    <title>✨ 焰色試驗模擬器 · Flame Test ✨</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root{ --ac:#3b82f6; }
         /* 全局字體設定 - 可愛圓體 */
         body {
-            font-family: 'Zen Maru Gothic', sans-serif;
-            background-color: #FFF0F5; /* 淺粉紅背景 */
+            font-family: 'Zen Maru Gothic', 'Noto Sans HK', sans-serif;
             user-select: none;
             -webkit-user-select: none; /* Safari */
+            transition:background-color .3s;
         }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+        .bp-surface{
+            background-color:#eaeef3;
+            background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        body.dark .bp-surface{
+            background-color:#0a1626;
+            background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
 
         /* 火焰動畫 */
-        .flame-container {
-            position: relative;
-            width: 80px;
-            height: 120px;
-            margin: 0 auto;
-        }
-
+        .flame-container { position: relative; width: 80px; height: 120px; margin: 0 auto; }
         .flame {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 40px;
-            height: 40px;
-            border-radius: 50% 50% 20% 20%;
-            background: radial-gradient(white 20%, transparent 70%); 
-            filter: blur(5px);
-            animation: flicker 0.5s infinite alternate;
-            opacity: 0.9;
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 40px; border-radius: 50% 50% 20% 20%;
+            background: radial-gradient(white 20%, transparent 70%);
+            filter: blur(5px); animation: flicker 0.5s infinite alternate; opacity: 0.9;
             transition: background 0.5s, box-shadow 0.5s, height 0.5s;
         }
-
         .flame.main {
-            width: 60px;
-            height: 100px;
-            bottom: 10px;
-            background: rgba(50, 50, 200, 0.3); /* 預設非發光火焰顏色 (藍色) */
+            width: 60px; height: 100px; bottom: 10px;
+            background: rgba(50, 50, 200, 0.3);
             box-shadow: 0 0 20px rgba(0, 0, 255, 0.2);
             border-radius: 50% 50% 35% 35%;
             animation: flicker-main 0.1s infinite alternate;
         }
-
-        .flame.inner {
-            width: 20px;
-            height: 50px;
-            bottom: 10px;
-            background: rgba(255, 255, 255, 0.8);
-            z-index: 10;
-        }
-
+        .flame.inner { width: 20px; height: 50px; bottom: 10px; background: rgba(255, 255, 255, 0.8); z-index: 10; }
         @keyframes flicker-main {
             0% { transform: translateX(-50%) scaleY(1) skewX(-2deg); }
             100% { transform: translateX(-50%) scaleY(1.1) skewX(2deg); }
         }
 
         /* 鉑金屬線動畫 */
-        .wire-tool {
-            transition: transform 1s ease-in-out;
-            transform-origin: top right;
-            pointer-events: none; /* 確保不會阻擋點擊 */
-        }
-        
+        .wire-tool { transition: transform 1s ease-in-out; transform-origin: top right; pointer-events: none; }
+
         /* 試劑瓶選取效果 */
-        .chemical-bottle {
-            cursor: pointer;
-            touch-action: manipulation;
-        }
-        .chemical-bottle:active {
-            transform: scale(0.95);
-        }
+        .chemical-bottle { cursor: pointer; touch-action: manipulation; }
+        .chemical-bottle:active { transform: scale(0.95); }
 
         /* 對話框箭頭 */
-        .speech-bubble {
-            position: relative;
-            background: #ffffff;
-            border-radius: .4em;
-        }
+        .speech-bubble { position: relative; background: #ffffff; border-radius: .4em; }
         .speech-bubble:after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 0;
-            height: 0;
-            border: 10px solid transparent;
-            border-right-color: #ffffff;
-            border-left: 0;
-            margin-top: -10px;
-            margin-left: -10px;
+            content: ''; position: absolute; left: 0; top: 50%; width: 0; height: 0;
+            border: 10px solid transparent; border-right-color: #ffffff; border-left: 0;
+            margin-top: -10px; margin-left: -10px;
         }
+        body.dark .speech-bubble{ background:#1e293b; color:#e2e8f0; }
+        body.dark .speech-bubble:after{ border-right-color:#1e293b; }
 
         /* 按鈕樣式 */
-        .btn-cartoon {
-            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
-            transition: all 0.1s;
-        }
-        .btn-cartoon:active {
-            box-shadow: 0 1px 0 rgba(0,0,0,0.1);
-            transform: translateY(3px);
-        }
+        .btn-cartoon { box-shadow: 0 4px 0 rgba(0,0,0,0.1); transition: all 0.1s; }
+        .btn-cartoon:active { box-shadow: 0 1px 0 rgba(0,0,0,0.1); transform: translateY(3px); }
+
+        /* 深色模式結構覆蓋 */
+        body.dark #app-container{ background:#0d192b; border-color:#334155; }
+        body.dark #app-container header{ background:#172033; border-color:#334155; }
+        body.dark #app-container header h1{ color:#f9a8d4; }
+        body.dark #app-container main{ background:linear-gradient(to bottom,#0f1a2e,#0d192b); }
+        body.dark #app-container footer{ background:#0d192b; border-color:#334155; }
+        body.dark #app-container footer h3{ color:#cbd5e1; }
+        body.dark .chemical-bottle{ background:#1e293b; border-color:#334155; }
+        body.dark #color-options button{ background:#1e293b !important; color:#e2e8f0; border-color:#334155; }
+        body.dark #start-overlay{ background:rgba(13,25,43,.96); }
+        body.dark #start-overlay .bg-white{ background:#1e293b; border-color:#334155; color:#e2e8f0; }
+        body.dark #score-chip{ background:#1e293b; border-color:#475569; color:#e2e8f0; }
+        body.dark #step-indicator{ background:rgba(15,23,42,.8); border-color:#334155; color:#93c5fd; }
     </style>
 </head>
-<body class="h-screen flex flex-col items-center justify-center overflow-hidden">
-<a id="__backlink" href="../../chemistry.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bp-surface h-screen flex flex-col items-center justify-center overflow-hidden">
+
+    <a href="../../chemistry.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:60" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:60" class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+        <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language"><i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span></button>
+    </div>
 
     <!-- 遊戲主容器 -->
     <div id="app-container" class="relative w-full max-w-4xl h-[95vh] bg-white rounded-3xl shadow-2xl overflow-hidden border-8 border-pink-200 flex flex-col">
-        
+
         <!-- 頂部標題與狀態 -->
         <header class="bg-pink-100 p-4 flex justify-between items-center border-b-4 border-pink-200 shrink-0 z-20">
             <div class="flex items-center gap-2">
                 <span class="text-3xl">🔥</span>
-                <h1 class="text-2xl font-bold text-pink-600">焰色試驗模擬器</h1>
+                <h1 class="serif-font text-2xl font-bold text-pink-600" data-zh="焰色試驗模擬器" data-en="Flame Test Simulator">焰色試驗模擬器</h1>
             </div>
-            <div class="bg-white px-4 py-2 rounded-full border-2 border-pink-300">
-                <span class="text-gray-600 font-bold">目前得分: <span id="score" class="text-pink-600">0</span></span>
+            <div id="score-chip" class="bg-white px-4 py-2 rounded-full border-2 border-pink-300">
+                <span class="text-gray-600 font-bold"><span data-zh="目前得分: " data-en="Score: ">目前得分: </span><span id="score" class="text-pink-600">0</span></span>
             </div>
         </header>
 
         <!-- 主要遊戲區域 -->
         <main class="flex-1 relative bg-gradient-to-b from-blue-50 to-white flex z-10">
-            
+
             <!-- 左側：NPC 與 指引 -->
             <div class="w-1/3 p-6 flex flex-col justify-end items-center z-10">
                 <div id="feedback-box" class="speech-bubble p-4 mb-4 shadow-lg w-full text-center text-lg text-gray-700 hidden">
@@ -135,13 +126,13 @@
                 </div>
                 <div class="relative">
                     <div class="text-9xl transform hover:scale-110 transition-transform cursor-pointer" onclick="window.app.pokeCharacter()">👩‍🔬</div>
-                    <div class="absolute -bottom-2 w-full text-center bg-pink-500 text-white rounded-full text-sm py-1 font-bold">石老師</div>
+                    <div class="absolute -bottom-2 w-full text-center bg-pink-500 text-white rounded-full text-sm py-1 font-bold" data-zh="石老師" data-en="Ms. Stone">石老師</div>
                 </div>
             </div>
 
             <!-- 中央：實驗台 -->
             <div class="w-2/3 relative flex flex-col items-center justify-end pb-10">
-                
+
                 <!-- 實驗步驟提示 -->
                 <div id="step-indicator" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/80 backdrop-blur px-6 py-2 rounded-full border border-blue-200 text-blue-600 font-bold shadow-sm whitespace-nowrap z-20">
                     請選擇一種試劑開始實驗！
@@ -149,7 +140,7 @@
 
                 <!-- 實驗設備區域 -->
                 <div class="relative w-full h-80 flex justify-center items-end z-0">
-                    
+
                     <!-- 鉑金屬線工具 (絕對定位，用於動畫) -->
                     <div id="nichrome-wire" class="wire-tool absolute right-10 top-0 z-20 opacity-0">
                         <div class="w-2 h-40 bg-gray-300 border border-gray-400 mx-auto rounded-t-lg shadow-md"></div> <!-- 手柄 -->
@@ -177,7 +168,7 @@
                         <div class="w-16 h-20 border-x-2 border-b-2 border-gray-400 bg-blue-100/50 rounded-b-lg relative overflow-hidden">
                             <div class="absolute bottom-0 w-full h-12 bg-yellow-100/80 animate-pulse"></div>
                         </div>
-                        <div class="text-center text-xs text-gray-500 mt-1 font-bold">濃氫氯酸溶液(HCl)</div>
+                        <div class="text-center text-xs text-gray-500 dark:text-slate-400 mt-1 font-bold" data-zh="濃氫氯酸溶液(HCl)" data-en="Conc. HCl solution">濃氫氯酸溶液(HCl)</div>
                     </div>
 
                 </div>
@@ -186,10 +177,10 @@
 
         <!-- 底部：控制面板 (提高 z-index 確保可點擊) -->
         <footer class="bg-white p-4 border-t-4 border-pink-200 h-48 shrink-0 relative z-30">
-            
+
             <!-- 階段 1: 選擇試劑 -->
             <div id="panel-select" class="h-full">
-                <h3 class="text-center text-gray-500 font-bold mb-2">步驟 1: 選擇要測試的金屬化合物</h3>
+                <h3 class="text-center text-gray-500 font-bold mb-2" data-zh="步驟 1: 選擇要測試的金屬化合物" data-en="Step 1: Choose a metal compound to test">步驟 1: 選擇要測試的金屬化合物</h3>
                 <div class="flex justify-center gap-4 overflow-x-auto p-2 items-center h-[120px]" id="chemical-list">
                     <!-- JS 生成按鈕 -->
                 </div>
@@ -198,14 +189,14 @@
             <!-- 階段 2: 實驗進行中 (顯示進度條或訊息) -->
             <div id="panel-processing" class="h-full hidden flex flex-col items-center justify-center">
                 <div class="text-xl font-bold text-blue-500 mb-2" id="process-text">正在進行實驗...</div>
-                <div class="w-64 h-4 bg-gray-200 rounded-full overflow-hidden">
+                <div class="w-64 h-4 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div id="progress-bar" class="h-full bg-blue-500 w-0 transition-all duration-300"></div>
                 </div>
             </div>
 
             <!-- 階段 3: 選擇顏色 -->
             <div id="panel-quiz" class="h-full hidden flex flex-col items-center">
-                <h3 class="text-center text-pink-600 font-bold mb-2 text-lg">👀 觀察與思考：這個化合物會產生什麼顏色的火焰？</h3>
+                <h3 class="text-center text-pink-600 font-bold mb-2 text-lg" data-zh="👀 觀察與思考：這個化合物會產生什麼顏色的火焰？" data-en="👀 Observe & think: what colour flame will this compound give?">👀 觀察與思考：這個化合物會產生什麼顏色的火焰？</h3>
                 <div class="grid grid-cols-3 gap-3 w-full max-w-2xl" id="color-options">
                     <!-- JS 生成顏色選項 -->
                 </div>
@@ -214,8 +205,8 @@
             <!-- 階段 4: 結果與重置 -->
             <div id="panel-result" class="h-full hidden flex flex-col items-center justify-center">
                 <h2 id="result-title" class="text-3xl font-bold mb-2">結果</h2>
-                <p id="result-desc" class="text-gray-600 mb-4 text-center">說明文字</p>
-                <button id="btn-reset" class="btn-cartoon px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-bold text-xl">
+                <p id="result-desc" class="text-gray-600 dark:text-slate-300 mb-4 text-center">說明文字</p>
+                <button id="btn-reset" class="btn-cartoon px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-bold text-xl" data-zh="做下一個實驗 🧪" data-en="Next experiment 🧪">
                     做下一個實驗 🧪
                 </button>
             </div>
@@ -225,19 +216,19 @@
         <!-- 覆蓋層：教學開始畫面 (Z-index 最高) -->
         <div id="start-overlay" class="absolute inset-0 bg-pink-50/95 z-50 flex flex-col items-center justify-center text-center p-10">
             <div class="text-6xl mb-4">👩‍🔬🔥🧪</div>
-            <h1 class="text-4xl font-bold text-pink-600 mb-6">歡迎來到焰色試驗模擬器！</h1>
+            <h1 class="serif-font text-4xl font-bold text-pink-600 mb-6" data-zh="歡迎來到焰色試驗模擬器！" data-en="Welcome to the Flame Test Simulator!">歡迎來到焰色試驗模擬器！</h1>
             <div class="bg-white p-6 rounded-2xl shadow-lg max-w-lg text-left text-gray-700 space-y-3 mb-8 border-4 border-pink-200">
-                <p>👋 你好！我是石老師。</p>
-                <p>在這個實驗中，我們將學習如何分辨不同的金屬離子。</p>
-                <p><strong>實驗步驟：</strong></p>
+                <p data-zh="👋 你好！我是石老師。" data-en="👋 Hi! I'm Ms. Stone.">👋 你好！我是石老師。</p>
+                <p data-zh="在這個實驗中，我們將學習如何分辨不同的金屬離子。" data-en="In this experiment we'll learn how to tell different metal ions apart.">在這個實驗中，我們將學習如何分辨不同的金屬離子。</p>
+                <p><strong data-zh="實驗步驟：" data-en="Steps:">實驗步驟：</strong></p>
                 <ol class="list-decimal list-inside pl-4 text-sm font-bold text-blue-600">
-                    <li>以濃氫氯酸溶液清洗鉑線(除去雜質)(加熱沒有特別火焰顏色生成)</li>
-                    <li>以濃氫氯酸溶液弄濕該鉑線，再沾取少量樣本 (金屬化合物)</li>
-                    <li>放入本生燈無火焰的外焰中加熱</li>
-                    <li>觀察火焰顏色變化</li>
+                    <li data-zh="以濃氫氯酸溶液清洗鉑線(除去雜質)(加熱沒有特別火焰顏色生成)" data-en="Clean the platinum wire with conc. HCl (remove impurities — heating gives no special flame colour)">以濃氫氯酸溶液清洗鉑線(除去雜質)(加熱沒有特別火焰顏色生成)</li>
+                    <li data-zh="以濃氫氯酸溶液弄濕該鉑線，再沾取少量樣本 (金屬化合物)" data-en="Wet the wire with conc. HCl, then pick up a little sample (metal compound)">以濃氫氯酸溶液弄濕該鉑線，再沾取少量樣本 (金屬化合物)</li>
+                    <li data-zh="放入本生燈無火焰的外焰中加熱" data-en="Heat it in the non-luminous outer flame of the Bunsen burner">放入本生燈無火焰的外焰中加熱</li>
+                    <li data-zh="觀察火焰顏色變化" data-en="Observe the change in flame colour">觀察火焰顏色變化</li>
                 </ol>
             </div>
-            <button id="btn-start" class="btn-cartoon bg-pink-500 hover:bg-pink-600 text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg transform transition hover:scale-105">
+            <button id="btn-start" class="btn-cartoon bg-pink-500 hover:bg-pink-600 text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg transform transition hover:scale-105" data-zh="開始實驗！" data-en="Start the experiment!">
                 開始實驗！
             </button>
         </div>
@@ -245,52 +236,92 @@
     </div>
 
     <script>
-        // 遊戲數據
+        let LANG = 'zh';
+        const L = (o) => (o && typeof o === 'object') ? (o[LANG] ?? o.zh) : o;
+
+        // 遊戲數據（雙語）
         const chemicals = [
-            { id: 'Li', formula: 'LiCl', name: '氯化鋰', ion: '鋰離子 (Li⁺)', color: '#DC143C', colorName: '深紅色', glow: 'rgba(220, 20, 60, 0.6)' },
-            { id: 'Na', formula: 'NaCl', name: '氯化鈉', ion: '鈉離子 (Na⁺)', color: '#FFD700', colorName: '金黃色', glow: 'rgba(255, 215, 0, 0.6)' },
-            { id: 'K',  formula: 'KCl',  name: '氯化鉀',  ion: '鉀離子 (K⁺)',  color: '#E0B0FF', colorName: '淡紫色', glow: 'rgba(224, 176, 255, 0.6)' },
-            { id: 'Ca', formula: 'CaCl₂', name: '氯化鈣', ion: '鈣離子 (Ca²⁺)', color: '#B22222', colorName: '磚紅色', glow: 'rgba(178, 34, 34, 0.6)' },
-            { id: 'Cu', formula: 'CuCl₂', name: '氯化銅', ion: '銅離子 (Cu²⁺)', color: '#00CED1', colorName: '藍綠色', glow: 'rgba(0, 206, 209, 0.6)' },
-            { id: 'Ba', formula: 'BaCl₂', name: '氯化鋇', ion: '鋇離子 (Ba²⁺)', color: '#ADFF2F', colorName: '蘋果綠色', glow: 'rgba(173, 255, 47, 0.6)' }
+            { id: 'Li', formula: 'LiCl', name: {zh:'氯化鋰',en:'Lithium chloride'}, ion: {zh:'鋰離子 (Li⁺)',en:'Lithium ion (Li⁺)'}, color: '#DC143C', colorName: {zh:'深紅色',en:'Crimson'}, glow: 'rgba(220, 20, 60, 0.6)' },
+            { id: 'Na', formula: 'NaCl', name: {zh:'氯化鈉',en:'Sodium chloride'}, ion: {zh:'鈉離子 (Na⁺)',en:'Sodium ion (Na⁺)'}, color: '#FFD700', colorName: {zh:'金黃色',en:'Golden yellow'}, glow: 'rgba(255, 215, 0, 0.6)' },
+            { id: 'K',  formula: 'KCl',  name: {zh:'氯化鉀',en:'Potassium chloride'},  ion: {zh:'鉀離子 (K⁺)',en:'Potassium ion (K⁺)'},  color: '#E0B0FF', colorName: {zh:'淡紫色',en:'Lilac'}, glow: 'rgba(224, 176, 255, 0.6)' },
+            { id: 'Ca', formula: 'CaCl₂', name: {zh:'氯化鈣',en:'Calcium chloride'}, ion: {zh:'鈣離子 (Ca²⁺)',en:'Calcium ion (Ca²⁺)'}, color: '#B22222', colorName: {zh:'磚紅色',en:'Brick red'}, glow: 'rgba(178, 34, 34, 0.6)' },
+            { id: 'Cu', formula: 'CuCl₂', name: {zh:'氯化銅',en:'Copper(II) chloride'}, ion: {zh:'銅離子 (Cu²⁺)',en:'Copper ion (Cu²⁺)'}, color: '#00CED1', colorName: {zh:'藍綠色',en:'Blue-green'}, glow: 'rgba(0, 206, 209, 0.6)' },
+            { id: 'Ba', formula: 'BaCl₂', name: {zh:'氯化鋇',en:'Barium chloride'}, ion: {zh:'鋇離子 (Ba²⁺)',en:'Barium ion (Ba²⁺)'}, color: '#ADFF2F', colorName: {zh:'蘋果綠色',en:'Apple green'}, glow: 'rgba(173, 255, 47, 0.6)' }
         ];
 
         const colorOptions = [
-            { id: 'red', name: '深紅色', code: '#DC143C' },
-            { id: 'gold', name: '金黃色', code: '#FFD700' },
-            { id: 'purple', name: '淡紫色', code: '#E0B0FF' },
-            { id: 'brick', name: '磚紅色', code: '#B22222' },
-            { id: 'bluegreen', name: '藍綠色', code: '#00CED1' },
-            { id: 'green', name: '蘋果綠色', code: '#ADFF2F' },
-            { id: 'none', name: '無明顯顏色', code: '#f3f4f6' }
+            { id: 'red', name: {zh:'深紅色',en:'Crimson'}, code: '#DC143C' },
+            { id: 'gold', name: {zh:'金黃色',en:'Golden yellow'}, code: '#FFD700' },
+            { id: 'purple', name: {zh:'淡紫色',en:'Lilac'}, code: '#E0B0FF' },
+            { id: 'brick', name: {zh:'磚紅色',en:'Brick red'}, code: '#B22222' },
+            { id: 'bluegreen', name: {zh:'藍綠色',en:'Blue-green'}, code: '#00CED1' },
+            { id: 'green', name: {zh:'蘋果綠色',en:'Apple green'}, code: '#ADFF2F' },
+            { id: 'none', name: {zh:'無明顯顏色',en:'No distinct colour'}, code: '#f3f4f6' }
         ];
+
+        // 動態字串（雙語）
+        const T = {
+            stepDefault: {zh:'請選擇一種試劑開始實驗！', en:'Pick a reagent to start the experiment!'},
+            processing: {zh:'正在進行實驗...', en:'Running the experiment...'},
+            step1: {zh:'步驟 1/3: 將鉑線浸入濃氫氯酸溶液清洗...', en:'Step 1/3: Dip the platinum wire in conc. HCl to clean it...'},
+            fbClean: {zh:'使用濃鹽酸可以去除金屬線上的雜質。', en:'Conc. HCl removes impurities from the wire.'},
+            step2: (n)=>({zh:`步驟 2/3: 沾取 ${n.zh} 固體樣本...`, en:`Step 2/3: Pick up a solid sample of ${n.en}...`}),
+            fbDip: {zh:'鉑線已沾取了固體樣本。', en:'The wire has picked up the solid sample.'},
+            step3: {zh:'步驟 3/3: 放入本生燈無火焰的外焰部分加熱...', en:'Step 3/3: Heat it in the non-luminous outer flame...'},
+            fbHeat: {zh:'正在進行強烈加熱...', en:'Heating strongly...'},
+            stepDone: {zh:'觀察完畢！請回答。', en:'Observation done! Answer the question.'},
+            fbGuess: {zh:'樣本已經在火焰中燃燒了，<br>你覺得會是什麼顏色呢？', en:'The sample is burning in the flame —<br>what colour do you think it is?'},
+            stepErr: {zh:'實驗發生錯誤，請重試。', en:'An error occurred — please try again.'},
+            correctTitle: {zh:'🎉 答對了！太棒了！', en:'🎉 Correct! Well done!'},
+            wrongTitle: {zh:'❌ 哎呀，再試一次？', en:'❌ Oops, try again?'},
+            fbTalent: {zh:'你真有化學天分！', en:"You've got a real talent for chemistry!"},
+            fbNvm: {zh:'沒關係，記住這個顏色，下次就會了！', en:"No worries — remember this colour for next time!"},
+            fbReady: {zh:'準備好進行下一個測試了嗎？', en:'Ready for the next test?'},
+            pokes: [
+                {zh:'加油！你可以的！', en:'You can do it!'},
+                {zh:'做實驗時要注意安全喔！', en:'Stay safe while doing experiments!'},
+                {zh:'焰色試驗是藉由電子躍遷釋放能量產生的光喔！', en:'Flame colours come from light released as electrons jump energy levels!'},
+                {zh:'記得要選對顏色喔！', en:'Remember to pick the right colour!'}
+            ],
+            correctDesc: (c)=>({
+                zh:`沒錯！<b>${c.name.zh}</b> 中的 <b>${c.ion.zh}</b><br>在焰色試驗中會呈現 <span style="color:${c.color};font-weight:bold;background:#333;padding:2px 8px;border-radius:4px;">${c.colorName.zh}</span>。`,
+                en:`That's right! The <b>${c.ion.en}</b> in <b>${c.name.en}</b><br>gives a <span style="color:${c.color};font-weight:bold;background:#333;padding:2px 8px;border-radius:4px;">${c.colorName.en}</span> flame.`
+            }),
+            wrongDesc: (c)=>({
+                zh:`其實正確答案是：<b>${c.colorName.zh}</b>。<br>這是 <b>${c.ion.zh}</b> 的特徵顏色喔！`,
+                en:`The correct answer is: <b>${c.colorName.en}</b>.<br>That's the characteristic colour of the <b>${c.ion.en}</b>!`
+            })
+        };
 
         class GameApp {
             constructor() {
                 this.score = 0;
                 this.currentChemical = null;
                 this.isAnimating = false;
+                this._fb = null;      // {o,type}
+                this._step = T.stepDefault;
+                this._result = null;  // {isCorrect, chem}
             }
 
             init() {
                 this.initUI();
                 this.bindEvents();
+                this.renderStep();
             }
 
             initUI() {
                 // 生成化學品按鈕
                 const list = document.getElementById('chemical-list');
-                list.innerHTML = ''; // 清空
+                list.innerHTML = '';
                 chemicals.forEach(chem => {
                     const btn = document.createElement('button');
-                    btn.type = 'button'; // 明確指定 type
+                    btn.type = 'button';
                     btn.className = 'chemical-bottle btn-cartoon flex flex-col items-center bg-white p-2 rounded-xl border-2 border-gray-200 min-w-[80px] hover:bg-pink-50 transition transform hover:-translate-y-1';
                     btn.innerHTML = `
                         <div class="text-2xl pointer-events-none">🧂</div>
-                        <div class="font-bold text-gray-700 text-sm pointer-events-none">${chem.formula}</div>
-                        <div class="text-xs text-gray-500 pointer-events-none">${chem.name}</div>
+                        <div class="font-bold text-gray-700 dark:text-slate-200 text-sm pointer-events-none">${chem.formula}</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-400 pointer-events-none">${L(chem.name)}</div>
                     `;
-                    // 使用 addEventListener 確保綁定
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
                         this.startExperiment(chem);
@@ -300,14 +331,14 @@
 
                 // 生成顏色選項按鈕
                 const colorGrid = document.getElementById('color-options');
-                colorGrid.innerHTML = ''; // 清空
+                colorGrid.innerHTML = '';
                 colorOptions.forEach(opt => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'btn-cartoon py-2 px-4 rounded-lg font-bold text-gray-700 border-2 border-gray-200 flex items-center justify-center gap-2 hover:opacity-80 active:scale-95 transition';
                     btn.style.backgroundColor = 'white';
-                    btn.innerHTML = `<span class="w-4 h-4 rounded-full border border-gray-300 pointer-events-none" style="background:${opt.code}"></span> ${opt.name}`;
-                    btn.addEventListener('click', () => this.checkAnswer(opt.name));
+                    btn.innerHTML = `<span class="w-4 h-4 rounded-full border border-gray-300 pointer-events-none" style="background:${opt.code}"></span> ${L(opt.name)}`;
+                    btn.addEventListener('click', () => this.checkAnswer(opt.id));
                     colorGrid.appendChild(btn);
                 });
             }
@@ -316,20 +347,24 @@
                 document.getElementById('btn-start').addEventListener('click', () => {
                     document.getElementById('start-overlay').classList.add('hidden');
                 });
-                
                 document.getElementById('btn-reset').addEventListener('click', () => {
                     this.resetGame();
                 });
             }
 
-            setFeedback(text, type = 'normal') {
+            setFeedback(o, type = 'normal') {
+                this._fb = { o, type };
+                this.renderFeedback();
+            }
+            renderFeedback() {
+                if (!this._fb) return;
                 const box = document.getElementById('feedback-box');
-                box.innerHTML = text;
+                box.innerHTML = L(this._fb.o);
                 box.classList.remove('hidden');
-                
+                const type = this._fb.type;
                 if (type === 'happy') box.style.borderColor = '#4ADE80';
                 else if (type === 'error') box.style.borderColor = '#F87171';
-                else box.style.borderColor = '#FFF';
+                else box.style.borderColor = '';
             }
 
             switchPanel(panelId) {
@@ -337,136 +372,100 @@
                     document.getElementById(id).classList.add('hidden');
                 });
                 const target = document.getElementById(panelId);
-                if (target) {
-                    target.classList.remove('hidden');
-                } else {
-                    console.error("Panel not found:", panelId);
-                }
+                if (target) target.classList.remove('hidden');
+                else console.error("Panel not found:", panelId);
             }
 
             async startExperiment(chem) {
-                if (this.isAnimating) {
-                    console.log("Animation in progress, ignoring click.");
-                    return;
-                }
-                
+                if (this.isAnimating) return;
                 try {
                     this.isAnimating = true;
                     this.currentChemical = chem;
                     this.switchPanel('panel-processing');
-                    
-                    // 重置火焰顏色
                     this.updateFlameColor('rgba(50, 50, 200, 0.3)', 'rgba(0,0,255,0.2)');
 
-                    // 1. 清洗步驟
-                    this.setStep("步驟 1/3: 將鉑線浸入濃氫氯酸溶液清洗...");
+                    this.setStep(T.step1);
                     await this.animateWireClean();
 
-                    // 2. 沾取樣本
-                    this.setStep(`步驟 2/3: 沾取 ${chem.name} 固體樣本...`);
+                    this.setStep(T.step2(chem.name));
                     await this.animateWireDip();
 
-                    // 3. 加熱
-                    this.setStep("步驟 3/3: 放入本生燈無火焰的外焰部分加熱...");
+                    this.setStep(T.step3);
                     await this.animateWireHeat();
 
-                    // 實驗完成，進入測驗
                     this.isAnimating = false;
-                    this.setStep("觀察完畢！請回答。");
-                    this.setFeedback(`樣本已經在火焰中燃燒了，<br>你覺得會是什麼顏色呢？`);
+                    this.setStep(T.stepDone);
+                    this.setFeedback(T.fbGuess);
                     this.switchPanel('panel-quiz');
                 } catch (err) {
                     console.error("Experiment error:", err);
                     this.isAnimating = false;
-                    this.setStep("實驗發生錯誤，請重試。");
+                    this.setStep(T.stepErr);
                     this.switchPanel('panel-select');
                 }
             }
 
-            setStep(text) {
+            setStep(o) {
+                this._step = o;
+                this.renderStep();
+            }
+            renderStep() {
                 const el = document.getElementById('step-indicator');
                 const el2 = document.getElementById('process-text');
-                if(el) el.innerText = text;
-                if(el2) el2.innerText = text;
+                if (el) el.innerText = L(this._step);
+                if (el2) el2.innerText = L(this._step);
             }
 
-            // 動畫：清洗
             animateWireClean() {
                 return new Promise(resolve => {
                     const wire = document.getElementById('nichrome-wire');
                     const bar = document.getElementById('progress-bar');
                     const acid = document.getElementById('acid-beaker');
-
                     wire.style.opacity = '1';
                     acid.style.opacity = '1';
                     bar.style.width = '10%';
-                    
-                    // 移動到酸液上方 -> 下降 -> 上升
-                    wire.style.transform = 'translate(-160px, 0px) rotate(0deg)'; // 移到酸液上方
-                    
+                    wire.style.transform = 'translate(-160px, 0px) rotate(0deg)';
                     setTimeout(() => {
-                        wire.style.transform = 'translate(-160px, 120px) rotate(0deg)'; // 浸入
-                        this.setFeedback("使用濃鹽酸可以去除金屬線上的雜質。");
+                        wire.style.transform = 'translate(-160px, 120px) rotate(0deg)';
+                        this.setFeedback(T.fbClean);
                     }, 800);
-
                     setTimeout(() => {
-                        wire.style.transform = 'translate(-160px, 0px) rotate(0deg)'; // 拿出
+                        wire.style.transform = 'translate(-160px, 0px) rotate(0deg)';
                         bar.style.width = '30%';
                     }, 2000);
-
-                    setTimeout(() => {
-                        acid.style.opacity = '0.3'; // 淡出酸液
-                        resolve();
-                    }, 3000);
+                    setTimeout(() => { acid.style.opacity = '0.3'; resolve(); }, 3000);
                 });
             }
 
-            // 動畫：沾取
             animateWireDip() {
                 return new Promise(resolve => {
                     const wire = document.getElementById('nichrome-wire');
                     const bar = document.getElementById('progress-bar');
                     const tip = document.getElementById('wire-tip');
-                    
-                    // 移到右側假想的樣本區
-                    wire.style.transform = 'translate(100px, 150px) rotate(-10deg)'; 
-                    
+                    wire.style.transform = 'translate(100px, 150px) rotate(-10deg)';
                     setTimeout(() => {
-                        tip.style.backgroundColor = '#FFF'; // 尖端變白表示沾了粉末
-                        this.setFeedback("鉑線已沾取了固體樣本。");
+                        tip.style.backgroundColor = '#FFF';
+                        this.setFeedback(T.fbDip);
                         bar.style.width = '60%';
                     }, 1000);
-
-                    setTimeout(() => {
-                        wire.style.transform = 'translate(0px, 0px) rotate(0deg)'; // 回正
-                        resolve();
-                    }, 2000);
+                    setTimeout(() => { wire.style.transform = 'translate(0px, 0px) rotate(0deg)'; resolve(); }, 2000);
                 });
             }
 
-            // 動畫：加熱
             animateWireHeat() {
                 return new Promise(resolve => {
                     const wire = document.getElementById('nichrome-wire');
                     const bar = document.getElementById('progress-bar');
                     const tip = document.getElementById('wire-tip');
-                    
-                    // 移入火焰
-                    wire.style.transform = 'translate(-70px, 110px) rotate(-5deg)'; // 移到火焰中心
-                    
+                    wire.style.transform = 'translate(-70px, 110px) rotate(-5deg)';
                     setTimeout(() => {
-                        this.setFeedback("正在進行強烈加熱...");
-                        // 尖端變紅熱
+                        this.setFeedback(T.fbHeat);
                         tip.style.backgroundColor = '#FF4500';
                         tip.style.boxShadow = '0 0 10px #FF4500';
                         bar.style.width = '100%';
                     }, 1000);
-
                     setTimeout(() => {
-                        // 在這裡改變火焰顏色，讓學生觀察
-                        if (this.currentChemical) {
-                            this.updateFlameColor(this.currentChemical.color, this.currentChemical.glow);
-                        }
+                        if (this.currentChemical) this.updateFlameColor(this.currentChemical.color, this.currentChemical.glow);
                         resolve();
                     }, 2000);
                 });
@@ -478,64 +477,93 @@
                 flame.style.boxShadow = `0 0 40px ${glow}`;
             }
 
-            checkAnswer(selectedColorName) {
-                const isCorrect = selectedColorName === this.currentChemical.colorName;
-                
-                // 顯示真正的火焰顏色
+            checkAnswer(selectedColorId) {
+                const correctOpt = colorOptions.find(o => o.name.zh === this.currentChemical.colorName.zh);
+                const isCorrect = correctOpt && selectedColorId === correctOpt.id;
+
                 this.updateFlameColor(this.currentChemical.color, this.currentChemical.glow);
-                
-                const title = document.getElementById('result-title');
-                const desc = document.getElementById('result-desc');
-                
+
                 if (isCorrect) {
                     this.score += 10;
                     document.getElementById('score').innerText = this.score;
-                    title.innerText = "🎉 答對了！太棒了！";
-                    title.className = "text-3xl font-bold mb-2 text-green-600";
-                    desc.innerHTML = `沒錯！<b>${this.currentChemical.name}</b> 中的 <b>${this.currentChemical.ion}</b><br>在焰色試驗中會呈現 <span style="color:${this.currentChemical.color};font-weight:bold;background:#333;padding:2px 8px;border-radius:4px;">${this.currentChemical.colorName}</span>。`;
-                    this.setFeedback("你真有化學天分！", 'happy');
+                    this.setFeedback(T.fbTalent, 'happy');
                 } else {
-                    title.innerText = "❌ 哎呀，再試一次？";
-                    title.className = "text-3xl font-bold mb-2 text-red-500";
-                    desc.innerHTML = `其實正確答案是：<b>${this.currentChemical.colorName}</b>。<br>這是 <b>${this.currentChemical.ion}</b> 的特徵顏色喔！`;
-                    this.setFeedback("沒關係，記住這個顏色，下次就會了！", 'error');
+                    this.setFeedback(T.fbNvm, 'error');
                 }
-
+                this._result = { isCorrect, chem: this.currentChemical };
+                this.renderResult();
                 this.switchPanel('panel-result');
+            }
+
+            renderResult() {
+                if (!this._result) return;
+                const { isCorrect, chem } = this._result;
+                const title = document.getElementById('result-title');
+                const desc = document.getElementById('result-desc');
+                if (isCorrect) {
+                    title.innerText = L(T.correctTitle);
+                    title.className = "text-3xl font-bold mb-2 text-green-600";
+                    desc.innerHTML = L(T.correctDesc(chem));
+                } else {
+                    title.innerText = L(T.wrongTitle);
+                    title.className = "text-3xl font-bold mb-2 text-red-500";
+                    desc.innerHTML = L(T.wrongDesc(chem));
+                }
             }
 
             resetGame() {
                 this.currentChemical = null;
+                this._result = null;
                 const wire = document.getElementById('nichrome-wire');
                 const tip = document.getElementById('wire-tip');
-                
                 wire.style.opacity = '0';
                 wire.style.transform = 'translate(0,0)';
-                tip.style.backgroundColor = '#6B7280'; // 灰
+                tip.style.backgroundColor = '#6B7280';
                 tip.style.boxShadow = 'none';
-                
                 this.updateFlameColor('rgba(50, 50, 200, 0.3)', 'rgba(0,0,255,0.2)');
-                this.setFeedback("準備好進行下一個測試了嗎？");
-                this.setStep("請選擇一種試劑開始實驗！");
+                this.setFeedback(T.fbReady);
+                this.setStep(T.stepDefault);
                 this.switchPanel('panel-select');
             }
-            
+
             pokeCharacter() {
-                const msgs = [
-                    "加油！你可以的！",
-                    "做實驗時要注意安全喔！",
-                    "焰色試驗是藉由電子躍遷釋放能量產生的光喔！",
-                    "記得要選對顏色喔！"
-                ];
-                const rand = msgs[Math.floor(Math.random() * msgs.length)];
+                const rand = T.pokes[Math.floor(Math.random() * T.pokes.length)];
                 this.setFeedback(rand);
             }
+
+            relang() {
+                // 重建按鈕 + 重新渲染動態文字
+                this.initUI();
+                this.renderStep();
+                this.renderFeedback();
+                this.renderResult();
+            }
+        }
+
+        // --- 主題 / 語言切換 ---
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+        function applyStaticLang(){
+            document.querySelectorAll('[data-zh][data-en]').forEach(el=>{
+                el.textContent = el.getAttribute(LANG==='zh'?'data-zh':'data-en');
+            });
+        }
+        function toggleLang(){
+            LANG = LANG==='zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = LANG==='zh' ? 'EN' : '中';
+            applyStaticLang();
+            if(window.app) window.app.relang();
         }
 
         // 確保 DOM 載入後才初始化
         window.addEventListener('DOMContentLoaded', () => {
             window.app = new GameApp();
             window.app.init();
+            if(window.lucide) lucide.createIcons();
         });
     </script>
 </body>
