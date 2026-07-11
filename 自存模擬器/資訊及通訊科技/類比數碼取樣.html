@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>類比→數碼取樣 · Analog-to-Digital Sampling</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ input[type=range]{ -webkit-appearance:none;width:100%;height:4px;background:#c3ccd8;border-radius:2px; } body.dark input[type=range]{ background:#2c3e57; }
+ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none;height:18px;width:18px;border-radius:4px;background:#fff;border:2px solid var(--ac);cursor:pointer; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-5xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.04</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">類比→數碼取樣</span><span class="lang-en hidden">Analog-to-Digital Sampling</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Digitisation</span>
+  </div>
+
+  <div class="flex flex-col lg:flex-row">
+    <div class="w-full lg:w-2/3 p-4 border-b lg:border-b-0 lg:border-r border-slate-300 dark:border-slate-700">
+      <canvas id="cv" class="w-full rounded" style="background:transparent"></canvas>
+      <div class="flex flex-wrap gap-4 justify-center mt-2 mono text-[11px]">
+        <span class="flex items-center gap-1.5"><span class="w-4 h-0.5 inline-block" style="background:#64748b"></span><span class="lang-zh">類比原訊號</span><span class="lang-en hidden">Analog signal</span></span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:var(--ac)"></span><span class="lang-zh">取樣點</span><span class="lang-en hidden">Sample</span></span>
+        <span class="flex items-center gap-1.5"><span class="w-4 h-0.5 inline-block" style="background:#10b981"></span><span class="lang-zh">數碼重建</span><span class="lang-en hidden">Digital reconstruction</span></span>
+      </div>
+    </div>
+
+    <div class="w-full lg:w-1/3 p-5 space-y-5">
+      <div>
+        <div class="flex justify-between mono text-xs mb-1"><span class="lang-zh">訊號頻率</span><span class="lang-en hidden">Signal freq</span><span id="freqv" class="font-bold" style="color:var(--ac)"></span></div>
+        <input id="freq" type="range" min="1" max="6" value="2" step="1" oninput="draw()">
+      </div>
+      <div>
+        <div class="flex justify-between mono text-xs mb-1"><span class="lang-zh">取樣率 (sample rate)</span><span class="lang-en hidden">Sample rate</span><span id="srv" class="font-bold" style="color:var(--ac)"></span></div>
+        <input id="sr" type="range" min="4" max="64" value="24" step="1" oninput="draw()">
+      </div>
+      <div>
+        <div class="flex justify-between mono text-xs mb-1"><span class="lang-zh">位元深度 (bit depth)</span><span class="lang-en hidden">Bit depth</span><span id="bdv" class="font-bold" style="color:var(--ac)"></span></div>
+        <input id="bd" type="range" min="1" max="8" value="3" step="1" oninput="draw()">
+        <div id="levels" class="mono text-[10px] text-slate-400 mt-1"></div>
+      </div>
+
+      <div class="bp-panel rounded p-3 space-y-1.5 mono text-xs">
+        <div class="flex justify-between"><span class="text-slate-400"><span class="lang-zh">量化階數</span><span class="lang-en hidden">Levels</span></span><span id="lv2"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400"><span class="lang-zh">每 1 秒資料量</span><span class="lang-en hidden">Data / sec</span></span><span id="rate" style="color:var(--ac)" class="font-bold"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400"><span class="lang-zh">品質</span><span class="lang-en hidden">Quality</span></span><span id="qual" class="font-bold"></span></div>
+      </div>
+
+      <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+        <span class="lang-zh"><b style="color:var(--ac)">取樣率↑</b> = 每秒取更多樣本，波形更貼近原訊號。<b style="color:var(--ac)">位元深度↑</b> = 更多量化階數，振幅更精細。兩者皆↑ → 品質更好但檔案更大。</span>
+        <span class="lang-en hidden"><b style="color:var(--ac)">Higher sample rate</b> = more samples per second, closer to the analog wave. <b style="color:var(--ac)">Higher bit depth</b> = more quantisation levels, finer amplitude. Both ↑ → better quality but larger file.</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();draw();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();draw();}
+</script>
+<script>
+(function(){
+  const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+  const $=id=>document.getElementById(id);
+  function resize(){ const w=cv.clientWidth; cv.width=w*devicePixelRatio; cv.height=320*devicePixelRatio; cv.style.height='320px'; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); }
+  window.addEventListener('resize',()=>{resize();draw();});
+
+  function draw(){
+    resize();
+    const W=cv.clientWidth, H=320, pad=28;
+    const freq=+$('freq').value, sr=+$('sr').value, bd=+$('bd').value;
+    const levels=Math.pow(2,bd);
+    $('freqv').textContent=freq+' Hz'; $('srv').textContent=sr+'/s'; $('bdv').textContent=bd+'-bit';
+    $('levels').textContent=(__lang==='zh'?'= ':'= ')+levels+(__lang==='zh'?' 個振幅階':' amplitude levels');
+    $('lv2').textContent=levels; $('rate').textContent=(sr*bd)+' bits';
+    const ok = sr>=2*freq*2; // Nyquist-ish visual threshold (freq scaled)
+    $('qual').innerHTML = (bd>=6&&sr>=32)? '<span style="color:#10b981">'+(__lang==='zh'?'高':'High')+'</span>'
+      : (bd<=2||sr<=8)? '<span style="color:#ef4444">'+(__lang==='zh'?'低':'Low')+'</span>'
+      : '<span style="color:#f59e0b">'+(__lang==='zh'?'中':'Medium')+'</span>';
+
+    ctx.clearRect(0,0,W,H);
+    const gc=__isDark?'rgba(56,189,248,.14)':'rgba(37,99,235,.12)';
+    const ink=__isDark?'#94a3b8':'#475569';
+    // grid: quantization levels
+    ctx.strokeStyle=gc; ctx.lineWidth=1;
+    for(let l=0;l<=levels;l++){ const y=pad+(H-2*pad)*l/levels; ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke(); }
+    // axis
+    ctx.strokeStyle=ink; ctx.beginPath();ctx.moveTo(pad,H/2);ctx.lineTo(W-pad,H/2);ctx.stroke();
+
+    const x0=pad, x1=W-pad, amp=(H-2*pad)/2, mid=H/2;
+    const sig=t=> Math.sin(2*Math.PI*freq*t); // t in [0,1]
+    const quant=v=>{ // v in [-1,1] -> nearest level center
+      const n=Math.round((v+1)/2*(levels-1)); return n/(levels-1)*2-1;
+    };
+    // analog
+    ctx.strokeStyle=ink; ctx.lineWidth=2; ctx.beginPath();
+    for(let px=0;px<=(x1-x0);px++){ const t=px/(x1-x0); const y=mid-sig(t)*amp; if(px===0)ctx.moveTo(x0+px,y);else ctx.lineTo(x0+px,y); }
+    ctx.stroke();
+    // digital staircase (sample & hold, quantized)
+    ctx.strokeStyle='#10b981'; ctx.lineWidth=2.5; ctx.beginPath();
+    let prevY=null;
+    for(let i=0;i<=sr;i++){ const t=i/sr; const qv=quant(sig(t)); const x=x0+t*(x1-x0); const y=mid-qv*amp;
+      if(i===0){ctx.moveTo(x,y);} else { ctx.lineTo(x,prevY); ctx.lineTo(x,y); } prevY=y; }
+    ctx.stroke();
+    // sample dots
+    ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--ac')||'#8b5cf6';
+    for(let i=0;i<=sr;i++){ const t=i/sr; const qv=quant(sig(t)); const x=x0+t*(x1-x0); const y=mid-qv*amp;
+      ctx.beginPath();ctx.arc(x,y,3.5,0,7);ctx.fill();
+      // stem to analog point
+      const ya=mid-sig(t)*amp;
+      ctx.strokeStyle='rgba(139,92,246,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,ya);ctx.lineTo(x,y);ctx.stroke();
+    }
+  }
+  window.draw=draw;
+  draw();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

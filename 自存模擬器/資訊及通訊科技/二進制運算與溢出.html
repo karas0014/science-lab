@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二進制運算與溢出 · Binary Arithmetic &amp; Overflow</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ input[type=range]{ -webkit-appearance:none;width:100%;height:4px;background:#c3ccd8;border-radius:2px;outline:none; } body.dark input[type=range]{ background:#2c3e57; }
+ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none;height:18px;width:18px;border-radius:4px;background:#fff;border:2px solid var(--ac);cursor:pointer;box-shadow:0 1px 3px rgba(2,6,23,.35); }
+ .cellb{ width:2.1rem;height:2.6rem;display:flex;align-items:center;justify-content:center;border:1px solid #c3ccd8;border-radius:4px;font-weight:700; } body.dark .cellb{ border-color:#2c3e57; }
+ .carry{ color:#f59e0b; } .b1{ background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac); }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.02</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">二進制運算與溢出</span><span class="lang-en hidden">Binary Arithmetic &amp; Overflow</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Two's Complement</span>
+  </div>
+
+  <div class="p-5 sm:p-8">
+    <div class="flex flex-wrap items-center gap-2 mb-6">
+      <span class="mono text-[11px] tracking-wider uppercase text-slate-400"><span class="lang-zh">位元</span><span class="lang-en hidden">Bits</span></span>
+      <button onclick="setWidth(4)" id="w4" class="bp-btn">4-bit</button>
+      <button onclick="setWidth(8)" id="w8" class="bp-btn">8-bit</button>
+      <span class="mono text-[11px] tracking-wider uppercase text-slate-400 ml-3"><span class="lang-zh">運算</span><span class="lang-en hidden">Op</span></span>
+      <button onclick="setOp('+')" id="opadd" class="bp-btn">A + B</button>
+      <button onclick="setOp('-')" id="opsub" class="bp-btn">A − B</button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+      <div class="bp-panel rounded p-4">
+        <div class="flex justify-between mono text-xs mb-1"><span style="color:var(--ac)">A</span><span id="aval" class="font-bold"></span></div>
+        <input id="aslider" type="range" oninput="onSlide()"><div id="abin" class="mono text-emerald-500 text-center mt-2 font-bold"></div>
+      </div>
+      <div class="bp-panel rounded p-4">
+        <div class="flex justify-between mono text-xs mb-1"><span style="color:var(--ac)">B</span><span id="bval" class="font-bold"></span></div>
+        <input id="bslider" type="range" oninput="onSlide()"><div id="bbin" class="mono text-emerald-500 text-center mt-2 font-bold"></div>
+      </div>
+    </div>
+
+    <!-- Column addition -->
+    <div class="bp-panel rounded p-4 sm:p-6 overflow-x-auto">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-3"><span class="lang-zh">逐位運算 (含進位)</span><span class="lang-en hidden">Column arithmetic (with carries)</span></div>
+      <div class="inline-block min-w-max mx-auto">
+        <div id="row-carry" class="flex gap-1.5 justify-end mb-1"></div>
+        <div id="row-a" class="flex gap-1.5 justify-end items-center"></div>
+        <div id="row-b" class="flex gap-1.5 justify-end items-center border-b-2 border-slate-400 dark:border-slate-500 pb-2 mb-2"></div>
+        <div id="row-r" class="flex gap-1.5 justify-end"></div>
+      </div>
+    </div>
+
+    <!-- Result panel -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 text-center">
+      <div class="bp-panel rounded p-3"><div class="mono text-[9px] uppercase text-slate-400">DEC A</div><div id="r-a" class="mono font-bold text-lg"></div></div>
+      <div class="bp-panel rounded p-3"><div class="mono text-[9px] uppercase text-slate-400">DEC B</div><div id="r-b" class="mono font-bold text-lg"></div></div>
+      <div class="bp-panel rounded p-3"><div class="mono text-[9px] uppercase text-slate-400"><span class="lang-zh">正確值</span><span class="lang-en hidden">True</span></div><div id="r-true" class="mono font-bold text-lg" style="color:var(--ac)"></div></div>
+      <div class="bp-panel rounded p-3"><div class="mono text-[9px] uppercase text-slate-400"><span class="lang-zh">n-bit 結果</span><span class="lang-en hidden">Stored</span></div><div id="r-store" class="mono font-bold text-lg"></div></div>
+    </div>
+
+    <div id="flag" class="mt-5 rounded p-4 mono text-sm text-center font-bold"></div>
+
+    <div class="mt-4 bp-panel rounded p-4 text-xs leading-relaxed">
+      <div class="mono text-[10px] uppercase text-slate-400 mb-1"><span class="lang-zh">此位元寬度可表示範圍</span><span class="lang-en hidden">Representable range</span></div>
+      <div id="range" class="mono"></div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-4">
+      <span class="lang-zh"><b style="color:var(--ac)">溢出 (Overflow)：</b> 當運算結果超出 n 個位元能表示的範圍，最高位的進位會被丟棄，儲存的數值便會出錯。二補數 (two's complement) 用最高位作正負號，讓同一套加法電路可處理正負數。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">Overflow:</b> when a result exceeds the range n bits can hold, the top carry is discarded and the stored value is wrong. Two's complement uses the top bit as a sign, so one adder circuit handles both positive and negative numbers.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();render();}
+</script>
+<script>
+(function(){
+  let width=8, op='+';
+  const $=id=>document.getElementById(id);
+  function unsignedMax(){ return Math.pow(2,width)-1; }
+  function bitsOf(v){ return ((v%Math.pow(2,width))+Math.pow(2,width))%Math.pow(2,width); }
+  function bstr(v){ return bitsOf(v).toString(2).padStart(width,'0'); }
+
+  function cell(txt,cls){ return `<div class="cellb mono ${cls||''}">${txt}</div>`; }
+
+  function render(){
+    const A=+$('aslider').value, B=+$('bslider').value;
+    $('aval').textContent=A; $('bval').textContent=B;
+    $('abin').textContent=bstr(A); $('bbin').textContent=bstr(B);
+
+    const aBits=bstr(A).split(''), bBits=bstr(B).split('');
+    // compute column addition of A and (op==='+'? B : two's complement of B)
+    const addendVal = op==='+'? B : bitsOf(-B);
+    const addBits = bitsOf(addendVal).toString(2).padStart(width,'0').split('');
+    const dispBbits = op==='+'? bBits : addBits;
+
+    let carry=0; const res=[]; const carries=new Array(width+1).fill(0);
+    for(let i=width-1;i>=0;i--){
+      const s=(+aBits[i])+(+addBits[i])+carry;
+      res[i]=s&1; carry=s>>1; carries[i]=carry;
+    }
+    const finalCarry=carry;
+
+    // rows
+    $('row-carry').innerHTML = cell(finalCarry?'1':'&nbsp;','carry text-xs') +
+      carries.slice(0,width).map((c,i)=> i===0?'':cell(c?'1':'&nbsp;','carry text-xs')).join('') ;
+    // simpler: show carry above each column
+    let carryRow='';
+    for(let i=0;i<width;i++){ const c = i===0? finalCarry : carries[i-1]; carryRow+=cell(c?'1':'·','carry text-xs'); }
+    $('row-carry').innerHTML='<div class="cellb mono text-xs text-slate-300 dark:text-slate-600" title="final carry">'+(finalCarry?'⟵1':'&nbsp;')+'</div>'+carryRow;
+
+    $('row-a').innerHTML='<div class="cellb mono text-slate-400">'+ ' ' +'</div>'+ aBits.map(b=>cell(b, b==='1'?'b1':'')).join('');
+    $('row-b').innerHTML='<div class="cellb mono font-bold" style="color:var(--ac)">'+(op)+'</div>'+ dispBbits.map(b=>cell(b, b==='1'?'b1':'')).join('');
+    $('row-r').innerHTML='<div class="cellb mono text-slate-400">=</div>'+ res.map(b=>cell(b, b?'b1':'')).join('');
+
+    const stored=bitsOf(op==='+'? A+B : A-B);
+    const trueVal= op==='+'? A+B : A-B;
+    $('r-a').textContent=A; $('r-b').textContent=B; $('r-true').textContent=trueVal; $('r-store').textContent=stored;
+
+    const overflow = trueVal>unsignedMax() || trueVal<0;
+    const flag=$('flag');
+    if(overflow){
+      flag.className='mt-5 rounded p-4 mono text-sm text-center font-bold';
+      flag.style.background='rgba(239,68,68,.15)'; flag.style.color='#ef4444';
+      flag.innerHTML= __lang==='zh'
+        ? `⚠ 溢出誤差 OVERFLOW！正確值 ${trueVal} 超出 0–${unsignedMax()} 範圍 → 儲存為 ${stored}（錯誤）`
+        : `⚠ OVERFLOW! True value ${trueVal} is outside 0–${unsignedMax()} → stored as ${stored} (wrong)`;
+    } else {
+      flag.className='mt-5 rounded p-4 mono text-sm text-center font-bold';
+      flag.style.background='rgba(16,185,129,.13)'; flag.style.color='#10b981';
+      flag.innerHTML= __lang==='zh' ? `✓ 結果正確，無溢出` : `✓ Result fits, no overflow`;
+    }
+    $('range').innerHTML = __lang==='zh'
+      ? `無符號: 0 … ${unsignedMax()}　|　二補數 (有符號): ${-Math.pow(2,width-1)} … ${Math.pow(2,width-1)-1}`
+      : `Unsigned: 0 … ${unsignedMax()}　|　Two's complement (signed): ${-Math.pow(2,width-1)} … ${Math.pow(2,width-1)-1}`;
+  }
+  window.render=render;
+  window.onSlide=render;
+
+  window.setWidth=function(w){ width=w;
+    ['aslider','bslider'].forEach(id=>{ const s=$(id); const cur=Math.min(+s.value, unsignedMax()); s.max=unsignedMax(); s.value=cur; });
+    $('w4').style.borderColor=w===4?'var(--ac)':''; $('w8').style.borderColor=w===8?'var(--ac)':'';
+    render();
+  };
+  window.setOp=function(o){ op=o; $('opadd').style.borderColor=o==='+'?'var(--ac)':''; $('opsub').style.borderColor=o==='-'?'var(--ac)':''; render(); };
+
+  $('aslider').min=0; $('bslider').min=0; $('aslider').value=13; $('bslider').value=9;
+  setWidth(8); setOp('+');
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

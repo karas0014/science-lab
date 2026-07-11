@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>進制轉換器 · Number System Converter</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; }
+ .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3;
+   background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+   background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626;
+   background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+   background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; }
+ .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; }
+ .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+ body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+ body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .bit{ cursor:pointer;user-select:none;transition:all .15s; }
+ .bit.on{ background:var(--ac);color:#fff;border-color:var(--ac);box-shadow:0 0 14px -2px var(--ac); }
+ .bit.off{ background:transparent;color:#94a3b8; }
+ .disp{ font-variant-numeric:tabular-nums;letter-spacing:.04em; }
+ input.numin{ background:transparent;border:1px solid #c3ccd8;border-radius:6px;padding:8px 10px;font-family:'JetBrains Mono',monospace; }
+ body.dark input.numin{ border-color:#2c3e57;color:#e2e8f0; }
+ input.numin:focus{ outline:none;border-color:var(--ac);box-shadow:0 0 0 2px color-mix(in srgb,var(--ac) 40%,transparent); }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px" aria-label="返回索引 / Back to index">
+  <i data-lucide="home" width="15" height="15"></i><span>INDEX</span>
+</a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-5xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.01</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+        <span class="lang-zh">進制轉換器</span><span class="lang-en hidden">Number System Converter</span>
+      </h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Data Representation</span>
+  </div>
+
+  <div class="p-5 sm:p-8">
+    <!-- Bit width toggle -->
+    <div class="flex items-center gap-2 mb-6">
+      <span class="mono text-[11px] tracking-wider uppercase text-slate-400"><span class="lang-zh">位元寬度</span><span class="lang-en hidden">Bit width</span></span>
+      <button onclick="setWidth(8)" id="w8" class="bp-btn">8-bit</button>
+      <button onclick="setWidth(16)" id="w16" class="bp-btn">16-bit</button>
+    </div>
+
+    <!-- Bit row -->
+    <div class="overflow-x-auto pb-2">
+      <div id="bitrow" class="flex gap-1.5 justify-start min-w-max"></div>
+    </div>
+    <p class="mono text-[10.5px] text-slate-400 mt-2 text-center"><span class="lang-zh">▲ 點擊方格切換位元 (0/1)，觀察三種進制同步變化</span><span class="lang-en hidden">▲ Click a cell to flip the bit (0/1) and watch all three bases update</span></p>
+
+    <!-- Three base displays -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+      <div class="bp-panel rounded p-4 text-center">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1">DEC · <span class="lang-zh">十進制</span><span class="lang-en hidden">base 10</span></div>
+        <input id="in-dec" class="numin numbase w-full text-center text-2xl font-bold disp" style="color:var(--ac)" inputmode="numeric" data-base="10">
+      </div>
+      <div class="bp-panel rounded p-4 text-center">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1">BIN · <span class="lang-zh">二進制</span><span class="lang-en hidden">base 2</span></div>
+        <input id="in-bin" class="numin numbase w-full text-center text-lg font-bold disp text-emerald-500" inputmode="numeric" data-base="2">
+      </div>
+      <div class="bp-panel rounded p-4 text-center">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1">HEX · <span class="lang-zh">十六進制</span><span class="lang-en hidden">base 16</span></div>
+        <input id="in-hex" class="numin numbase w-full text-center text-2xl font-bold disp text-amber-500" data-base="16">
+      </div>
+    </div>
+
+    <!-- Place value breakdown -->
+    <div class="bp-panel rounded p-4 mt-6">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">位值展開 · Place-value expansion</span><span class="lang-en hidden">Place-value expansion</span></div>
+      <div id="expand" class="mono text-sm sm:text-base leading-loose break-words"></div>
+    </div>
+
+    <!-- Hex nibble helper -->
+    <div class="bp-panel rounded p-4 mt-4">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">十六進制分組 (每 4 位元 = 1 個 hex 符號)</span><span class="lang-en hidden">Hex grouping (each 4 bits = 1 hex digit)</span></div>
+      <div id="nibbles" class="flex flex-wrap gap-3"></div>
+    </div>
+
+    <div class="mt-6 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-4">
+      <span class="lang-zh"><b style="color:var(--ac)">概念：</b> 電腦以二進制 (0/1) 儲存資料。<b>n</b> 個位元可表示 <b>2ⁿ</b> 種組合 (例如 3 位元 = 8 種顏色)。十六進制把每 4 位元縮寫成 1 個符號 (0–9, A–F)，方便人閱讀。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">Concept:</b> Computers store data in binary (0/1). <b>n</b> bits give <b>2ⁿ</b> combinations (e.g. 3 bits = 8 colours). Hexadecimal abbreviates every 4 bits into one symbol (0–9, A–F) for human readability.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();render();}
+</script>
+
+<script>
+(function(){
+  let width=8, value=5;
+  const bitrow=document.getElementById('bitrow');
+  const expand=document.getElementById('expand');
+  const nibbles=document.getElementById('nibbles');
+
+  function maxVal(){ return Math.pow(2,width)-1; }
+
+  function buildBits(){
+    bitrow.innerHTML='';
+    for(let i=width-1;i>=0;i--){
+      const pv=Math.pow(2,i);
+      const cell=document.createElement('div');
+      cell.className='flex flex-col items-center gap-1';
+      cell.innerHTML=`<span class="mono text-[9px] text-slate-400">${pv>=1024?(pv/1024)+'K':pv}</span>
+        <div class="bit off mono w-8 h-10 sm:w-9 sm:h-11 flex items-center justify-center rounded border text-lg font-bold" data-i="${i}" style="border-color:#c3ccd8">0</div>
+        <span class="mono text-[9px] text-slate-400">2<sup>${i}</sup></span>`;
+      cell.querySelector('.bit').addEventListener('click',()=>{ value^=pv; render(); });
+      bitrow.appendChild(cell);
+    }
+  }
+
+  function render(){
+    value=Math.max(0,Math.min(maxVal(),Math.round(value)));
+    // bits
+    bitrow.querySelectorAll('.bit').forEach(b=>{
+      const i=+b.dataset.i, on=(value>>i)&1;
+      b.textContent=on; b.classList.toggle('on',!!on); b.classList.toggle('off',!on);
+    });
+    // displays
+    const dec=value.toString(10), bin=value.toString(2).padStart(width,'0'), hex=value.toString(16).toUpperCase().padStart(width/4,'0');
+    setIfNotFocused('in-dec',dec); setIfNotFocused('in-bin',bin); setIfNotFocused('in-hex',hex);
+    // place value expansion
+    const terms=[]; for(let i=width-1;i>=0;i--){ if((value>>i)&1) terms.push(`<span style="color:var(--ac)">1×2<sup>${i}</sup></span>`); }
+    if(terms.length===0){ expand.innerHTML='<span class="text-slate-400">0</span>'; }
+    else{
+      const nums=[]; for(let i=width-1;i>=0;i--){ if((value>>i)&1) nums.push(Math.pow(2,i)); }
+      expand.innerHTML= terms.join(' + ') + ' = ' + nums.join(' + ') + ` = <b style="color:var(--ac)">${value}</b>`;
+    }
+    // nibbles
+    nibbles.innerHTML='';
+    for(let n=0;n<width/4;n++){
+      const shift=(width/4-1-n)*4;
+      const nib=(value>>shift)&0xF;
+      const nibbin=nib.toString(2).padStart(4,'0');
+      const div=document.createElement('div');
+      div.className='bp-panel rounded px-3 py-2 text-center';
+      div.innerHTML=`<div class="mono text-emerald-500 text-sm font-bold">${nibbin}</div>
+        <div class="mono text-[10px] text-slate-400">= </div>
+        <div class="mono text-amber-500 text-lg font-bold">${nib.toString(16).toUpperCase()}</div>`;
+      nibbles.appendChild(div);
+    }
+  }
+
+  function setIfNotFocused(id,v){ const el=document.getElementById(id); if(document.activeElement!==el) el.value=v; }
+
+  // input handlers
+  document.querySelectorAll('.numbase').forEach(inp=>{
+    inp.addEventListener('input',()=>{
+      const base=+inp.dataset.base;
+      const raw=inp.value.trim().replace(/[^0-9a-fA-F]/g,'');
+      const v=parseInt(raw||'0',base);
+      if(!isNaN(v)){ value=v; render(); }
+    });
+  });
+
+  window.setWidth=function(w){
+    width=w; value=Math.min(value,maxVal());
+    document.getElementById('w8').style.borderColor= w===8?'var(--ac)':'';
+    document.getElementById('w16').style.borderColor= w===16?'var(--ac)':'';
+    buildBits(); render();
+  };
+
+  window.render=render;
+  buildBits(); setWidth(8); render();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

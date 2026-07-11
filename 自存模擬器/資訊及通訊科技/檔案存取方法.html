@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>檔案存取方法 · Sequential vs Direct Access</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .rec{ display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid #c3ccd8;border-radius:5px;transition:all .2s; } body.dark .rec{ border-color:#2c3e57; }
+ .rec.scan{ background:rgba(245,158,11,.2);border-color:#f59e0b; }
+ .rec.hit{ background:color-mix(in srgb,var(--ac) 20%,transparent);border-color:var(--ac);box-shadow:0 0 14px -2px var(--ac); }
+ .rec.skip{ opacity:.35; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.08</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">檔案存取方法</span><span class="lang-en hidden">File Access Methods</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Sequential vs Direct</span>
+  </div>
+
+  <div class="p-5 sm:p-8">
+    <div class="flex flex-wrap items-center gap-3 mb-6">
+      <span class="mono text-xs text-slate-400"><span class="lang-zh">尋找記錄鍵值</span><span class="lang-en hidden">Find record key</span></span>
+      <select id="target" class="bp-btn"></select>
+      <button onclick="run()" id="runbtn" class="bp-btn" style="border-color:var(--ac)"><i data-lucide="play" width="14" height="14"></i><span class="lang-zh">開始搜尋</span><span class="lang-en hidden">Search</span></button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <!-- Sequential -->
+      <div class="bp-panel rounded p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="serif-font font-bold text-lg"><span class="lang-zh">順序存取</span><span class="lang-en hidden">Sequential</span></h3>
+          <span class="mono text-xs bp-btn" style="cursor:default"><span class="lang-zh">步數</span><span class="lang-en hidden">Steps</span>: <b id="seqsteps" style="color:#f59e0b">0</b></span>
+        </div>
+        <div id="seqlist" class="space-y-1.5"></div>
+      </div>
+      <!-- Direct -->
+      <div class="bp-panel rounded p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="serif-font font-bold text-lg"><span class="lang-zh">直接存取</span><span class="lang-en hidden">Direct</span></h3>
+          <span class="mono text-xs bp-btn" style="cursor:default"><span class="lang-zh">步數</span><span class="lang-en hidden">Steps</span>: <b id="dirsteps" style="color:var(--ac)">0</b></span>
+        </div>
+        <div id="diraddr" class="mono text-xs text-slate-400 mb-2 h-4"></div>
+        <div id="dirlist" class="space-y-1.5"></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5 text-xs">
+      <div class="bp-panel rounded p-3">
+        <b style="color:#f59e0b" class="mono">SEQUENTIAL</b>
+        <ul class="mt-1 space-y-0.5 list-disc list-inside">
+          <li><span class="lang-zh">✓ 適合磁帶、簡單、順序讀取快</span><span class="lang-en hidden">✓ Good for tape; simple; fast for reading in order</span></li>
+          <li><span class="lang-zh">✗ 找特定記錄要逐筆掃描，慢</span><span class="lang-en hidden">✗ Must scan record-by-record to find one — slow</span></li>
+        </ul>
+      </div>
+      <div class="bp-panel rounded p-3">
+        <b style="color:var(--ac)" class="mono">DIRECT</b>
+        <ul class="mt-1 space-y-0.5 list-disc list-inside">
+          <li><span class="lang-zh">✓ 由鍵值算出位址，直接跳到，快</span><span class="lang-en hidden">✓ Address computed from key — jump straight there, fast</span></li>
+          <li><span class="lang-zh">✗ 需要磁碟等可隨機存取的媒體</span><span class="lang-en hidden">✗ Needs random-access media (e.g. disk)</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const N=10;
+  const names=['Chan','Wong','Lee','Ho','Ng','Lam','Cheung','Tang','Yeung','Kwok'];
+  // records with keys 100,101,... stored by index = key-100 (direct addressable)
+  const recs=[]; for(let i=0;i<N;i++) recs.push({key:100+i, name:names[i]});
+  let busy=false;
+
+  const sel=$('target');
+  recs.forEach(r=> sel.add(new Option(r.key+' · '+r.name, r.key)) );
+  sel.value=100+N-2;
+
+  function build(listEl){
+    listEl.innerHTML='';
+    recs.forEach((r,i)=>{
+      const d=document.createElement('div'); d.className='rec mono text-sm'; d.dataset.i=i;
+      d.innerHTML=`<span class="text-[10px] text-slate-400 w-10">#${String(i).padStart(2,'0')}</span><b>${r.key}</b><span class="text-slate-500">${r.name}</span>`;
+      listEl.appendChild(d);
+    });
+  }
+  function reset(){ build($('seqlist')); build($('dirlist')); $('seqsteps').textContent='0'; $('dirsteps').textContent='0'; $('diraddr').textContent=''; }
+  reset();
+
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+  window.run=async function(){
+    if(busy) return; busy=true; reset();
+    const target=+sel.value; const idx=target-100;
+    $('runbtn').style.opacity=.5;
+    // Sequential
+    const seq=$('seqlist').children;
+    (async()=>{
+      for(let i=0;i<recs.length;i++){
+        seq[i].classList.add('scan'); $('seqsteps').textContent=i+1;
+        await sleep(320);
+        if(recs[i].key===target){ seq[i].classList.remove('scan'); seq[i].classList.add('hit'); break; }
+        seq[i].classList.remove('scan'); seq[i].classList.add('skip');
+      }
+    })();
+    // Direct (concurrent)
+    const dir=$('dirlist').children;
+    $('diraddr').textContent=(__lang==='zh'?'位址 = 鍵值 − 100 = ':'address = key − 100 = ')+target+' − 100 = #'+idx;
+    for(let i=0;i<recs.length;i++){ if(i!==idx) dir[i].classList.add('skip'); }
+    await sleep(500);
+    dir[idx].classList.add('hit'); $('dirsteps').textContent='1';
+    await sleep(400);
+    $('runbtn').style.opacity=1; busy=false;
+  };
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

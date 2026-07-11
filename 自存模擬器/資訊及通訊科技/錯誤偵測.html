@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>錯誤偵測 · Parity &amp; Check Digit</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .bit{ width:2.6rem;height:3rem;display:flex;align-items:center;justify-content:center;border:1px solid #c3ccd8;border-radius:5px;font-weight:700;font-size:1.25rem;cursor:pointer;transition:all .15s; } body.dark .bit{ border-color:#2c3e57; }
+ .bit.on{ background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac); }
+ .bit.flip{ background:#ef4444!important;color:#fff!important;border-color:#ef4444!important;box-shadow:0 0 14px -2px #ef4444; }
+ .pbit{ border-color:#f59e0b;border-width:2px; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.07</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">錯誤偵測</span><span class="lang-en hidden">Error Detection</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Parity &amp; Check Digit</span>
+  </div>
+
+  <div class="p-5 sm:p-8">
+    <!-- PARITY -->
+    <div class="mono text-[11px] tracking-[0.2em] uppercase text-slate-400 mb-3">// <span class="lang-zh">奇偶檢驗 Parity Bit</span><span class="lang-en hidden">Parity Bit</span></div>
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <span class="mono text-xs text-slate-400"><span class="lang-zh">檢驗類型</span><span class="lang-en hidden">Parity</span></span>
+      <button onclick="setParity('even')" id="pe" class="bp-btn"><span class="lang-zh">偶檢驗</span><span class="lang-en hidden">Even</span></button>
+      <button onclick="setParity('odd')" id="po" class="bp-btn"><span class="lang-zh">奇檢驗</span><span class="lang-en hidden">Odd</span></button>
+      <button onclick="reset()" class="bp-btn ml-2"><i data-lucide="rotate-ccw" width="13" height="13"></i><span class="lang-zh">重設</span><span class="lang-en hidden">Reset</span></button>
+    </div>
+
+    <div class="bp-panel rounded p-4 sm:p-5">
+      <div class="text-xs mono text-slate-400 mb-2"><span class="lang-zh">① 傳送端：7 位元資料 + 1 位元檢驗位 (橙色，自動計算)</span><span class="lang-en hidden">① Sender: 7 data bits + 1 parity bit (orange, auto-computed)</span></div>
+      <div id="sendrow" class="flex gap-1.5 justify-center flex-wrap"></div>
+      <div class="text-center mono text-xs text-slate-400 mt-2"><span class="lang-zh">1 的數目</span><span class="lang-en hidden"># of 1s</span>: <span id="sendones" class="font-bold" style="color:var(--ac)"></span></div>
+    </div>
+
+    <div class="text-center my-3 text-slate-400"><i data-lucide="arrow-down" width="20" height="20"></i>
+      <div class="mono text-[11px]"><span class="lang-zh">② 傳輸通道 — 點下方位元模擬雜訊翻轉</span><span class="lang-en hidden">② Channel — click bits below to simulate noise flips</span></div>
+    </div>
+
+    <div class="bp-panel rounded p-4 sm:p-5">
+      <div class="text-xs mono text-slate-400 mb-2"><span class="lang-zh">③ 接收端：點擊翻轉位元，接收端重新計算</span><span class="lang-en hidden">③ Receiver: click to flip, receiver recomputes</span></div>
+      <div id="recvrow" class="flex gap-1.5 justify-center flex-wrap"></div>
+      <div class="text-center mono text-xs text-slate-400 mt-2"><span class="lang-zh">收到 1 的數目</span><span class="lang-en hidden">received # of 1s</span>: <span id="recvones" class="font-bold" style="color:var(--ac)"></span></div>
+    </div>
+
+    <div id="verdict" class="mt-4 rounded p-4 mono text-center font-bold"></div>
+
+    <!-- CHECK DIGIT -->
+    <div class="mono text-[11px] tracking-[0.2em] uppercase text-slate-400 mt-8 mb-3">// <span class="lang-zh">檢查碼 Check Digit (模 10)</span><span class="lang-en hidden">Check Digit (mod 10)</span></div>
+    <div class="bp-panel rounded p-4 sm:p-5">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="mono text-xs text-slate-400"><span class="lang-zh">輸入 7 位數字</span><span class="lang-en hidden">Enter 7 digits</span></span>
+        <input id="cdin" maxlength="7" value="4602315" class="bp-btn" style="width:120px;letter-spacing:.2em" oninput="checkdigit()">
+      </div>
+      <div id="cdwork" class="mono text-sm mt-3 leading-relaxed"></div>
+    </div>
+
+    <div class="mt-6 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-4">
+      <span class="lang-zh"><b style="color:var(--ac)">奇偶檢驗</b>加一個位元使 1 的總數為偶(或奇)。可偵測<b>單一位元</b>錯誤，但<b>雙位元</b>錯誤會互相抵消而偵測不到。<b style="color:var(--ac)">檢查碼</b>由前面數字經公式算出，附在末端；重算不符即代表輸入有誤 (常見於學生證、條碼、身分證)。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">Parity</b> adds a bit so the count of 1s is even (or odd). It catches <b>single-bit</b> errors, but a <b>two-bit</b> error cancels out and slips through. A <b>check digit</b> is computed from the leading digits and appended; if the recomputed value doesn't match, the input is wrong (used in student IDs, barcodes, HKID).</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();render();checkdigit();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let data=[0,1,0,0,1,0,1]; // 7 data bits (editable at sender)
+  let parity='even';
+  let sent=[], recv=[], flipped=[];
+
+  function parityBit(bits){ const ones=bits.reduce((a,b)=>a+b,0); return parity==='even'? (ones%2) : (1-ones%2); }
+
+  function buildSent(){ sent=[...data, parityBit(data)]; recv=[...sent]; flipped=new Array(8).fill(false); }
+
+  function render(){
+    // sender row (data editable + parity computed)
+    const sr=$('sendrow'); sr.innerHTML='';
+    sent.forEach((b,i)=>{
+      const isP=i===7;
+      const d=document.createElement('div');
+      d.className='bit '+(b?'on':'')+(isP?' pbit':'');
+      d.textContent=b;
+      d.title=isP?'parity':'data';
+      if(!isP){ d.onclick=()=>{ data[i]^=1; buildSent(); render(); }; }
+      sr.appendChild(d);
+    });
+    $('sendones').textContent=sent.reduce((a,b)=>a+b,0);
+    // receiver row
+    const rr=$('recvrow'); rr.innerHTML='';
+    recv.forEach((b,i)=>{
+      const isP=i===7;
+      const d=document.createElement('div');
+      d.className='bit '+(b?'on':'')+(isP?' pbit':'')+(flipped[i]?' flip':'');
+      d.textContent=b;
+      d.onclick=()=>{ recv[i]^=1; flipped[i]=!flipped[i]; render(); };
+      rr.appendChild(d);
+    });
+    $('recvones').textContent=recv.reduce((a,b)=>a+b,0);
+    // verdict
+    const recompute=parityBit(recv.slice(0,7));
+    const nFlips=flipped.filter(Boolean).length;
+    const detected = recompute!==recv[7];
+    const v=$('verdict');
+    if(nFlips===0){ v.style.background='rgba(16,185,129,.13)'; v.style.color='#10b981';
+      v.textContent=__lang==='zh'?'✓ 無錯誤，接收端檢驗位相符':'✓ No errors, parity matches at receiver'; }
+    else if(detected){ v.style.background='rgba(245,158,11,.15)'; v.style.color='#f59e0b';
+      v.textContent=__lang==='zh'?`⚠ 偵測到錯誤！(${nFlips} 個位元被翻轉，檢驗位不符)`:`⚠ Error DETECTED! (${nFlips} bit(s) flipped, parity mismatch)`; }
+    else { v.style.background='rgba(239,68,68,.15)'; v.style.color='#ef4444';
+      v.textContent=__lang==='zh'?`✗ 偵測失敗！${nFlips} 個位元翻轉互相抵消，奇偶檢驗查不出`:`✗ MISSED! ${nFlips} flips cancel out — parity cannot detect this`; }
+  }
+  window.render=render;
+  window.setParity=function(p){ parity=p; $('pe').style.borderColor=p==='even'?'var(--ac)':''; $('po').style.borderColor=p==='odd'?'var(--ac)':''; buildSent(); render(); };
+  window.reset=function(){ buildSent(); render(); };
+
+  window.checkdigit=function(){
+    const s=$('cdin').value.replace(/\D/g,'').slice(0,7);
+    if(s.length<7){ $('cdwork').innerHTML=`<span class="text-slate-400">${__lang==='zh'?'請輸入 7 位數字…':'Enter 7 digits…'}</span>`; return; }
+    const ds=[...s].map(Number);
+    // weighted mod-10: weights 7..1
+    let sum=0, work=[];
+    ds.forEach((d,i)=>{ const w=7-i; sum+=d*w; work.push(`${d}×${w}`); });
+    const check=(10-(sum%10))%10;
+    $('cdwork').innerHTML=
+      `${work.join(' + ')} = <b>${sum}</b><br>`+
+      `${__lang==='zh'?'檢查碼':'Check digit'} = (10 − ${sum} mod 10) mod 10 = <b style="color:var(--ac)">${check}</b><br>`+
+      `${__lang==='zh'?'完整號碼':'Full number'}: <b class="tracking-widest">${s}-${check}</b>`;
+  };
+
+  setParity('even'); render(); checkdigit();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>
