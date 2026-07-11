@@ -5,13 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>燃料電池模擬器 | Fuel Cell Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root{ --ac:#3b82f6; }
         body {
-            background-color: #0f172a; /* Slate 900 */
             color: #f8fafc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Noto Sans HK', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
+            transition:background-color .3s,color .3s;
         }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-surface{
+            background-color:#0a1626;
+            background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        body.light .bp-surface{
+            background-color:#eaeef3;
+            background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #2c3e57;background:rgba(10,22,38,.85);color:#cbd5e1;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        body.light .bp-btn{ background:rgba(255,255,255,.85);border-color:#c3ccd8;color:#334155; }
+        body.light .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        /* 淺色覆蓋 (canvas 保持深色 scope) */
+        body.light{ color:#0f172a; }
+        body.light .bg-slate-800{ background:rgba(255,255,255,.9)!important; border-color:#c3ccd8!important; }
+        body.light .text-slate-300,body.light .text-slate-400{ color:#475569!important; }
+        body.light .border-slate-700,body.light .border-slate-600{ border-color:#cbd5e1!important; }
         canvas {
             display: block;
             width: 100%;
@@ -35,13 +59,18 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-4 md:p-6">
-<a id="__backlink" href="../../chemistry.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bp-surface min-h-screen flex flex-col items-center p-4 md:p-6">
+    <a href="../../chemistry.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:60" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:60">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+    </div>
 
     <!-- Header & Controls -->
     <header class="w-full max-w-6xl flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div>
-            <h1 id="main-title" class="text-3xl font-bold text-blue-400">氫氧燃料電池模擬器</h1>
+            <h1 id="main-title" class="serif-font text-3xl font-bold text-blue-400 mt-8 md:mt-0">氫氧燃料電池模擬器</h1>
             <p id="sub-title" class="text-slate-400 mt-1">高中化學科互動教材</p>
         </div>
         <div class="flex items-center gap-4">
@@ -665,9 +694,19 @@
             requestAnimationFrame(animate);
         }
 
+        // --- 主題切換 ---
+        function toggleTheme(){
+            const light = !document.body.classList.contains('light');
+            document.body.classList.toggle('light', light);
+            document.body.classList.toggle('dark', !light);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${light?'moon':'sun'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+
         // Initialize
         updateLangUI();
         drawBackground(); // Initial draw before start
+        if(window.lucide) lucide.createIcons();
 
     </script>
 </body>
