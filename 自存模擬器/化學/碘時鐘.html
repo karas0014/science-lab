@@ -3,14 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高中化學 - 碘時鐘反應虛擬實驗室</title>
+    <title>碘時鐘反應 · Iodine Clock</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; }
+        :root{ --ac:#6366f1; }
+        body { font-family: 'Noto Sans HK', 'Noto Sans TC', sans-serif; }
         .font-lcd { font-family: 'Share Tech Mono', monospace; }
+        .serif-font{ font-family:'Noto Serif HK', serif; }
+
+        /* Blueprint buttons (INDEX / theme / lang) */
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
+        /* Dark (blueprint) theme */
+        body.dark{ color:#cbd5e1;
+            background-color:#0a1626 !important;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        body.dark .bg-white{ background-color:#0d192b !important; }
+        body.dark .bg-slate-50{ background-color:#131f33 !important; }
+        body.dark .bg-slate-100{ background-color:#131f33 !important; }
+        body.dark .bg-indigo-50{ background-color:#101a33 !important; }
+        body.dark .bg-green-50{ background-color:#0f2417 !important; }
+        body.dark .bg-red-50{ background-color:#2a1416 !important; }
+        body.dark .text-slate-800,body.dark .text-slate-700{ color:#e2e8f0 !important; }
+        body.dark .text-slate-600,body.dark .text-slate-500{ color:#94a3b8 !important; }
+        body.dark .text-indigo-900,body.dark .text-indigo-800{ color:#c7d2fe !important; }
+        body.dark .border-slate-200,body.dark .border-slate-300,body.dark .border-slate-100,body.dark .border-indigo-100{ border-color:#2c3e57 !important; }
+        body.dark .beaker{ border-color:#334155; background-color:rgba(148,163,184,0.08); }
+        body.dark input,body.dark textarea{ background-color:#0f1a2e !important; color:#e2e8f0 !important; border-color:#2c3e57 !important; }
         
         /* Professional Beaker Styles */
         .beaker {
@@ -68,22 +101,28 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen pb-12">
-<a id="__backlink" href="../../chemistry.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bg-slate-100 text-slate-800 min-h-screen pb-12">
+    <a href="../../chemistry.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:2147483647" class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式" style="width:auto"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+        <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language" style="width:auto"><i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span></button>
+    </div>
 
     <!-- Professional Navbar -->
     <nav class="bg-indigo-900 text-white p-4 shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
+        <div class="container mx-auto flex justify-between items-center" style="padding-left:5.5rem;padding-right:7rem">
             <div class="flex items-center space-x-3">
                 <i class="fas fa-microscope text-2xl text-indigo-300"></i>
                 <div>
-                    <h1 class="text-xl font-bold tracking-wider">碘時鐘反應 (Iodine Clock Reaction)</h1>
-                    <p class="text-xs text-indigo-200">化學虛擬實驗室</p>
+                    <h1 class="serif-font text-xl font-bold tracking-wider" data-zh="碘時鐘反應 (Iodine Clock Reaction)" data-en="Iodine Clock Reaction">碘時鐘反應 (Iodine Clock Reaction)</h1>
+                    <p class="text-xs text-indigo-200" data-zh="化學虛擬實驗室" data-en="Chemistry Virtual Laboratory">化學虛擬實驗室</p>
                 </div>
             </div>
             <div class="flex space-x-2 bg-indigo-800 p-1 rounded-lg">
-                <button onclick="switchTab('simulator')" id="btn-tab-sim" class="bg-indigo-600 text-white px-4 py-1.5 rounded shadow-sm text-sm font-medium transition">實驗區</button>
-                <button onclick="switchTab('challenge')" id="btn-tab-quiz" class="text-indigo-200 hover:text-white px-4 py-1.5 rounded text-sm font-medium transition">知識挑戰區</button>
+                <button onclick="switchTab('simulator')" id="btn-tab-sim" class="bg-indigo-600 text-white px-4 py-1.5 rounded shadow-sm text-sm font-medium transition" data-zh="實驗區" data-en="Lab">實驗區</button>
+                <button onclick="switchTab('challenge')" id="btn-tab-quiz" class="text-indigo-200 hover:text-white px-4 py-1.5 rounded text-sm font-medium transition" data-zh="知識挑戰區" data-en="Challenge">知識挑戰區</button>
             </div>
         </div>
     </nav>
@@ -99,7 +138,7 @@
                 
                 <!-- Apparatus Card -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center">
-                    <h2 class="w-full text-lg font-bold text-slate-700 border-b pb-2 mb-6"><i class="fas fa-flask text-indigo-500 mr-2"></i>反應裝置</h2>
+                    <h2 class="w-full text-lg font-bold text-slate-700 border-b pb-2 mb-6"><i class="fas fa-flask text-indigo-500 mr-2"></i><span data-zh="反應裝置" data-en="Apparatus">反應裝置</span></h2>
                     
                     <div class="beaker mb-8">
                         <!-- Volume Marks -->
@@ -126,7 +165,7 @@
                     
                     <!-- Digital Timer -->
                     <div class="w-full bg-slate-900 rounded-lg p-4 mb-2 flex flex-col items-center shadow-inner border-2 border-slate-700">
-                        <span class="text-slate-400 text-xs font-bold mb-1 uppercase tracking-widest">電子計時器</span>
+                        <span class="text-slate-400 text-xs font-bold mb-1 uppercase tracking-widest" data-zh="電子計時器" data-en="Digital Timer">電子計時器</span>
                         <div class="text-4xl font-lcd text-green-400 tracking-wider" id="timerDisplay">
                             0.000 <span class="text-xl">s</span>
                         </div>
@@ -135,15 +174,18 @@
 
                 <!-- Controls Card -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-bold text-slate-700 border-b pb-2 mb-4"><i class="fas fa-sliders-h text-indigo-500 mr-2"></i>實驗參數設定</h2>
-                    
-                    <p class="text-sm text-slate-600 mb-3 font-medium"><strong>影響速率的因素：</strong>透過調整以下變數來「撥動」這個化學時鐘：</p>
+                    <h2 class="text-lg font-bold text-slate-700 border-b pb-2 mb-4"><i class="fas fa-sliders-h text-indigo-500 mr-2"></i><span data-zh="實驗參數設定" data-en="Experiment Parameters">實驗參數設定</span></h2>
+
+                    <p class="text-sm text-slate-600 mb-3 font-medium">
+                        <span class="lang-zh"><strong>影響速率的因素：</strong>透過調整以下變數來「撥動」這個化學時鐘：</span>
+                        <span class="lang-en" style="display:none"><strong>Factors affecting the rate:</strong> adjust the variables below to "wind" this chemical clock:</span>
+                    </p>
 
                     <!-- 探究模式選擇 -->
                     <div class="flex space-x-2 mb-4">
-                        <button onclick="setMode('conc')" id="mode-btn-conc" class="flex-1 py-1.5 bg-indigo-600 text-white rounded text-sm font-bold shadow-sm transition">探究濃度</button>
-                        <button onclick="setMode('temp')" id="mode-btn-temp" class="flex-1 py-1.5 bg-slate-100 text-slate-600 rounded text-sm font-bold hover:bg-slate-200 transition">探究溫度</button>
-                        <button onclick="setMode('cat')" id="mode-btn-cat" class="flex-1 py-1.5 bg-slate-100 text-slate-600 rounded text-sm font-bold hover:bg-slate-200 transition">探究催化劑</button>
+                        <button onclick="setMode('conc')" id="mode-btn-conc" class="flex-1 py-1.5 bg-indigo-600 text-white rounded text-sm font-bold shadow-sm transition" data-zh="探究濃度" data-en="Concentration">探究濃度</button>
+                        <button onclick="setMode('temp')" id="mode-btn-temp" class="flex-1 py-1.5 bg-slate-100 text-slate-600 rounded text-sm font-bold hover:bg-slate-200 transition" data-zh="探究溫度" data-en="Temperature">探究溫度</button>
+                        <button onclick="setMode('cat')" id="mode-btn-cat" class="flex-1 py-1.5 bg-slate-100 text-slate-600 rounded text-sm font-bold hover:bg-slate-200 transition" data-zh="探究催化劑" data-en="Catalyst">探究催化劑</button>
                     </div>
                     
                     <div id="control-info" class="text-xs text-slate-500 mb-4 bg-slate-50 p-2 rounded border border-slate-100">
@@ -152,7 +194,7 @@
 
                     <!-- 濃度面板 -->
                     <div id="panel-conc" class="control-panel block">
-                        <label class="block text-sm font-bold text-slate-600 mb-2">設定過硫酸鹽 [S₂O₈²⁻] 初始濃度 (M):</label>
+                        <label class="block text-sm font-bold text-slate-600 mb-2" data-zh="設定過硫酸鹽 [S₂O₈²⁻] 初始濃度 (M):" data-en="Set persulfate [S₂O₈²⁻] initial concentration (M):">設定過硫酸鹽 [S₂O₈²⁻] 初始濃度 (M):</label>
                         <div class="grid grid-cols-5 gap-2 mb-6" id="concentrationButtons">
                             <button onclick="setParam('conc', 0.02)" class="param-btn-conc py-2 bg-slate-100 border border-slate-300 rounded hover:bg-indigo-50 text-slate-700 text-sm font-bold transition shadow-sm" data-val="0.02">0.02</button>
                             <button onclick="setParam('conc', 0.04)" class="param-btn-conc py-2 bg-slate-100 border border-slate-300 rounded hover:bg-indigo-50 text-slate-700 text-sm font-bold transition shadow-sm" data-val="0.04">0.04</button>
@@ -164,7 +206,7 @@
 
                     <!-- 溫度面板 -->
                     <div id="panel-temp" class="control-panel hidden">
-                        <label class="block text-sm font-bold text-slate-600 mb-2">設定反應溫度 (°C):</label>
+                        <label class="block text-sm font-bold text-slate-600 mb-2" data-zh="設定反應溫度 (°C):" data-en="Set reaction temperature (°C):">設定反應溫度 (°C):</label>
                         <div class="grid grid-cols-5 gap-2 mb-6" id="temperatureButtons">
                             <button onclick="setParam('temp', 10)" class="param-btn-temp py-2 bg-slate-100 border border-slate-300 rounded hover:bg-indigo-50 text-slate-700 text-sm font-bold transition shadow-sm" data-val="10">10</button>
                             <button onclick="setParam('temp', 20)" class="param-btn-temp py-2 bg-indigo-600 text-white border border-indigo-700 rounded text-sm font-bold transition shadow-sm ring-2 ring-indigo-300 ring-offset-1" data-val="20">20</button>
@@ -176,16 +218,16 @@
 
                     <!-- 催化劑面板 -->
                     <div id="panel-cat" class="control-panel hidden">
-                        <label class="block text-sm font-bold text-slate-600 mb-2">加入催化劑:</label>
+                        <label class="block text-sm font-bold text-slate-600 mb-2" data-zh="加入催化劑:" data-en="Add a catalyst:">加入催化劑:</label>
                         <div class="grid grid-cols-2 gap-4 mb-6" id="catalystButtons">
-                            <button onclick="setParam('cat', 0)" class="param-btn-cat py-3 bg-indigo-600 text-white border border-indigo-700 rounded-lg text-base font-bold transition shadow-sm ring-2 ring-indigo-300 ring-offset-1" data-val="0">沒有加入催化劑</button>
-                            <button onclick="setParam('cat', 1)" class="param-btn-cat py-3 bg-slate-100 border border-slate-300 rounded-lg hover:bg-indigo-50 text-slate-700 text-base font-bold transition shadow-sm" data-val="1">有加入催化劑</button>
+                            <button onclick="setParam('cat', 0)" class="param-btn-cat py-3 bg-indigo-600 text-white border border-indigo-700 rounded-lg text-base font-bold transition shadow-sm ring-2 ring-indigo-300 ring-offset-1" data-val="0" data-zh="沒有加入催化劑" data-en="No catalyst">沒有加入催化劑</button>
+                            <button onclick="setParam('cat', 1)" class="param-btn-cat py-3 bg-slate-100 border border-slate-300 rounded-lg hover:bg-indigo-50 text-slate-700 text-base font-bold transition shadow-sm" data-val="1" data-zh="有加入催化劑" data-en="With catalyst">有加入催化劑</button>
                         </div>
                     </div>
 
                     <div class="flex space-x-3">
                         <button id="startBtn" onclick="startReaction()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-md transition flex justify-center items-center">
-                            <i class="fas fa-play mr-2"></i> 開始反應
+                            <i class="fas fa-play mr-2"></i> <span data-zh="開始反應" data-en="Start reaction">開始反應</span>
                         </button>
                         <button id="resetBtn" onclick="resetReaction()" class="w-1/3 bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 rounded-lg shadow-md transition flex justify-center items-center">
                             <i class="fas fa-redo-alt"></i>
@@ -200,23 +242,25 @@
                 
                 <!-- Theory Panel -->
                 <div class="bg-indigo-50 p-5 rounded-xl border border-indigo-100 shadow-sm">
-                    <h3 class="font-bold text-indigo-900 mb-2 flex items-center"><i class="fas fa-book-open mr-2 text-indigo-600"></i>反應原理 (Reaction Principle)</h3>
+                    <h3 class="font-bold text-indigo-900 mb-2 flex items-center"><i class="fas fa-book-open mr-2 text-indigo-600"></i><span data-zh="反應原理 (Reaction Principle)" data-en="Reaction Principle">反應原理 (Reaction Principle)</span></h3>
                     <p class="text-sm text-indigo-800 leading-relaxed font-medium">
-                        本模擬器展示<strong>過硫酸鹽型碘鐘反應</strong>。通過過硫酸鹽將碘離子氧化成碘單質，而硫代硫酸鈉則將生成的碘單質還原回碘離子。<br>
+                        <span class="lang-zh">本模擬器展示<strong>過硫酸鹽型碘鐘反應</strong>。通過過硫酸鹽將碘離子氧化成碘單質，而硫代硫酸鈉則將生成的碘單質還原回碘離子。</span>
+                        <span class="lang-en" style="display:none">This simulator demonstrates the <strong>persulfate iodine clock reaction</strong>. Persulfate oxidises iodide ions to iodine, while sodium thiosulfate reduces the iodine formed back to iodide.</span><br>
                         <span class="inline-block mt-2 mb-1 pl-2 border-l-4 border-indigo-400">
-                            1. <span class="font-mono text-slate-900 font-bold">2I⁻(aq) + S₂O₈²⁻(aq) ➔ I₂(aq) + 2SO₄²⁻(aq)</span> (決定速率的慢步驟)<br>
-                            2. <span class="font-mono text-slate-900 font-bold">I₂(aq) + 2S₂O₃²⁻(aq) ➔ 2I⁻(aq) + S₄O₆²⁻(aq)</span> (快步驟)
+                            1. <span class="font-mono text-slate-900 font-bold">2I⁻(aq) + S₂O₈²⁻(aq) ➔ I₂(aq) + 2SO₄²⁻(aq)</span> <span data-zh="(決定速率的慢步驟)" data-en="(rate-determining slow step)">(決定速率的慢步驟)</span><br>
+                            2. <span class="font-mono text-slate-900 font-bold">I₂(aq) + 2S₂O₃²⁻(aq) ➔ 2I⁻(aq) + S₄O₆²⁻(aq)</span> <span data-zh="(快步驟)" data-en="(fast step)">(快步驟)</span>
                         </span><br>
-                        當 S₂O₃²⁻ 完全耗盡時，步驟1生成的 I₂ 無法再被還原，會瞬間與溶液中的澱粉指示劑結合，形成 <strong class="text-blue-900 bg-blue-200 px-1 rounded">藍黑色絡合物</strong>。
+                        <span class="lang-zh">當 S₂O₃²⁻ 完全耗盡時，步驟1生成的 I₂ 無法再被還原，會瞬間與溶液中的澱粉指示劑結合，形成 <strong class="text-blue-900 bg-blue-200 px-1 rounded">藍黑色絡合物</strong>。</span>
+                        <span class="lang-en" style="display:none">When the S₂O₃²⁻ is completely used up, the I₂ produced in step 1 can no longer be reduced and instantly binds with the starch indicator in solution, forming a <strong class="text-blue-900 bg-blue-200 px-1 rounded">blue-black complex</strong>.</span>
                     </p>
                 </div>
 
                 <!-- Data Analysis Panel -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full">
                     <div class="flex justify-between items-end border-b pb-2 mb-4">
-                        <h2 class="text-lg font-bold text-slate-700"><i class="fas fa-chart-line text-indigo-500 mr-2"></i>數據採集與分析</h2>
+                        <h2 class="text-lg font-bold text-slate-700"><i class="fas fa-chart-line text-indigo-500 mr-2"></i><span data-zh="數據採集與分析" data-en="Data Collection & Analysis">數據採集與分析</span></h2>
                         <button id="recordBtn" onclick="recordData()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-bold py-1.5 px-4 rounded shadow-sm transition opacity-50 cursor-not-allowed text-sm" disabled>
-                            <i class="fas fa-calculator mr-1"></i> 計算並記錄數據
+                            <i class="fas fa-calculator mr-1"></i> <span data-zh="計算並記錄數據" data-en="Calculate & record">計算並記錄數據</span>
                         </button>
                     </div>
 
@@ -227,12 +271,12 @@
                                 <thead class="bg-slate-800 text-slate-100 sticky top-0 z-10">
                                     <tr>
                                         <th id="table-col-var" class="py-2 px-3 border-b font-medium tracking-wider">[S₂O₈²⁻] (M)</th>
-                                        <th class="py-2 px-3 border-b font-medium tracking-wider">時間 t (s)</th>
-                                        <th class="py-2 px-3 border-b font-medium tracking-wider">速率 1/t (s⁻¹)</th>
+                                        <th class="py-2 px-3 border-b font-medium tracking-wider" data-zh="時間 t (s)" data-en="Time t (s)">時間 t (s)</th>
+                                        <th class="py-2 px-3 border-b font-medium tracking-wider" data-zh="速率 1/t (s⁻¹)" data-en="Rate 1/t (s⁻¹)">速率 1/t (s⁻¹)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="dataTableBody" class="text-slate-600 font-mono">
-                                    <tr><td colspan="3" class="py-4 text-slate-400 font-sans">尚未記錄數據</td></tr>
+                                    <tr><td colspan="3" class="py-4 text-slate-400 font-sans" data-zh="尚未記錄數據" data-en="No data recorded yet">尚未記錄數據</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -246,22 +290,22 @@
 
                 <!-- Conclusion Panel -->
                 <div id="conclusionPanel" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hidden transition-all duration-500">
-                    <h2 class="text-lg font-bold text-slate-700 border-b pb-2 mb-4"><i class="fas fa-edit text-indigo-500 mr-2"></i>實驗結論與原理解釋</h2>
+                    <h2 class="text-lg font-bold text-slate-700 border-b pb-2 mb-4"><i class="fas fa-edit text-indigo-500 mr-2"></i><span data-zh="實驗結論與原理解釋" data-en="Conclusion & Explanation">實驗結論與原理解釋</span></h2>
                     <div id="studentInputArea">
-                        <p class="text-sm font-bold text-slate-600 mb-2">請根據上方圖表的趨勢，寫下您的實驗結論：</p>
-                        <textarea id="studentConclusion" rows="3" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3 text-slate-700 text-sm" placeholder="例如：當...增加時，反應速率會..."></textarea>
-                        <button id="submitConclusionBtn" onclick="submitConclusion()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md text-sm">
+                        <p class="text-sm font-bold text-slate-600 mb-2" data-zh="請根據上方圖表的趨勢，寫下您的實驗結論：" data-en="Based on the trend in the chart above, write your experimental conclusion:">請根據上方圖表的趨勢，寫下您的實驗結論：</p>
+                        <textarea id="studentConclusion" rows="3" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3 text-slate-700 text-sm" placeholder="例如：當...增加時，反應速率會..." data-ph-zh="例如：當...增加時，反應速率會..." data-ph-en="e.g. As ... increases, the reaction rate will..."></textarea>
+                        <button id="submitConclusionBtn" onclick="submitConclusion()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md text-sm" data-zh="提交並查看學術解析" data-en="Submit & view analysis">
                             提交並查看學術解析
                         </button>
                     </div>
-                    
+
                     <div id="referenceArea" class="hidden mt-5 pt-5 border-t border-slate-200">
                         <div class="mb-4">
-                            <h4 class="font-bold text-green-700 mb-2 flex items-center"><i class="fas fa-check-circle mr-2"></i>參考結論</h4>
+                            <h4 class="font-bold text-green-700 mb-2 flex items-center"><i class="fas fa-check-circle mr-2"></i><span data-zh="參考結論" data-en="Reference conclusion">參考結論</span></h4>
                             <p id="refConclusion" class="text-sm text-slate-700 bg-green-50 p-4 rounded-lg border border-green-100 leading-relaxed"></p>
                         </div>
                         <div>
-                            <h4 class="font-bold text-indigo-700 mb-2 flex items-center"><i class="fas fa-lightbulb mr-2"></i>原理解釋 (碰撞學說)</h4>
+                            <h4 class="font-bold text-indigo-700 mb-2 flex items-center"><i class="fas fa-lightbulb mr-2"></i><span data-zh="原理解釋 (碰撞學說)" data-en="Explanation (collision theory)">原理解釋 (碰撞學說)</span></h4>
                             <p id="refExplanation" class="text-sm text-slate-700 bg-indigo-50 p-4 rounded-lg border border-indigo-100 leading-relaxed"></p>
                         </div>
                     </div>
@@ -274,14 +318,17 @@
         <div id="challenge-tab" class="hidden">
             <div class="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
                 <div class="text-center mb-8 border-b pb-6">
-                    <h2 class="text-3xl font-bold text-indigo-800 mb-3"><i class="fas fa-graduation-cap text-indigo-500 mr-2"></i>學術知識評量</h2>
-                    <p class="text-slate-600">請完成以下 10 題測驗以驗證您對反應動力學的理解。通過標準：<strong>80分 (答對8題)</strong>。</p>
+                    <h2 class="text-3xl font-bold text-indigo-800 mb-3"><i class="fas fa-graduation-cap text-indigo-500 mr-2"></i><span data-zh="學術知識評量" data-en="Knowledge Assessment">學術知識評量</span></h2>
+                    <p class="text-slate-600">
+                        <span class="lang-zh">請完成以下 10 題測驗以驗證您對反應動力學的理解。通過標準：<strong>80分 (答對8題)</strong>。</span>
+                        <span class="lang-en" style="display:none">Complete the 10 questions below to test your understanding of reaction kinetics. Pass mark: <strong>80 points (8 correct)</strong>.</span>
+                    </p>
                 </div>
 
                 <form id="challengeForm" onsubmit="submitChallenge(event)">
                     <div class="mb-8 p-6 bg-slate-50 rounded-lg border border-slate-200 flex flex-col md:flex-row md:items-center gap-4">
-                        <label class="font-bold text-slate-700 whitespace-nowrap" for="studentName"><i class="fas fa-user-circle mr-2 text-slate-400"></i>受測者姓名/學號：</label>
-                        <input class="flex-grow px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium" id="studentName" type="text" required placeholder="請輸入資料以建立成績記錄">
+                        <label class="font-bold text-slate-700 whitespace-nowrap" for="studentName"><i class="fas fa-user-circle mr-2 text-slate-400"></i><span data-zh="受測者姓名/學號：" data-en="Name / student ID:">受測者姓名/學號：</span></label>
+                        <input class="flex-grow px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium" id="studentName" type="text" required placeholder="請輸入資料以建立成績記錄" data-ph-zh="請輸入資料以建立成績記錄" data-ph-en="Enter your details to record your score">
                     </div>
 
                     <div id="questionsContainer" class="space-y-5 mb-10">
@@ -289,7 +336,7 @@
                     </div>
 
                     <button type="submit" id="submitQuizBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-bold py-4 rounded-xl shadow-lg transition flex justify-center items-center tracking-wider">
-                        <i class="fas fa-file-signature mr-2"></i> 提交試卷並結算成績
+                        <i class="fas fa-file-signature mr-2"></i> <span data-zh="提交試卷並結算成績" data-en="Submit & grade">提交試卷並結算成績</span>
                     </button>
                 </form>
             </div>
@@ -299,13 +346,13 @@
     <!-- Rate Input Modal (自行計算速率彈出視窗) -->
     <div id="rateInputModal" class="fixed inset-0 bg-slate-900 bg-opacity-70 hidden flex justify-center items-center z-[110] px-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 transform transition-transform duration-200 border-t-8 border-indigo-600">
-            <h3 class="text-xl font-bold text-slate-800 mb-3"><i class="fas fa-calculator text-indigo-500 mr-2"></i>自行計算反應速率</h3>
-            <p class="text-slate-600 mb-4 text-sm">反應時間 t = <span id="modalTimeDisplay" class="font-bold text-indigo-600 text-lg"></span> s<br>請計算並輸入反應速率 (Rate = 1 / t)：</p>
-            <input type="number" id="studentRateInput" step="0.0001" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-2 font-mono text-lg text-center shadow-inner" placeholder="例如: 0.1234">
+            <h3 class="text-xl font-bold text-slate-800 mb-3"><i class="fas fa-calculator text-indigo-500 mr-2"></i><span data-zh="自行計算反應速率" data-en="Calculate the reaction rate">自行計算反應速率</span></h3>
+            <p class="text-slate-600 mb-4 text-sm"><span data-zh="反應時間 t = " data-en="Reaction time t = ">反應時間 t = </span><span id="modalTimeDisplay" class="font-bold text-indigo-600 text-lg"></span> s<br><span data-zh="請計算並輸入反應速率 (Rate = 1 / t)：" data-en="Calculate and enter the reaction rate (Rate = 1 / t):">請計算並輸入反應速率 (Rate = 1 / t)：</span></p>
+            <input type="number" id="studentRateInput" step="0.0001" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-2 font-mono text-lg text-center shadow-inner" placeholder="例如: 0.1234" data-ph-zh="例如: 0.1234" data-ph-en="e.g. 0.1234">
             <p id="rateInputError" class="text-red-500 text-sm hidden mb-4"><i class="fas fa-exclamation-circle mr-1"></i> 計算結果不正確，請檢查公式 (1 / t) 或保留3~4位小數。</p>
             <div class="flex space-x-3 mt-6">
-                <button onclick="cancelRateInput()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-4 rounded-xl transition">取消</button>
-                <button onclick="verifyAndRecordRate()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-md">驗證並記錄</button>
+                <button onclick="cancelRateInput()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-4 rounded-xl transition" data-zh="取消" data-en="Cancel">取消</button>
+                <button onclick="verifyAndRecordRate()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-md" data-zh="驗證並記錄" data-en="Verify & record">驗證並記錄</button>
             </div>
         </div>
     </div>
@@ -317,7 +364,7 @@
                 <div id="modalIcon" class="text-5xl mb-4 drop-shadow-md"></div>
                 <h3 id="modalTitle" class="text-2xl font-bold text-slate-800 mb-3"></h3>
                 <p id="modalMessage" class="text-slate-600 mb-8 leading-relaxed"></p>
-                <button onclick="closeModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-md">
+                <button onclick="closeModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-md" data-zh="確認 (OK)" data-en="OK">
                     確認 (OK)
                 </button>
             </div>
@@ -334,6 +381,10 @@
         let timerInterval = null;
         let targetTime = 0;
         let chartInstance = null;
+
+        /* ---- Language helpers ---- */
+        let LANG = 'zh';
+        function L(o){ return (o && typeof o === 'object' && 'zh' in o) ? o[LANG] : o; }
 
         // Variables state
         let currentMode = 'conc'; // 'conc', 'temp', 'cat'
@@ -358,12 +409,17 @@
 
         function updateControlInfo() {
             const infoBox = document.getElementById('control-info');
+            const iv = LANG==='zh' ? '獨立變項：' : 'Independent variable: ';
+            const cv = LANG==='zh' ? '控制變因：' : 'Controlled variables: ';
+            const noYes = defaultParams.cat === 0 ? (LANG==='zh'?'無':'None') : (LANG==='zh'?'有':'Yes');
+            const catL = LANG==='zh' ? '催化劑' : 'catalyst';
+            const tempL = LANG==='zh' ? '溫度' : 'Temp';
             if(currentMode === 'conc') {
-                infoBox.innerHTML = `<strong>獨立變項：</strong>過硫酸鹽濃度<br><strong>控制變因：</strong>溫度 = ${defaultParams.temp}°C, 催化劑 = ${defaultParams.cat === 0 ? '無' : '有'}`;
+                infoBox.innerHTML = `<strong>${iv}</strong>${LANG==='zh'?'過硫酸鹽濃度':'persulfate concentration'}<br><strong>${cv}</strong>${tempL} = ${defaultParams.temp}°C, ${catL} = ${noYes}`;
             } else if (currentMode === 'temp') {
-                infoBox.innerHTML = `<strong>獨立變項：</strong>反應溫度<br><strong>控制變因：</strong>[S₂O₈²⁻] = ${defaultParams.conc}M, 催化劑 = ${defaultParams.cat === 0 ? '無' : '有'}`;
+                infoBox.innerHTML = `<strong>${iv}</strong>${LANG==='zh'?'反應溫度':'reaction temperature'}<br><strong>${cv}</strong>[S₂O₈²⁻] = ${defaultParams.conc}M, ${catL} = ${noYes}`;
             } else if (currentMode === 'cat') {
-                infoBox.innerHTML = `<strong>獨立變項：</strong>有無催化劑<br><strong>控制變因：</strong>[S₂O₈²⁻] = ${defaultParams.conc}M, 溫度 = ${defaultParams.temp}°C`;
+                infoBox.innerHTML = `<strong>${iv}</strong>${LANG==='zh'?'有無催化劑':'presence of catalyst'}<br><strong>${cv}</strong>[S₂O₈²⁻] = ${defaultParams.conc}M, ${tempL} = ${defaultParams.temp}°C`;
             }
         }
 
@@ -508,7 +564,10 @@
             
             const exists = currentArray.find(d => d.val === currentVal);
             if (exists) {
-                showModal('系統提示', '此參數的數據已存在資料庫中。', '⚠️', 'text-amber-500');
+                showModal(
+                    LANG==='zh' ? '系統提示' : 'Notice',
+                    LANG==='zh' ? '此參數的數據已存在資料庫中。' : 'Data for this parameter is already recorded.',
+                    '⚠️', 'text-amber-500');
                 return;
             }
 
@@ -532,7 +591,9 @@
             const actualRate = 1 / timeElapsed;
 
             if (isNaN(userInput)) {
-                document.getElementById('rateInputError').innerHTML = "<i class='fas fa-exclamation-circle mr-1'></i> 請輸入有效的數字。";
+                document.getElementById('rateInputError').innerHTML = LANG==='zh'
+                    ? "<i class='fas fa-exclamation-circle mr-1'></i> 請輸入有效的數字。"
+                    : "<i class='fas fa-exclamation-circle mr-1'></i> Please enter a valid number.";
                 document.getElementById('rateInputError').classList.remove('hidden');
                 return;
             }
@@ -569,7 +630,9 @@
                 }
             } else {
                 // 計算錯誤，提示重試
-                document.getElementById('rateInputError').innerHTML = "<i class='fas fa-exclamation-circle mr-1'></i> 計算結果不正確，請檢查公式 (Rate = 1 / t) 或保留3~4位小數。";
+                document.getElementById('rateInputError').innerHTML = LANG==='zh'
+                    ? "<i class='fas fa-exclamation-circle mr-1'></i> 計算結果不正確，請檢查公式 (Rate = 1 / t) 或保留3~4位小數。"
+                    : "<i class='fas fa-exclamation-circle mr-1'></i> That result is incorrect. Check the formula (Rate = 1 / t) or keep 3–4 decimal places.";
                 document.getElementById('rateInputError').classList.remove('hidden');
             }
         }
@@ -577,8 +640,8 @@
         function updateTableHeader() {
             const col = document.getElementById('table-col-var');
             if (currentMode === 'conc') col.innerText = '[S₂O₈²⁻] (M)';
-            else if (currentMode === 'temp') col.innerText = '溫度 (°C)';
-            else if (currentMode === 'cat') col.innerText = '催化劑狀態';
+            else if (currentMode === 'temp') col.innerText = LANG==='zh' ? '溫度 (°C)' : 'Temp (°C)';
+            else if (currentMode === 'cat') col.innerText = LANG==='zh' ? '催化劑狀態' : 'Catalyst';
         }
 
         function updateDataTable() {
@@ -587,7 +650,7 @@
             const currentArray = dataStore[currentMode];
             
             if (currentArray.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-slate-400 font-sans">尚未記錄數據</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-slate-400 font-sans">${LANG==='zh'?'尚未記錄數據':'No data recorded yet'}</td></tr>`;
                 return;
             }
 
@@ -596,7 +659,7 @@
                 tr.className = "hover:bg-slate-50 border-b border-slate-100 transition";
                 let displayVal = data.val;
                 if (currentMode === 'conc') displayVal = data.val.toFixed(2);
-                else if (currentMode === 'cat') displayVal = data.val === 0 ? '無' : '有';
+                else if (currentMode === 'cat') displayVal = data.val === 0 ? (LANG==='zh'?'無':'None') : (LANG==='zh'?'有':'Yes');
                 
                 tr.innerHTML = `
                     <td class="py-2.5 px-3 font-bold text-slate-700">${displayVal}</td>
@@ -627,33 +690,43 @@
             }
         }
 
+        const REF_TEXTS = {
+            conc: {
+                conclusion: { zh: "過硫酸鹽 [S₂O₈²⁻] 濃度越高，出現藍黑色越快，反應速率顯著加快。", en: "The higher the persulfate [S₂O₈²⁻] concentration, the faster the blue-black colour appears — the reaction rate increases markedly." },
+                explanation: { zh: "反應物（如 S₂O₈²⁻）濃度越高，反應物粒子之間的距離減少，有效撞擊頻率增加，反應速率顯著加快。因此，出現藍黑色越快。", en: "The higher the concentration of a reactant (e.g. S₂O₈²⁻), the closer the particles are, so the frequency of effective collisions rises and the reaction rate increases markedly — hence the blue-black colour appears sooner." }
+            },
+            temp: {
+                conclusion: { zh: "反應溫度越高，出現藍黑色越快，反應速率顯著加快。", en: "The higher the reaction temperature, the faster the blue-black colour appears — the reaction rate increases markedly." },
+                explanation: { zh: "溫度越高，反應物粒子平均動能上升，有效撞擊頻率增加，反應速率顯著加快。", en: "The higher the temperature, the greater the average kinetic energy of the reactant particles, so the frequency of effective collisions rises and the reaction rate increases markedly." }
+            },
+            cat: {
+                conclusion: { zh: "加入催化劑後，出現藍黑色越快，反應速率顯著加快。", en: "Adding a catalyst makes the blue-black colour appear faster — the reaction rate increases markedly." },
+                explanation: { zh: "加入如硫酸錳 (MnSO₄) 等催化劑可改變使用較低活化能的反應路徑。有較多反應物粒子擁有高於或等於活化能，使有效撞擊頻率增加，並加速反應。", en: "Adding a catalyst such as manganese(II) sulfate (MnSO₄) provides an alternative reaction pathway with lower activation energy. More reactant particles then possess energy at or above the activation energy, increasing the frequency of effective collisions and speeding up the reaction." }
+            }
+        };
+
+        function applyRefTexts() {
+            const r = REF_TEXTS[currentMode];
+            if (!r) return;
+            document.getElementById('refConclusion').innerHTML = L(r.conclusion);
+            document.getElementById('refExplanation').innerHTML = L(r.explanation);
+        }
+
         function submitConclusion() {
             const studentText = document.getElementById('studentConclusion').value.trim();
             if (!studentText) {
-                showModal('提示', '請先輸入您的實驗結論！', '⚠️', 'text-amber-500');
+                showModal(
+                    LANG==='zh' ? '提示' : 'Notice',
+                    LANG==='zh' ? '請先輸入您的實驗結論！' : 'Please enter your conclusion first!',
+                    '⚠️', 'text-amber-500');
                 return;
             }
 
-            let refConc = "";
-            let refExp = "";
+            applyRefTexts();
 
-            if (currentMode === 'conc') {
-                refConc = "過硫酸鹽 [S₂O₈²⁻] 濃度越高，出現藍黑色越快，反應速率顯著加快。";
-                refExp = "反應物（如 S₂O₈²⁻）濃度越高，反應物粒子之間的距離減少，有效撞擊頻率增加，反應速率顯著加快。因此，出現藍黑色越快。";
-            } else if (currentMode === 'temp') {
-                refConc = "反應溫度越高，出現藍黑色越快，反應速率顯著加快。";
-                refExp = "溫度越高，反應物粒子平均動能上升，有效撞擊頻率增加，反應速率顯著加快。";
-            } else if (currentMode === 'cat') {
-                refConc = "加入催化劑後，出現藍黑色越快，反應速率顯著加快。";
-                refExp = "加入如硫酸錳 (MnSO₄) 等催化劑可改變使用較低活化能的反應路徑。有較多反應物粒子擁有高於或等於活化能，使有效撞擊頻率增加，並加速反應。";
-            }
-
-            document.getElementById('refConclusion').innerHTML = refConc;
-            document.getElementById('refExplanation').innerHTML = refExp;
-            
             document.getElementById('referenceArea').classList.remove('hidden');
             document.getElementById('studentConclusion').disabled = true;
-            
+
             const btn = document.getElementById('submitConclusionBtn');
             btn.disabled = true;
             btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -708,20 +781,23 @@
                 }
             });
             updateChartConfig();
+            applyChartTheme();
         }
 
         function updateChartConfig() {
             if (!chartInstance) return;
             if (currentMode === 'conc') {
-                chartInstance.options.scales.x.title.text = '[S₂O₈²⁻] 濃度 (M)';
+                chartInstance.options.scales.x.title.text = LANG==='zh' ? '[S₂O₈²⁻] 濃度 (M)' : '[S₂O₈²⁻] concentration (M)';
                 chartInstance.options.scales.x.max = 0.12;
             } else if (currentMode === 'temp') {
-                chartInstance.options.scales.x.title.text = '溫度 (°C)';
+                chartInstance.options.scales.x.title.text = LANG==='zh' ? '溫度 (°C)' : 'Temperature (°C)';
                 chartInstance.options.scales.x.max = 60;
             } else if (currentMode === 'cat') {
-                chartInstance.options.scales.x.title.text = '催化劑 (0=無, 1=有)';
+                chartInstance.options.scales.x.title.text = LANG==='zh' ? '催化劑 (0=無, 1=有)' : 'Catalyst (0=none, 1=yes)';
                 chartInstance.options.scales.x.max = 1.5;
             }
+            chartInstance.options.scales.y.title.text = LANG==='zh' ? '反應速率 1/t (s⁻¹)' : 'Reaction rate 1/t (s⁻¹)';
+            chartInstance.data.datasets[0].label = LANG==='zh' ? '反應速率關係' : 'Rate relationship';
             chartInstance.update();
         }
 
@@ -733,34 +809,106 @@
             chartInstance.update();
         }
 
+        function applyChartTheme() {
+            if (!chartInstance) return;
+            const dark = document.body.classList.contains('dark');
+            const tick = dark ? '#94a3b8' : '#666';
+            const grid = dark ? 'rgba(148,163,184,0.15)' : '#f1f5f9';
+            const titleCol = dark ? '#cbd5e1' : '#666';
+            ['x','y'].forEach(ax => {
+                const s = chartInstance.options.scales[ax];
+                s.ticks = s.ticks || {}; s.ticks.color = tick;
+                s.grid = s.grid || {}; s.grid.color = grid;
+                s.title = s.title || {}; s.title.color = titleCol;
+            });
+            chartInstance.update();
+        }
+
         /* =========================================
            3. Quiz Logic & Google Sheets Integration
         ========================================= */
         const questions = [
-            { q: "1. 碘時鐘反應中，出現藍黑色是因為碘與什麼物質結合？", opts: ["(A) 澱粉", "(B) 葡萄糖", "(C) 蛋白質", "(D) 脂肪"], ans: 0, guidance: "碘單質 (I₂) 遇到澱粉會形成特有的藍黑色絡合物，這是經典的指示劑反應。" },
-            { q: "2. 反應速率與反應物濃度的關係通常是？", opts: ["(A) 濃度越高，速率越快", "(B) 濃度越高，速率越慢", "(C) 兩者無關", "(D) 呈反比"], ans: 0, guidance: "濃度增加代表單位體積內粒子數增加，粒子間的碰撞頻率上升，因此速率變快。" },
-            { q: "3. 單位時間內反應物濃度的減少量或產物濃度的增加量定義為：", opts: ["(A) 反應級數", "(B) 速率常數", "(C) 反應速率", "(D) 活化能"], ans: 2, guidance: "這是化學反應速率的標準定義，用以衡量反應進行的快慢。" },
-            { q: "4. 在我們的模擬實驗中，若將過硫酸鹽濃度加倍，反應時間會？", opts: ["(A) 加倍", "(B) 減半", "(C) 不變", "(D) 增加四倍"], ans: 1, guidance: "因為過硫酸鹽的反應級數為一級，濃度與速率成正比例；速率加倍，完成反應所需時間自然減半。" },
-            { q: "5. 溫度升高能加快反應速率的主要原因為何？", opts: ["(A) 降低了活化能", "(B) 增加了容器壓力", "(C) 減少了分子間距", "(D) 增加了具有足夠動能的分子比例"], ans: 3, guidance: "溫度升高使分子平均動能增加，超過活化能門檻的「有效碰撞」分子比例大幅上升。" },
-            { q: "6. 哪種方法不能加快碘時鐘反應的速率？", opts: ["(A) 提高溫度", "(B) 加入催化劑", "(C) 加水稀釋反應物", "(D) 增加反應物濃度"], ans: 2, guidance: "加水稀釋會降低反應物的濃度，導致粒子間碰撞機率下降，反而會減慢反應速率。" },
-            { q: "7. 實驗中，用澱粉來標示反應終點，這裡的澱粉作用類似於？", opts: ["(A) 催化劑", "(B) 指示劑", "(C) 抑制劑", "(D) 溶劑"], ans: 1, guidance: "澱粉本身不參與主反應，僅在產生特定產物 (碘) 時變色以指示反應進度，故作為指示劑。" },
-            { q: "8. 若一個反應的速率常數 (k) 較大，代表該反應？", opts: ["(A) 較慢", "(B) 較快", "(C) 需要較高溫度", "(D) 活化能極高"], ans: 1, guidance: "速率常數 k 是速率方程式中的比例常數，k 值越大，代表在相同濃度下的反應速率越快。" },
-            { q: "9. 以速率 (1/t) 對濃度作圖，若為該反應物對該反應是「一級」(即濃度和反應速率為正比例)，圖形會呈現？", opts: ["(A) 拋物線", "(B) 雙曲線", "(C) 通過原點的直線", "(D) 水平線"], ans: 2, guidance: "正比例關係 (y = kx) 在數學圖形上即為一條通過原點 (0,0) 的斜直線。" },
-            { q: "10. 進行化學實驗時，若不慎將酸液濺到皮膚上，第一步應該怎麼做？", opts: ["(A) 塗抹鹼性溶液中和", "(B) 用布擦拭", "(C) 塗抹藥膏", "(D) 立即用大量清水沖洗"], ans: 3, guidance: "實驗室安全守則第一步永遠是用大量清水沖洗稀釋，直接用酸鹼中和可能會產生大量熱量造成二次灼傷。" }
+            {
+                q: { zh: "1. 碘時鐘反應中，出現藍黑色是因為碘與什麼物質結合？", en: "1. In the iodine clock reaction, the blue-black colour appears because iodine binds with which substance?" },
+                opts: { zh: ["(A) 澱粉", "(B) 葡萄糖", "(C) 蛋白質", "(D) 脂肪"], en: ["(A) Starch", "(B) Glucose", "(C) Protein", "(D) Fat"] },
+                ans: 0,
+                guidance: { zh: "碘單質 (I₂) 遇到澱粉會形成特有的藍黑色絡合物，這是經典的指示劑反應。", en: "Iodine (I₂) forms a characteristic blue-black complex with starch — the classic indicator reaction." }
+            },
+            {
+                q: { zh: "2. 反應速率與反應物濃度的關係通常是？", en: "2. The relationship between reaction rate and reactant concentration is usually?" },
+                opts: { zh: ["(A) 濃度越高，速率越快", "(B) 濃度越高，速率越慢", "(C) 兩者無關", "(D) 呈反比"], en: ["(A) Higher concentration, faster rate", "(B) Higher concentration, slower rate", "(C) Unrelated", "(D) Inversely proportional"] },
+                ans: 0,
+                guidance: { zh: "濃度增加代表單位體積內粒子數增加，粒子間的碰撞頻率上升，因此速率變快。", en: "A higher concentration means more particles per unit volume, so the collision frequency rises and the rate increases." }
+            },
+            {
+                q: { zh: "3. 單位時間內反應物濃度的減少量或產物濃度的增加量定義為：", en: "3. The decrease in reactant concentration (or increase in product concentration) per unit time is defined as:" },
+                opts: { zh: ["(A) 反應級數", "(B) 速率常數", "(C) 反應速率", "(D) 活化能"], en: ["(A) Reaction order", "(B) Rate constant", "(C) Reaction rate", "(D) Activation energy"] },
+                ans: 2,
+                guidance: { zh: "這是化學反應速率的標準定義，用以衡量反應進行的快慢。", en: "This is the standard definition of reaction rate, used to measure how fast a reaction proceeds." }
+            },
+            {
+                q: { zh: "4. 在我們的模擬實驗中，若將過硫酸鹽濃度加倍，反應時間會？", en: "4. In our simulation, if the persulfate concentration is doubled, the reaction time will?" },
+                opts: { zh: ["(A) 加倍", "(B) 減半", "(C) 不變", "(D) 增加四倍"], en: ["(A) Double", "(B) Halve", "(C) Stay the same", "(D) Increase fourfold"] },
+                ans: 1,
+                guidance: { zh: "因為過硫酸鹽的反應級數為一級，濃度與速率成正比例；速率加倍，完成反應所需時間自然減半。", en: "Persulfate is first-order here, so concentration is proportional to rate; doubling the rate halves the time needed to complete the reaction." }
+            },
+            {
+                q: { zh: "5. 溫度升高能加快反應速率的主要原因為何？", en: "5. What is the main reason a higher temperature speeds up the reaction?" },
+                opts: { zh: ["(A) 降低了活化能", "(B) 增加了容器壓力", "(C) 減少了分子間距", "(D) 增加了具有足夠動能的分子比例"], en: ["(A) It lowers the activation energy", "(B) It raises the container pressure", "(C) It reduces the spacing between molecules", "(D) It increases the proportion of molecules with enough kinetic energy"] },
+                ans: 3,
+                guidance: { zh: "溫度升高使分子平均動能增加，超過活化能門檻的「有效碰撞」分子比例大幅上升。", en: "A higher temperature raises the average kinetic energy of molecules, greatly increasing the fraction of 'effective collisions' above the activation-energy threshold." }
+            },
+            {
+                q: { zh: "6. 哪種方法不能加快碘時鐘反應的速率？", en: "6. Which method does NOT speed up the iodine clock reaction?" },
+                opts: { zh: ["(A) 提高溫度", "(B) 加入催化劑", "(C) 加水稀釋反應物", "(D) 增加反應物濃度"], en: ["(A) Raising the temperature", "(B) Adding a catalyst", "(C) Diluting the reactants with water", "(D) Increasing the reactant concentration"] },
+                ans: 2,
+                guidance: { zh: "加水稀釋會降低反應物的濃度，導致粒子間碰撞機率下降，反而會減慢反應速率。", en: "Diluting with water lowers the reactant concentration, reducing collision frequency and slowing the reaction instead." }
+            },
+            {
+                q: { zh: "7. 實驗中，用澱粉來標示反應終點，這裡的澱粉作用類似於？", en: "7. Starch is used to mark the reaction endpoint. Here starch acts like a?" },
+                opts: { zh: ["(A) 催化劑", "(B) 指示劑", "(C) 抑制劑", "(D) 溶劑"], en: ["(A) Catalyst", "(B) Indicator", "(C) Inhibitor", "(D) Solvent"] },
+                ans: 1,
+                guidance: { zh: "澱粉本身不參與主反應，僅在產生特定產物 (碘) 時變色以指示反應進度，故作為指示劑。", en: "Starch does not take part in the main reaction; it only changes colour when a specific product (iodine) forms, so it acts as an indicator." }
+            },
+            {
+                q: { zh: "8. 若一個反應的速率常數 (k) 較大，代表該反應？", en: "8. If a reaction has a larger rate constant (k), it means the reaction is?" },
+                opts: { zh: ["(A) 較慢", "(B) 較快", "(C) 需要較高溫度", "(D) 活化能極高"], en: ["(A) Slower", "(B) Faster", "(C) Needs a higher temperature", "(D) Has very high activation energy"] },
+                ans: 1,
+                guidance: { zh: "速率常數 k 是速率方程式中的比例常數，k 值越大，代表在相同濃度下的反應速率越快。", en: "The rate constant k is the proportionality constant in the rate equation; a larger k means a faster rate at the same concentration." }
+            },
+            {
+                q: { zh: "9. 以速率 (1/t) 對濃度作圖，若為該反應物對該反應是「一級」(即濃度和反應速率為正比例)，圖形會呈現？", en: "9. Plotting rate (1/t) against concentration, if the reaction is 'first-order' in that reactant (rate directly proportional to concentration), the graph is?" },
+                opts: { zh: ["(A) 拋物線", "(B) 雙曲線", "(C) 通過原點的直線", "(D) 水平線"], en: ["(A) A parabola", "(B) A hyperbola", "(C) A straight line through the origin", "(D) A horizontal line"] },
+                ans: 2,
+                guidance: { zh: "正比例關係 (y = kx) 在數學圖形上即為一條通過原點 (0,0) 的斜直線。", en: "A direct proportion (y = kx) is, mathematically, a straight line passing through the origin (0,0)." }
+            },
+            {
+                q: { zh: "10. 進行化學實驗時，若不慎將酸液濺到皮膚上，第一步應該怎麼做？", en: "10. During an experiment, if acid is accidentally splashed on your skin, what should you do first?" },
+                opts: { zh: ["(A) 塗抹鹼性溶液中和", "(B) 用布擦拭", "(C) 塗抹藥膏", "(D) 立即用大量清水沖洗"], en: ["(A) Apply an alkaline solution to neutralise it", "(B) Wipe it with a cloth", "(C) Apply ointment", "(D) Immediately rinse with plenty of water"] },
+                ans: 3,
+                guidance: { zh: "實驗室安全守則第一步永遠是用大量清水沖洗稀釋，直接用酸鹼中和可能會產生大量熱量造成二次灼傷。", en: "The first rule of lab safety is always to rinse with plenty of water to dilute; neutralising directly with acid or base can release a lot of heat and cause secondary burns." }
+            }
         ];
 
         function renderQuestions() {
             const container = document.getElementById('questionsContainer');
+            // Preserve any currently-selected answers across a re-render (e.g. language switch)
+            const prevSelections = questions.map((q, i) => {
+                const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                return sel ? sel.value : null;
+            });
+            container.innerHTML = '';
             questions.forEach((q, index) => {
                 let html = `
                 <div class="p-6 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
-                    <p class="font-bold text-slate-800 mb-4 text-lg">${q.q}</p>
+                    <p class="font-bold text-slate-800 mb-4 text-lg">${L(q.q)}</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 `;
-                q.opts.forEach((opt, oIndex) => {
+                L(q.opts).forEach((opt, oIndex) => {
+                    const checked = prevSelections[index] === String(oIndex) ? ' checked' : '';
                     html += `
                         <label class="flex items-center space-x-3 p-3 border border-slate-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 cursor-pointer transition">
-                            <input type="radio" name="q${index}" value="${oIndex}" class="form-radio h-5 w-5 text-indigo-600 focus:ring-indigo-500" required>
+                            <input type="radio" name="q${index}" value="${oIndex}" class="form-radio h-5 w-5 text-indigo-600 focus:ring-indigo-500" required${checked}>
                             <span class="text-slate-700 font-medium">${opt}</span>
                         </label>
                     `;
@@ -778,7 +926,10 @@
             
             const name = document.getElementById('studentName').value.trim();
             if(!name) {
-                showModal('資料缺失', '請輸入受測者姓名或學號以記錄成績。', '❌', 'text-red-500');
+                showModal(
+                    LANG==='zh' ? '資料缺失' : 'Missing details',
+                    LANG==='zh' ? '請輸入受測者姓名或學號以記錄成績。' : 'Please enter a name or student ID to record the score.',
+                    '❌', 'text-red-500');
                 return;
             }
 
@@ -793,25 +944,37 @@
                 if (selected && parseInt(selected.value) === questions[i].ans) {
                     score++;
                     feedbackDiv.classList.add('bg-green-50', 'text-green-700', 'border', 'border-green-200');
-                    feedbackDiv.innerHTML = `<i class="fas fa-check-circle mr-1 text-lg"></i> <strong>答對了！</strong>`;
+                    feedbackDiv.innerHTML = `<i class="fas fa-check-circle mr-1 text-lg"></i> <strong>${LANG==='zh'?'答對了！':'Correct!'}</strong>`;
                 } else {
                     feedbackDiv.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                    let userAnsText = selected ? questions[i].opts[parseInt(selected.value)] : "未作答";
-                    let correctAnsText = questions[i].opts[questions[i].ans];
+                    const opts = L(questions[i].opts);
+                    let userAnsText = selected ? opts[parseInt(selected.value)] : (LANG==='zh'?"未作答":"No answer");
+                    let correctAnsText = opts[questions[i].ans];
                     feedbackDiv.innerHTML = `
-                        <div class="mb-2"><i class="fas fa-times-circle mr-1 text-red-600 text-lg"></i> <strong>答錯了。</strong><br>
-                        <span class="text-slate-600 ml-6 block mt-1">您的答案：<span class="line-through">${userAnsText}</span></span>
-                        <span class="text-slate-600 ml-6 block">正確答案：<span class="text-green-700 font-bold">${correctAnsText}</span></span></div>
+                        <div class="mb-2"><i class="fas fa-times-circle mr-1 text-red-600 text-lg"></i> <strong>${LANG==='zh'?'答錯了。':'Incorrect.'}</strong><br>
+                        <span class="text-slate-600 ml-6 block mt-1">${LANG==='zh'?'您的答案：':'Your answer: '}<span class="line-through">${userAnsText}</span></span>
+                        <span class="text-slate-600 ml-6 block">${LANG==='zh'?'正確答案：':'Correct answer: '}<span class="text-green-700 font-bold">${correctAnsText}</span></span></div>
                         <div class="mt-3 pt-3 border-t border-red-200">
-                            <i class="fas fa-lightbulb text-amber-500 mr-1 text-lg"></i> <strong>解題指導：</strong><br>
-                            <span class="text-slate-700 ml-6 block mt-1 leading-relaxed">${questions[i].guidance}</span>
+                            <i class="fas fa-lightbulb text-amber-500 mr-1 text-lg"></i> <strong>${LANG==='zh'?'解題指導：':'Explanation:'}</strong><br>
+                            <span class="text-slate-700 ml-6 block mt-1 leading-relaxed">${L(questions[i].guidance)}</span>
                         </div>`;
                 }
             }
 
             const isSuccess = score >= 8;
-            const title = isSuccess ? '評量通過 (Passed) 🎉' : '評量未達標 (Failed) 📖';
-            const message = `<div class="text-lg mb-2"><span class="font-bold text-slate-800">${name}</span> 同學，您的最終得分為：<br><span class="text-4xl font-black ${isSuccess ? 'text-green-500' : 'text-red-500'} block mt-2">${score * 10} / 100</span></div><div class="text-sm mt-4 p-3 rounded bg-slate-50 border">${isSuccess ? '優異表現！您已確實掌握反應速率的核心概念與實驗原理。' : '請重新檢視實驗數據面板與反應原理，理解概念後再次挑戰。'}<br><br><strong class="text-indigo-600"><i class="fas fa-arrow-down mr-1"></i> 請關閉此視窗並查看下方各題的詳細解題指導。</strong></div>`;
+            const title = isSuccess
+                ? (LANG==='zh' ? '評量通過 (Passed) 🎉' : 'Passed 🎉')
+                : (LANG==='zh' ? '評量未達標 (Failed) 📖' : 'Not passed 📖');
+            const scoredLine = LANG==='zh'
+                ? `<span class="font-bold text-slate-800">${name}</span> 同學，您的最終得分為：`
+                : `<span class="font-bold text-slate-800">${name}</span>, your final score is:`;
+            const verdict = isSuccess
+                ? (LANG==='zh' ? '優異表現！您已確實掌握反應速率的核心概念與實驗原理。' : 'Excellent work! You have firmly grasped the core concepts of reaction rate and the experiment.')
+                : (LANG==='zh' ? '請重新檢視實驗數據面板與反應原理，理解概念後再次挑戰。' : 'Review the data panel and reaction principle, then try the challenge again once the concepts are clear.');
+            const seeBelow = LANG==='zh'
+                ? '請關閉此視窗並查看下方各題的詳細解題指導。'
+                : 'Close this window and review the detailed explanation for each question below.';
+            const message = `<div class="text-lg mb-2">${scoredLine}<br><span class="text-4xl font-black ${isSuccess ? 'text-green-500' : 'text-red-500'} block mt-2">${score * 10} / 100</span></div><div class="text-sm mt-4 p-3 rounded bg-slate-50 border">${verdict}<br><br><strong class="text-indigo-600"><i class="fas fa-arrow-down mr-1"></i> ${seeBelow}</strong></div>`;
             const icon = isSuccess ? '🏆' : '🔬';
             const iconColor = isSuccess ? 'text-yellow-500' : 'text-indigo-400';
 
@@ -825,7 +988,9 @@
             if(scriptURL !== 'YOUR_WEB_APP_URL_HERE') {
                 try {
                     const submitBtn = document.getElementById('submitQuizBtn');
-                    submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> 同步至雲端資料庫中...';
+                    submitBtn.innerHTML = LANG==='zh'
+                        ? '<i class="fas fa-circle-notch fa-spin mr-2"></i> 同步至雲端資料庫中...'
+                        : '<i class="fas fa-circle-notch fa-spin mr-2"></i> Syncing to the cloud...';
                     submitBtn.disabled = true;
 
                     const payload = {
@@ -843,7 +1008,9 @@
                         }
                     });
                     
-                    submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> 成績已成功上傳';
+                    submitBtn.innerHTML = LANG==='zh'
+                        ? '<i class="fas fa-check-circle mr-2"></i> 成績已成功上傳'
+                        : '<i class="fas fa-check-circle mr-2"></i> Score uploaded successfully';
                     submitBtn.classList.replace('bg-indigo-600', 'bg-green-600');
                     submitBtn.classList.replace('hover:bg-indigo-700', 'hover:bg-green-700');
                 } catch (error) {
@@ -851,7 +1018,9 @@
                 } finally {
                     setTimeout(() => {
                         const btn = document.getElementById('submitQuizBtn');
-                        btn.innerHTML = '<i class="fas fa-file-signature mr-2"></i> 重新提交測驗';
+                        btn.innerHTML = LANG==='zh'
+                            ? '<i class="fas fa-file-signature mr-2"></i> 重新提交測驗'
+                            : '<i class="fas fa-file-signature mr-2"></i> Resubmit quiz';
                         btn.classList.replace('bg-green-600', 'bg-indigo-600');
                         btn.classList.replace('hover:bg-green-700', 'hover:bg-indigo-700');
                         btn.disabled = false;
@@ -910,11 +1079,50 @@
             }, 200);
         }
 
+        /* =========================================
+           5. Theme & Language toggles
+        ========================================= */
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            applyChartTheme();
+            if(window.lucide) lucide.createIcons();
+        }
+
+        function toggleLang(){
+            LANG = LANG === 'zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = LANG === 'zh' ? 'EN' : '中';
+
+            // Simple text nodes
+            document.querySelectorAll('[data-zh][data-en]').forEach(el=>{
+                el.textContent = el.getAttribute(LANG === 'zh' ? 'data-zh' : 'data-en');
+            });
+            // Placeholders
+            document.querySelectorAll('[data-ph-zh][data-ph-en]').forEach(el=>{
+                el.placeholder = el.getAttribute(LANG === 'zh' ? 'data-ph-zh' : 'data-ph-en');
+            });
+            // Paired rich-text spans
+            document.querySelectorAll('.lang-zh').forEach(el=>{ el.style.display = LANG === 'zh' ? '' : 'none'; });
+            document.querySelectorAll('.lang-en').forEach(el=>{ el.style.display = LANG === 'en' ? '' : 'none'; });
+
+            // Re-render dynamic content
+            updateControlInfo();
+            updateTableHeader();
+            updateDataTable();
+            updateChartConfig();
+            renderQuestions();
+            if(!document.getElementById('referenceArea').classList.contains('hidden')) applyRefTexts();
+
+            if(window.lucide) lucide.createIcons();
+        }
+
         // Initialize on load
         window.onload = () => {
             initChart();
             setMode('conc');
             renderQuestions();
+            if(window.lucide) lucide.createIcons();
         };
     </script>
 </body>
