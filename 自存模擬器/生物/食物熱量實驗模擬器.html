@@ -3,11 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>食物熱量計實驗模擬器 | Food Calorimetry Lab Simulator</title>
+    <title>食物熱量計 · Food Calorimetry</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Inter:wght@400;700;900&family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        :root{ --ac:#14b8a6; }
+        body { font-family: 'Inter', 'Noto Sans HK', 'Noto Sans TC', sans-serif; background-color: #f8fafc; transition: background-color .3s, color .3s; }
+        body.dark{ color:#cbd5e1; background-color:#0a1626;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .serif-font{ font-family:'Noto Serif HK', serif; }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
+        /* Dark-mode Tailwind surface overrides */
+        body.dark .bg-white{ background-color:#0d192b !important; }
+        body.dark .bg-slate-50,body.dark .bg-slate-50\/50{ background-color:#131f33 !important; }
+        body.dark .bg-slate-100{ background-color:#131f33 !important; }
+        body.dark .bg-slate-200{ background-color:#1e293b !important; }
+        body.dark .bg-amber-50{ background-color:#2a2110 !important; }
+        body.dark .text-slate-900,body.dark .text-slate-800,body.dark .text-slate-700{ color:#e2e8f0 !important; }
+        body.dark .text-slate-600,body.dark .text-slate-500,body.dark .text-slate-400{ color:#94a3b8 !important; }
+        body.dark .border-slate-100,body.dark .border-slate-200,body.dark .border-amber-200{ border-color:#2c3e57 !important; }
         .fire-gradient { fill: url(#fireGrad); }
         .thermometer-fluid { transition: height 0.3s ease-out; }
         input[type=range] { accent-color: #4f46e5; }
@@ -23,19 +49,23 @@
         .flame-anim { animation: flicker 0.15s infinite; }
     </style>
 </head>
-<body class="p-4 md:p-8">
-<a id="__backlink" href="../../biology.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
-    <div class="max-w-7xl mx-auto">
+<body class="dark p-4 md:p-8">
+    <a href="../../biology.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div class="max-w-7xl mx-auto" style="padding-top:3rem">
         <!-- Header -->
         <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
             <div>
-                <h1 id="ui-title" class="text-3xl font-black text-slate-900 flex items-center gap-2 tracking-tight">
+                <h1 id="ui-title" class="serif-font text-3xl font-black text-slate-900 flex items-center gap-2 tracking-tight">
                     <span class="text-orange-600">🔥</span> 食物熱量計模擬器
                 </h1>
                 <p id="ui-subtitle" class="text-slate-500 font-medium">專業教學版：支援 kJ / kcal 單位顯示與課後練習</p>
             </div>
             
             <div class="flex flex-col sm:flex-row gap-3">
+                <!-- Theme Toggle -->
+                <button onclick="toggleTheme()" class="bp-btn self-start" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式" style="width:auto"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
                 <!-- Language Toggle -->
                 <div class="flex bg-slate-200 p-1 rounded-xl shadow-inner border border-slate-200">
                     <button id="langZhBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm">繁中</button>
@@ -560,7 +590,14 @@
         el('autoSaveBtn').onclick = saveLog;
         el('submitManualBtn').onclick = saveLog;
 
-        window.onload = updateStaticText;
+        window.toggleTheme = () => {
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        };
+
+        window.onload = () => { updateStaticText(); if(window.lucide) lucide.createIcons(); };
     </script>
 </body>
 </html>
