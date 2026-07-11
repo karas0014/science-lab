@@ -3,24 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>蒸騰作用環境因素模擬實驗 - 雙語標準版</title>
+    <title>蒸騰計 · Potometer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0fdf4; }
-        .potometer-container { 
-            position: relative; 
-            height: 400px; 
-            background: white; 
-            border-radius: 12px; 
-            overflow: hidden; 
+        :root{ --ac:#14b8a6; }
+        body { font-family: 'Noto Sans HK','Noto Sans TC', sans-serif; background-color: #f0fdf4; transition: background-color .3s, color .3s; }
+        body.dark{ color:#cbd5e1; background-color:#0a1626;
+            background-image:
+                linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),
+                linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .serif-font{ font-family:'Noto Serif HK', serif; }
+        .potometer-container {
+            position: relative;
+            height: 400px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
             border: 2px solid #e2e8f0;
             display: flex;
             justify-content: center;
             align-items: flex-end;
             padding-bottom: 20px;
         }
+        body.dark .potometer-container{ background:#0f1a2e; border-color:#2c3e57; }
+
+        /* Blueprint buttons */
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+
+        /* Dark-mode Tailwind surface overrides */
+        body.dark .bg-white{ background-color:#0d192b !important; }
+        body.dark .bg-slate-50{ background-color:#131f33 !important; }
+        body.dark .bg-gray-100{ background-color:#131f33 !important; }
+        body.dark .bg-blue-50{ background-color:#0d1b2e !important; }
+        body.dark .bg-green-50{ background-color:#0f2417 !important; }
+        body.dark .text-gray-800,body.dark .text-gray-700{ color:#e2e8f0 !important; }
+        body.dark .text-gray-600,body.dark .text-gray-500{ color:#94a3b8 !important; }
+        body.dark .border-gray-100,body.dark .border-green-100,body.dark .border-indigo-100,body.dark .border-blue-200,body.dark .border-green-200{ border-color:#2c3e57 !important; }
+        body.dark #lang-selector{ background:#0f1a2e; color:#e2e8f0; border-color:#2c3e57; }
         .label-text {
             font-size: 11px;
             color: #1e293b;
@@ -36,11 +66,14 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
     </style>
 </head>
-<body class="p-4 md:p-8 relative">
-<a id="__backlink" href="../../biology.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
-    
-    <!-- 語言切換器 -->
-    <div class="absolute top-4 right-4 md:top-8 md:right-8 z-50">
+<body class="dark p-4 md:p-8 relative">
+    <a href="../../biology.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+
+    <!-- 主題切換 + 語言切換器 -->
+    <div class="fixed top-3 right-3 z-50 flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式" style="width:auto"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
         <select id="lang-selector" class="bg-white border border-green-300 text-green-800 py-1.5 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 font-bold cursor-pointer">
             <option value="zh">繁體中文</option>
             <option value="en">English</option>
@@ -49,7 +82,7 @@
 
     <div class="max-w-6xl mx-auto mt-8 md:mt-0">
         <header class="mb-6 text-center">
-            <h1 class="text-3xl font-bold text-green-800" data-i18n="header_title">蒸騰作用環境因素模擬實驗</h1>
+            <h1 class="serif-font text-3xl font-bold text-green-800" data-i18n="header_title">蒸騰作用環境因素模擬實驗</h1>
             <p class="text-gray-600 mt-2" data-i18n="header_desc">使用標準 T型氣泡式蒸騰計，探究環境因素如何影響植物的水分吸入速率。</p>
         </header>
 
@@ -569,6 +602,32 @@
                     animation: { duration: 500 }
                 }
             });
+            applyChartTheme();
+        }
+
+        function applyChartTheme() {
+            if (!chart) return;
+            const dark = document.body.classList.contains('dark');
+            const tick = dark ? '#94a3b8' : '#666';
+            const grid = dark ? 'rgba(148,163,184,0.15)' : 'rgba(0,0,0,0.1)';
+            ['x','y'].forEach(ax => {
+                const s = chart.options.scales[ax] = chart.options.scales[ax] || {};
+                s.ticks = s.ticks || {}; s.ticks.color = tick;
+                s.grid = s.grid || {}; s.grid.color = grid;
+            });
+            chart.options.plugins = chart.options.plugins || {};
+            chart.options.plugins.legend = chart.options.plugins.legend || {};
+            chart.options.plugins.legend.labels = chart.options.plugins.legend.labels || {};
+            chart.options.plugins.legend.labels.color = dark ? '#cbd5e1' : '#333';
+            chart.update();
+        }
+
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            applyChartTheme();
+            if(window.lucide) lucide.createIcons();
         }
 
         // 記錄數據至表格和圖表
@@ -619,9 +678,10 @@
                 if(confirm(translations[currentLang].alert_clear)) location.reload();
             };
             
-            updateLanguage('zh'); 
+            updateLanguage('zh');
             updateLogic();
             step();
+            if(window.lucide) lucide.createIcons();
         };
     </script>
 </body>
