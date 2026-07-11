@@ -11,13 +11,46 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        body { 
-            background-color: #f8fafc; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        :root{ --ac:#3b82f6; }
+        body {
+            font-family: 'Noto Sans HK', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
+            transition:background-color .3s,color .3s;
         }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-surface{
+            background-color:#eaeef3;
+            background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        body.dark .bp-surface{
+            background-color:#0a1626;
+            background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px);
+            background-size:26px 26px,26px 26px,130px 130px,130px 130px;
+        }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        /* 深色覆蓋 (SVG 圖示面板保持淺色 scope) */
+        body.dark{ color:#e2e8f0; }
+        body.dark .btn-inactive{ background:#1e293b; color:#cbd5e1; }
+        body.dark .btn-inactive:hover{ background:#334155; }
+        body.dark .bp-head{ border-color:#2c3e57 !important; }
+        body.dark .bp-head h1{ color:#f1f5f9 !important; }
+        body.dark .bp-card{ background:#0d192b !important; border-color:#2c3e57 !important; }
+        body.dark .bp-card .text-slate-800{ color:#f1f5f9 !important; }
+        body.dark .bp-card .text-slate-700,body.dark .bp-card .text-slate-600,body.dark .bp-card .text-slate-500{ color:#cbd5e1 !important; }
+        body.dark .bp-card .bg-slate-100{ background:#1e293b !important; color:#cbd5e1 !important; }
+        body.dark .bp-card .bg-slate-100:hover{ background:#334155 !important; }
+        body.dark .quiz-option{ border-color:#2c3e57; color:#cbd5e1; }
+        body.dark .quiz-option:hover{ background:#172033; border-color:var(--ac); }
+        body.dark .bp-card input{ background:#0f1a2e; color:#e2e8f0; border-color:#2c3e57; }
         
         /* Button Styles */
         .btn-base { padding: 0.75rem 1.5rem; border-radius: 1rem; font-weight: 600; transition: all 0.3s ease; }
@@ -70,8 +103,13 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
-<a id="__backlink" href="../../chemistry.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark bp-surface">
+    <a href="../../chemistry.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:60" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:60">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+    </div>
     <div id="root"></div>
 
     <script type="text/javascript">
@@ -292,7 +330,7 @@
                 document.body.removeChild(link);
             };
 
-            return e('div', { className: "w-full max-w-4xl mx-auto bg-white p-8 rounded-[2rem] shadow-lg border-4 border-slate-200 min-h-[400px] flex flex-col justify-center" },
+            return e('div', { className: "bp-card w-full max-w-4xl mx-auto bg-white p-8 rounded-[2rem] shadow-lg border-4 border-slate-200 min-h-[400px] flex flex-col justify-center" },
                 e('h2', { className: "text-3xl font-bold text-center text-slate-800 mb-8" }, t.quizTitle),
                 
                 step === 'login' && e('div', { className: "flex flex-col items-center gap-6 animate-fade-in" },
@@ -657,8 +695,8 @@
 
             return e('div', { className: "min-h-screen flex flex-col items-center py-6 px-4 md:px-8" },
                 // Header
-                e('div', { className: "w-full max-w-6xl flex justify-between items-center mb-6 border-b-4 border-slate-300 pb-4" },
-                    e('h1', { className: "text-2xl md:text-4xl font-black text-slate-800 tracking-tight drop-shadow-sm" }, t.title),
+                e('div', { className: "bp-head w-full max-w-6xl flex justify-between items-center mb-6 border-b-4 border-slate-300 pb-4 mt-10 md:mt-8" },
+                    e('h1', { className: "serif-font text-2xl md:text-4xl font-black text-slate-800 tracking-tight drop-shadow-sm" }, t.title),
                     e('button', { onClick: () => setLang(lang==='zh'?'en':'zh'), className: "btn-base btn-inactive font-bold hover:bg-slate-300" }, t.langToggle)
                 ),
                 // Tabs
@@ -670,7 +708,7 @@
                 
                 tab !== 'challenge' && e(React.Fragment, null,
                     // Controls Panel
-                    e('div', { className: "w-full max-w-6xl bg-white p-4 md:p-6 rounded-2xl shadow-md flex flex-col md:flex-row flex-wrap gap-6 justify-center items-center mb-6 border border-slate-200" },
+                    e('div', { className: "bp-card w-full max-w-6xl bg-white p-4 md:p-6 rounded-2xl shadow-md flex flex-col md:flex-row flex-wrap gap-6 justify-center items-center mb-6 border border-slate-200" },
                         // Molecule Selector
                         e('div', { className: "flex gap-2 flex-wrap justify-center" },
                             tab === 'ionic' && ['NaCl', 'MgO', 'CaCl2', 'Al2O3'].map(mol => 
@@ -766,6 +804,15 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(e(App));
+
+        // --- 主題切換 ---
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+        if(window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>
