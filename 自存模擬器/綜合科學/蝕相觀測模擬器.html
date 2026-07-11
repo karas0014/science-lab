@@ -9,18 +9,29 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+        :root{ --ac:#6366f1; }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Noto Sans HK','Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
             background-color: #050505;
         }
+        .serif-font{ font-family:'Noto Serif HK', serif; }
         .glass-panel {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+        /* Light-mode reskins the floating glass chrome to white blueprint panels. The 3D space scene and the instrument views (obsCanvas, info modal) stay dark. */
+        body.light .glass-panel:not(.bg-gray-900){ background:rgba(255,255,255,.92) !important; border-color:#c3ccd8 !important; color:#1e293b !important; box-shadow:0 8px 24px rgba(31,38,135,.12) !important; }
         .toggle-pill {
             position: relative;
             width: 100px;
@@ -52,15 +63,17 @@
         canvas { touch-action: none; }
     </style>
 </head>
-<body class="text-white">
-<a id="__backlink" href="../../science.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="text-white dark">
+    <a href="../../science.html" class="bp-btn" style="position:fixed;bottom:12px;left:12px;z-index:2147483647" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
     <!-- UI Overlay -->
     <div class="absolute inset-0 pointer-events-none z-20">
         <!-- Header (Top Left) -->
         <div class="absolute top-4 left-4 md:top-8 md:left-8 pointer-events-auto flex flex-col gap-3">
             <div>
                 <div class="flex items-center gap-3">
-                    <h1 id="title" class="text-xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-yellow-200">
+                    <h1 id="title" class="serif-font text-xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-yellow-200">
                         蝕相觀測模擬器
                     </h1>
                     <!-- 新增的齒輪按鈕 -->
@@ -75,10 +88,13 @@
             </div>
             
             <!-- Language Switcher -->
-            <div id="langToggle" class="toggle-pill lang-zh" onclick="toggleLanguage()">
-                <div class="slider"></div>
-                <span class="label-text label-zh">中文</span>
-                <span class="label-text label-en">EN</span>
+            <div class="flex items-center gap-2">
+                <div id="langToggle" class="toggle-pill lang-zh" onclick="toggleLanguage()">
+                    <div class="slider"></div>
+                    <span class="label-text label-zh">中文</span>
+                    <span class="label-text label-en">EN</span>
+                </div>
+                <button onclick="toggleTheme()" class="glass-panel p-2 rounded-full hover:bg-white hover:text-black transition" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式"><span id="theme-ic"><i data-lucide="sun" width="18" height="18"></i></span></button>
             </div>
 
             <!-- Info Toggle Button -->
@@ -169,10 +185,10 @@
             </div>
 
             <div class="grid grid-cols-2 gap-2 cursor-auto mt-2">
-                <button onclick="setEvent('solar_eclipse')" id="btn-cond-1" class="bg-orange-600 hover:bg-orange-500 py-1.5 rounded-xl text-xs font-semibold transition">食季: 日全蝕</button>
-                <button onclick="setEvent('lunar_eclipse')" id="btn-cond-2" class="bg-blue-600 hover:bg-blue-500 py-1.5 rounded-xl text-xs font-semibold transition">食季: 月全蝕</button>
-                <button onclick="setEvent('no_eclipse_solar')" id="btn-cond-3" class="bg-gray-700 hover:bg-gray-600 py-1.5 rounded-xl text-xs font-semibold transition">非食季: 錯過(新月)</button>
-                <button onclick="setEvent('no_eclipse_lunar')" id="btn-cond-4" class="bg-gray-700 hover:bg-gray-600 py-1.5 rounded-xl text-xs font-semibold transition">非食季: 錯過(滿月)</button>
+                <button onclick="setEvent('solar_eclipse')" id="btn-cond-1" class="bg-orange-600 hover:bg-orange-500 text-white py-1.5 rounded-xl text-xs font-semibold transition">食季: 日全蝕</button>
+                <button onclick="setEvent('lunar_eclipse')" id="btn-cond-2" class="bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-xl text-xs font-semibold transition">食季: 月全蝕</button>
+                <button onclick="setEvent('no_eclipse_solar')" id="btn-cond-3" class="bg-gray-700 hover:bg-gray-600 text-white py-1.5 rounded-xl text-xs font-semibold transition">非食季: 錯過(新月)</button>
+                <button onclick="setEvent('no_eclipse_lunar')" id="btn-cond-4" class="bg-gray-700 hover:bg-gray-600 text-white py-1.5 rounded-xl text-xs font-semibold transition">非食季: 錯過(滿月)</button>
             </div>
 
             <div class="pt-2 border-t border-gray-700 cursor-auto">
@@ -246,6 +262,13 @@
             const toggle = document.getElementById('langToggle');
             if(toggle) toggle.className = `toggle-pill lang-${currentLang}`;
             updateText();
+        }
+
+        // Theme toggle: reskins the floating glass chrome only; the 3D space scene stays dark.
+        function toggleTheme() {
+            const dark = document.body.classList.toggle('dark');
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="18" height="18"></i>`;
+            if(window.lucide) lucide.createIcons();
         }
 
         function updateText() {
@@ -715,6 +738,8 @@
             // 讓「地球觀測視角」面板也能被拖曳
             const viewPanel = document.getElementById("view-panel");
             if (viewPanel) makeDraggable(viewPanel);
+
+            if(window.lucide) lucide.createIcons();
         };
     </script>
 </body>
