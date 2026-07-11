@@ -3,345 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>倉鼠化學實驗室：金屬置換大冒險</title>
+    <title>金屬置換反應 · Metal Displacement</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-
         :root {
-            --primary: #FFB347; /* Hamster Orange */
-            --secondary: #87CEEB; /* Science Blue */
+            --ac:#3b82f6;
+            --primary: #FFB347;
+            --secondary: #87CEEB;
             --bg: #FFF8E7;
             --text: #5D4037;
             --success: #4CAF50;
             --fail: #E53935;
         }
+        body { font-family: 'Noto Sans HK', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; transition:background-color .3s,color .3s; }
+        body.dark{ color:#cbd5e1; background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+        h1, h2, h3 { color: #6D4C41; text-align: center; }
+        body.dark h1,body.dark h2,body.dark h3{ color:#e2e8f0; }
+        .serif-font{ font-family:'Noto Serif HK',serif; }
+        .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:border-color .2s,color .2s; }
+        .bp-btn:hover{ border-color:var(--ac);color:#0f172a; }
+        body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; }
+        body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
 
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1, h2, h3 {
-            color: #6D4C41;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 800px;
-            width: 100%;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 4px solid var(--primary);
-        }
-
-        /* --- Introduction & Concepts --- */
-        .hamster-mascot {
-            font-size: 3rem;
-            display: block;
-            text-align: center;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        /* Victory Animation */
-        @keyframes popIn {
-            0% { transform: scale(0); opacity: 0; }
-            80% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .activity-series {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-end;
-            margin: 20px 0;
-            padding: 15px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            overflow-x: auto;
-        }
-
-        .metal-rank {
-            text-align: center;
-            margin: 0 5px;
-        }
-
-        .bar {
-            width: 40px;
-            background: linear-gradient(to top, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
-            border-radius: 5px 5px 0 0;
-            position: relative;
-        }
-        
+        .container { max-width: 800px; width: 100%; background: white; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 30px; border: 4px solid var(--primary); }
+        body.dark .container{ background:#0d192b; border-color:#2c3e57; }
+        .hamster-mascot { font-size: 3rem; display: block; text-align: center; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        .activity-series { display: flex; justify-content: space-around; align-items: flex-end; margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 10px; overflow-x: auto; }
+        body.dark .activity-series{ background:#131f33; }
+        .metal-rank { text-align: center; margin: 0 5px; }
+        .bar { width: 40px; background: linear-gradient(to top, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); border-radius: 5px 5px 0 0; position: relative; }
         .rank-high .bar { height: 120px; background: #FF5252; }
         .rank-med .bar { height: 80px; background: #FFCA28; }
         .rank-low .bar { height: 40px; background: #9E9E9E; }
         .rank-very-low .bar { height: 20px; background: #B0BEC5; }
-
-        .arrow-guide {
-            text-align: center;
-            font-weight: bold;
-            color: var(--primary);
-            margin-bottom: 10px;
-        }
-
-        /* --- Experiment Section --- */
-        .lab-bench {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            align-items: center;
-            background-color: #f9fbe7;
-            padding: 20px;
-            border-radius: 15px;
-            border: 2px dashed #ccc;
-        }
-
-        .controls {
-            flex: 1;
-            min-width: 250px;
-        }
-
-        select, button, input {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 8px;
-            border: 2px solid #ddd;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            transition: transform 0.1s;
-        }
-
-        button:active {
-            transform: scale(0.98);
-        }
-
-        .beaker-container {
-            flex: 1;
-            min-width: 200px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .beaker {
-            width: 120px;
-            height: 160px;
-            border-left: 4px solid #333;
-            border-right: 4px solid #333;
-            border-bottom: 4px solid #333;
-            border-radius: 0 0 10px 10px;
-            position: relative;
-            background-color: rgba(255,255,255,0.5);
-            margin-top: 10px;
-        }
-
-        .liquid {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 70%;
-            background-color: #e0f7fa; /* Default clear */
-            transition: background-color 1.5s ease;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            opacity: 0.8;
-        }
-
-        .metal-strip {
-            width: 30px;
-            height: 90%;
-            background-color: #999;
-            position: absolute;
-            top: -10px; /* Hanging in */
-            left: 50%;
-            transform: translateX(-50%);
-            border-radius: 4px;
-            transition: background-color 0.5s;
-            z-index: 2;
-        }
-
-        .bubbles {
-            display: none;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-        }
-
-        .bubble {
-            position: absolute;
-            background: rgba(255,255,255,0.7);
-            border-radius: 50%;
-        }
-
-        /* Result Animation */
-        .reaction-active .liquid {
-            animation: shake 0.5s;
-        }
-        
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-5px) rotate(-5deg); }
-            75% { transform: translateX(5px) rotate(5deg); }
-            100% { transform: translateX(0); }
-        }
-
-        .result-box {
-            background: #fff;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            border-left: 5px solid #ccc;
-        }
-
-        /* --- Challenge Section --- */
-        .challenge-zone {
-            background: #E3F2FD;
-            border-color: #2196F3;
-        }
-
-        .score-board {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #1565C0;
-            margin-bottom: 10px;
-        }
-
-        .question-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .challenge-btns {
-            display: flex;
-            gap: 10px;
-        }
-
+        .arrow-guide { text-align: center; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
+        .lab-bench { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: center; background-color: #f9fbe7; padding: 20px; border-radius: 15px; border: 2px dashed #ccc; }
+        body.dark .lab-bench{ background:#131f33; border-color:#334155; }
+        .controls { flex: 1; min-width: 250px; }
+        select, button, input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid #ddd; font-size: 1rem; font-family: inherit; }
+        body.dark select,body.dark input{ background:#0f1a2e; color:#e2e8f0; border-color:#2c3e57; }
+        button { background-color: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; transition: transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        .beaker-container { flex: 1; min-width: 200px; display: flex; flex-direction: column; align-items: center; }
+        .beaker { width: 120px; height: 160px; border-left: 4px solid #333; border-right: 4px solid #333; border-bottom: 4px solid #333; border-radius: 0 0 10px 10px; position: relative; background-color: rgba(255,255,255,0.5); margin-top: 10px; }
+        body.dark .beaker{ border-color:#94a3b8; background-color:rgba(148,163,184,0.12); }
+        .liquid { position: absolute; bottom: 0; left: 0; right: 0; height: 70%; background-color: #e0f7fa; transition: background-color 1.5s ease; display: flex; justify-content: center; align-items: flex-end; opacity: 0.8; }
+        .metal-strip { width: 30px; height: 90%; background-color: #999; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); border-radius: 4px; transition: background-color 0.5s; z-index: 2; }
+        .bubbles { display: none; position: absolute; width: 100%; height: 100%; }
+        .bubble { position: absolute; background: rgba(255,255,255,0.7); border-radius: 50%; }
+        .reaction-active .liquid { animation: shake 0.5s; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px) rotate(-5deg); } 75% { transform: translateX(5px) rotate(5deg); } 100% { transform: translateX(0); } }
+        .result-box { background: #fff; padding: 15px; border-radius: 10px; margin-top: 20px; border-left: 5px solid #ccc; }
+        body.dark .result-box{ background:#131f33; border-left-color:#2c3e57; }
+        .challenge-zone { background: #E3F2FD; border-color: #2196F3; }
+        body.dark .challenge-zone{ background:#0d1b2e; border-color:#2c3e57; }
+        .score-board { font-size: 1.2rem; font-weight: bold; color: #1565C0; margin-bottom: 10px; }
+        body.dark .score-board{ color:#60a5fa; }
+        .question-card { background: white; padding: 20px; border-radius: 10px; text-align: center; font-size: 1.2rem; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        body.dark .question-card{ background:#0f1a2e; }
+        .challenge-btns { display: flex; gap: 10px; }
         .btn-yes { background-color: #4CAF50; }
         .btn-no { background-color: #E53935; }
-
         .hidden { display: none; }
-
-        /* Helpers */
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: #eee;
-            font-size: 0.8em;
-            margin-left: 5px;
-        }
-
-        /* Responsive */
-        @media (max-width: 600px) {
-            .lab-bench {
-                flex-direction: column;
-            }
-        }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #eee; font-size: 0.8em; margin-left: 5px; }
+        @media (max-width: 600px) { .lab-bench { flex-direction: column; } }
+        #equation{ font-family:'JetBrains Mono',monospace; background:#eee; padding:5px; margin-top:5px; font-size:1.1em; }
+        body.dark #equation{ background:#0f1a2e; color:#e2e8f0; }
     </style>
 </head>
-<body>
-<a id="__backlink" href="../../chemistry.html" style="position:fixed;top:12px;left:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(15,23,42,.82);color:#fff;font:500 14px/1 system-ui,'Noto Sans HK',sans-serif;text-decoration:none;border-radius:9999px;box-shadow:0 2px 10px rgba(0,0,0,.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">← 返回</a>
+<body class="dark">
 
-    <div class="hamster-mascot">🐹🧪</div>
-    <h1>倉鼠化學實驗室</h1>
-    <p>歡迎來到金屬置換大冒險！學習如何判斷反應是否會發生。</p>
+    <a href="../../chemistry.html" class="bp-btn" style="position:fixed;top:12px;left:12px;z-index:60" aria-label="返回索引 / Back to index">
+        <i data-lucide="home" width="14" height="14"></i><span>INDEX</span>
+    </a>
+    <div style="position:fixed;top:12px;right:12px;z-index:60" class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="bp-btn" title="切換深淺色模式 / Toggle theme" aria-label="切換深淺色模式" style="width:auto"><span id="theme-ic"><i data-lucide="sun" width="15" height="15"></i></span></button>
+        <button onclick="toggleLang()" class="bp-btn" aria-label="切換語言 / Switch language" style="width:auto"><i data-lucide="languages" width="14" height="14"></i><span id="lang-label">EN</span></button>
+    </div>
+
+    <div class="hamster-mascot" style="margin-top:2rem">🐹🧪</div>
+    <h1 class="serif-font" data-zh="倉鼠化學實驗室" data-en="Hamster Chemistry Lab">倉鼠化學實驗室</h1>
+    <p data-zh="歡迎來到金屬置換大冒險！學習如何判斷反應是否會發生。" data-en="Welcome to the metal displacement adventure! Learn how to tell whether a reaction happens.">歡迎來到金屬置換大冒險！學習如何判斷反應是否會發生。</p>
 
     <!-- Concept Section -->
     <div class="container">
-        <h2>📚 知識小百科：倉鼠活潑性排行榜</h2>
-        <p>想像每一種金屬都是一隻倉鼠。<b>越活潑的金屬 = 越強壯的倉鼠</b>。</p>
-        <p>如果一隻強壯的倉鼠（活潑金屬）遇到一隻弱小倉鼠（低活潑性）霸佔的食物（溶液），強壯的倉鼠就會把弱小的踢走，自己搶走食物！這就是<b>置換反應</b>。</p>
-        
-        <div class="arrow-guide">最強壯 (最活潑) ➜ 最弱小 (最不活潑)</div>
+        <h2 data-zh="📚 知識小百科：倉鼠活潑性排行榜" data-en="📚 Quick facts: the hamster reactivity ranking">📚 知識小百科：倉鼠活潑性排行榜</h2>
+        <p>
+            <span class="lang-zh">想像每一種金屬都是一隻倉鼠。<b>越活潑的金屬 = 越強壯的倉鼠</b>。</span>
+            <span class="lang-en" style="display:none">Imagine every metal is a hamster. <b>The more reactive the metal, the stronger the hamster.</b></span>
+        </p>
+        <p>
+            <span class="lang-zh">如果一隻強壯的倉鼠（活潑金屬）遇到一隻弱小倉鼠（低活潑性）霸佔的食物（溶液），強壯的倉鼠就會把弱小的踢走，自己搶走食物！這就是<b>置換反應</b>。</span>
+            <span class="lang-en" style="display:none">If a strong hamster (reactive metal) meets food (a solution) hogged by a weak hamster (low reactivity), the strong one kicks it out and takes the food! That is a <b>displacement reaction</b>.</span>
+        </p>
+
+        <div class="arrow-guide" data-zh="最強壯 (最活潑) ➜ 最弱小 (最不活潑)" data-en="Strongest (most reactive) ➜ Weakest (least reactive)">最強壯 (最活潑) ➜ 最弱小 (最不活潑)</div>
         <div class="activity-series">
-            <div class="metal-rank rank-high">
-                <div class="bar"></div>
-                <div>鎂 (Mg)</div>
-                <div>💪🐹</div>
-            </div>
-            <div class="metal-rank rank-high">
-                <div class="bar" style="height: 100px;"></div>
-                <div>鋁 (Al)</div>
-                <div>🐹</div>
-            </div>
-            <div class="metal-rank rank-med">
-                <div class="bar"></div>
-                <div>鋅 (Zn)</div>
-                <div>🏃‍♂️🐹</div>
-            </div>
-            <div class="metal-rank rank-med">
-                <div class="bar" style="height: 60px;"></div>
-                <div>鐵 (Fe)</div>
-                <div>🚶🐹</div>
-            </div>
-            <div class="metal-rank rank-low">
-                <div class="bar" style="height: 35px; background:#A1887F"></div>
-                <div>銅 (Cu)</div>
-                <div>🛌🐹</div>
-            </div>
-            <div class="metal-rank rank-very-low">
-                <div class="bar"></div>
-                <div>銀 (Ag)</div>
-                <div>😴🐹</div>
-            </div>
+            <div class="metal-rank rank-high"><div class="bar"></div><div data-zh="鎂 (Mg)" data-en="Mg">鎂 (Mg)</div><div>💪🐹</div></div>
+            <div class="metal-rank rank-high"><div class="bar" style="height: 100px;"></div><div data-zh="鋁 (Al)" data-en="Al">鋁 (Al)</div><div>🐹</div></div>
+            <div class="metal-rank rank-med"><div class="bar"></div><div data-zh="鋅 (Zn)" data-en="Zn">鋅 (Zn)</div><div>🏃‍♂️🐹</div></div>
+            <div class="metal-rank rank-med"><div class="bar" style="height: 60px;"></div><div data-zh="鐵 (Fe)" data-en="Fe">鐵 (Fe)</div><div>🚶🐹</div></div>
+            <div class="metal-rank rank-low"><div class="bar" style="height: 35px; background:#A1887F"></div><div data-zh="銅 (Cu)" data-en="Cu">銅 (Cu)</div><div>🛌🐹</div></div>
+            <div class="metal-rank rank-very-low"><div class="bar"></div><div data-zh="銀 (Ag)" data-en="Ag">銀 (Ag)</div><div>😴🐹</div></div>
         </div>
     </div>
 
     <!-- Simulator Section -->
     <div class="container">
-        <h2>🔬 實驗模擬區</h2>
+        <h2 data-zh="🔬 實驗模擬區" data-en="🔬 Experiment simulator">🔬 實驗模擬區</h2>
         <div class="lab-bench">
             <div class="controls">
-                <label>1. 選擇投入的金屬 (攻擊者 🐹):</label>
+                <label data-zh="1. 選擇投入的金屬 (攻擊者 🐹):" data-en="1. Choose the metal to add (attacker 🐹):">1. 選擇投入的金屬 (攻擊者 🐹):</label>
                 <select id="metalSolid">
-                    <option value="Mg">鎂條 (Mg) - 超級活潑</option>
-                    <option value="Zn">鋅片 (Zn) - 蠻活潑</option>
-                    <option value="Fe">鐵釘 (Fe) - 普通</option>
-                    <option value="Cu">銅片 (Cu) - 懶惰</option>
-                    <option value="Ag">銀幣 (Ag) - 睡覺中</option>
+                    <option value="Mg" data-zh="鎂條 (Mg) - 超級活潑" data-en="Magnesium strip (Mg) - very reactive">鎂條 (Mg) - 超級活潑</option>
+                    <option value="Zn" data-zh="鋅片 (Zn) - 蠻活潑" data-en="Zinc plate (Zn) - fairly reactive">鋅片 (Zn) - 蠻活潑</option>
+                    <option value="Fe" data-zh="鐵釘 (Fe) - 普通" data-en="Iron nail (Fe) - moderate">鐵釘 (Fe) - 普通</option>
+                    <option value="Cu" data-zh="銅片 (Cu) - 懶惰" data-en="Copper plate (Cu) - lazy">銅片 (Cu) - 懶惰</option>
+                    <option value="Ag" data-zh="銀幣 (Ag) - 睡覺中" data-en="Silver coin (Ag) - sleeping">銀幣 (Ag) - 睡覺中</option>
                 </select>
 
-                <label>2. 選擇溶液 (防守者 🧪):</label>
+                <label data-zh="2. 選擇溶液 (防守者 🧪):" data-en="2. Choose the solution (defender 🧪):">2. 選擇溶液 (防守者 🧪):</label>
                 <select id="metalSolution">
-                    <option value="Mg">硫酸鎂溶液 (Mg²⁺)</option>
-                    <option value="Zn">硫酸鋅溶液 (Zn²⁺)</option>
-                    <option value="Fe">硫酸亞鐵溶液 (Fe²⁺)</option>
-                    <option value="Cu">硫酸銅溶液 (Cu²⁺)</option>
-                    <option value="Ag">硝酸銀溶液 (Ag⁺)</option>
+                    <option value="Mg" data-zh="硫酸鎂溶液 (Mg²⁺)" data-en="Magnesium sulfate solution (Mg²⁺)">硫酸鎂溶液 (Mg²⁺)</option>
+                    <option value="Zn" data-zh="硫酸鋅溶液 (Zn²⁺)" data-en="Zinc sulfate solution (Zn²⁺)">硫酸鋅溶液 (Zn²⁺)</option>
+                    <option value="Fe" data-zh="硫酸亞鐵溶液 (Fe²⁺)" data-en="Iron(II) sulfate solution (Fe²⁺)">硫酸亞鐵溶液 (Fe²⁺)</option>
+                    <option value="Cu" data-zh="硫酸銅溶液 (Cu²⁺)" data-en="Copper sulfate solution (Cu²⁺)">硫酸銅溶液 (Cu²⁺)</option>
+                    <option value="Ag" data-zh="硝酸銀溶液 (Ag⁺)" data-en="Silver nitrate solution (Ag⁺)">硝酸銀溶液 (Ag⁺)</option>
                 </select>
 
-                <button onclick="runExperiment()">⚗️ 開始實驗！</button>
+                <button onclick="runExperiment()" data-zh="⚗️ 開始實驗！" data-en="⚗️ Run experiment!">⚗️ 開始實驗！</button>
             </div>
 
             <div class="beaker-container">
@@ -350,160 +143,141 @@
                     <div class="liquid" id="visualLiquid"></div>
                     <div class="bubbles" id="bubbles"></div>
                 </div>
-                <div style="margin-top:10px; font-weight:bold;">實驗燒杯</div>
+                <div style="margin-top:10px; font-weight:bold;" data-zh="實驗燒杯" data-en="Beaker">實驗燒杯</div>
             </div>
         </div>
 
         <div id="resultBox" class="result-box hidden">
             <h3 id="resultTitle">結果</h3>
             <p id="resultDesc"></p>
-            <div id="equation" style="font-family: monospace; background: #eee; padding: 5px; margin-top: 5px; font-size: 1.1em;"></div>
+            <div id="equation"></div>
         </div>
     </div>
 
     <!-- Challenge Section -->
     <div class="container challenge-zone">
-        <h2>🏆 挑戰區：金屬競技場</h2>
-        
+        <h2 data-zh="🏆 挑戰區：金屬競技場" data-en="🏆 Challenge: metal arena">🏆 挑戰區：金屬競技場</h2>
+
         <div id="loginScreen">
-            <p>準備好接受挑戰了嗎？輸入名字開始！ (目標：100分)</p>
-            <input type="text" id="challengerName" placeholder="輸入你的名字..." style="max-width: 300px;">
-            <button onclick="startChallenge()">開始挑戰</button>
+            <p data-zh="準備好接受挑戰了嗎？輸入名字開始！ (目標：100分)" data-en="Ready for the challenge? Enter your name to start! (Goal: 100 pts)">準備好接受挑戰了嗎？輸入名字開始！ (目標：100分)</p>
+            <input type="text" id="challengerName" placeholder="輸入你的名字..." data-ph-zh="輸入你的名字..." data-ph-en="Enter your name..." style="max-width: 300px;">
+            <button onclick="startChallenge()" data-zh="開始挑戰" data-en="Start challenge">開始挑戰</button>
         </div>
 
         <div id="gameScreen" class="hidden">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span id="displayName" style="font-weight:bold;"></span>
-                <span class="score-board">得分: <span id="score">0</span> / 100</span>
+                <span class="score-board"><span data-zh="得分: " data-en="Score: ">得分: </span><span id="score">0</span> / 100</span>
             </div>
-            
+
             <div class="question-card">
-                <p>如果把 <b style="color:var(--primary); font-size:1.3em;" id="qMetal"></b> 放入 <b style="color:var(--secondary); font-size:1.3em;" id="qSolution"></b> 中...</p>
-                <p>會發生置換反應嗎？</p>
+                <p><span data-zh="如果把 " data-en="If you put ">如果把 </span><b style="color:var(--primary); font-size:1.3em;" id="qMetal"></b><span data-zh=" 放入 " data-en=" into "> 放入 </span><b style="color:var(--secondary); font-size:1.3em;" id="qSolution"></b><span data-zh=" 中..." data-en="..."> 中...</span></p>
+                <p data-zh="會發生置換反應嗎？" data-en="Will a displacement reaction occur?">會發生置換反應嗎？</p>
             </div>
 
             <div class="challenge-btns">
-                <button class="btn-yes" onclick="answerChallenge(true)">會反應 (O)</button>
-                <button class="btn-no" onclick="answerChallenge(false)">不會反應 (X)</button>
+                <button class="btn-yes" onclick="answerChallenge(true)" data-zh="會反應 (O)" data-en="Yes (O)">會反應 (O)</button>
+                <button class="btn-no" onclick="answerChallenge(false)" data-zh="不會反應 (X)" data-en="No (X)">不會反應 (X)</button>
             </div>
-            
+
             <p id="feedback" style="min-height: 1.5em; font-weight: bold; margin-top: 15px;"></p>
-            <button onclick="nextQuestion()" id="nextBtn" class="hidden" style="background:#555;">下一題 ➡</button>
+            <button onclick="nextQuestion()" id="nextBtn" class="hidden" style="background:#555;" data-zh="下一題 ➡" data-en="Next ➡">下一題 ➡</button>
         </div>
 
-        <!-- New Victory Screen -->
         <div id="victoryScreen" class="hidden" style="text-align:center; animation: popIn 0.5s;">
-            <h3 style="color: #E91E63; font-size: 2em;">🎉 挑戰成功！ 🎉</h3>
+            <h3 style="color: #E91E63; font-size: 2em;" data-zh="🎉 挑戰成功！ 🎉" data-en="🎉 Challenge complete! 🎉">🎉 挑戰成功！ 🎉</h3>
             <div style="font-size: 6rem;">🐹👑</div>
             <p id="victoryMessage" style="font-size: 1.3rem; margin: 20px 0; line-height: 1.6;"></p>
-            <button onclick="resetGame()" style="background-color: #E91E63;">再次挑戰</button>
+            <button onclick="resetGame()" style="background-color: #E91E63;" data-zh="再次挑戰" data-en="Play again">再次挑戰</button>
         </div>
     </div>
 
     <script>
-        // Data: Reactivity Series
-        // Updated to include 'charge' for accurate ionic equation generation
+        let LANG = 'zh';
+        const L = (o) => (o && typeof o === 'object') ? (o[LANG] ?? o.zh) : o;
+
         const metalsData = {
-            'Mg': { reactivity: 6, name: '鎂', color: '#C0C0C0', ionColor: '#E0F7FA', charge: 2 }, 
-            'Al': { reactivity: 5, name: '鋁', color: '#D3D3D3', ionColor: '#E0F7FA', charge: 3 }, 
-            'Zn': { reactivity: 4, name: '鋅', color: '#90A4AE', ionColor: '#E0F7FA', charge: 2 }, 
-            'Fe': { reactivity: 3, name: '鐵', color: '#5D4037', ionColor: '#C8E6C9', charge: 2 }, // Using Fe2+ for simplicity in this context
-            'Cu': { reactivity: 2, name: '銅', color: '#B87333', ionColor: '#29B6F6', charge: 2 }, 
-            'Ag': { reactivity: 1, name: '銀', color: '#E0E0E0', ionColor: '#E0F7FA', charge: 1 }  
+            'Mg': { reactivity: 6, name: {zh:'鎂',en:'magnesium'}, color: '#C0C0C0', ionColor: '#E0F7FA', charge: 2 },
+            'Al': { reactivity: 5, name: {zh:'鋁',en:'aluminium'}, color: '#D3D3D3', ionColor: '#E0F7FA', charge: 3 },
+            'Zn': { reactivity: 4, name: {zh:'鋅',en:'zinc'}, color: '#90A4AE', ionColor: '#E0F7FA', charge: 2 },
+            'Fe': { reactivity: 3, name: {zh:'鐵',en:'iron'}, color: '#5D4037', ionColor: '#C8E6C9', charge: 2 },
+            'Cu': { reactivity: 2, name: {zh:'銅',en:'copper'}, color: '#B87333', ionColor: '#29B6F6', charge: 2 },
+            'Ag': { reactivity: 1, name: {zh:'銀',en:'silver'}, color: '#E0E0E0', ionColor: '#E0F7FA', charge: 1 }
         };
 
-        // Helper for LCM to balance equations
-        function getLCM(a, b) {
-            let max = Math.max(a, b);
-            let min = Math.min(a, b);
-            let lcm = max;
-            while(lcm % min !== 0) {
-                lcm += max;
-            }
-            return lcm;
+        function getLCM(a, b) { let max=Math.max(a,b),min=Math.min(a,b),lcm=max; while(lcm%min!==0){lcm+=max;} return lcm; }
+
+        function nm(key){ return L(metalsData[key].name); }
+        function solutionName(key){
+            if(LANG==='zh') return key==='Ag' ? '硝酸銀溶液' : `硫酸${metalsData[key].name.zh}溶液`;
+            return key==='Ag' ? 'silver nitrate solution' : `${metalsData[key].name.en} sulfate solution`;
         }
 
-        // --- Simulation Logic ---
+        // 記錄狀態以支援語言切換
+        let _lastExp = null;      // {solidKey, solutionKey}
+        let _feedback = null;     // {msg:{zh,en}, ok:bool}
+        let _challengerName = '';
+
+        function renderResult(solidKey, solutionKey){
+            const solid = metalsData[solidKey], solution = metalsData[solutionKey];
+            const resultTitle = document.getElementById('resultTitle');
+            const resultDesc = document.getElementById('resultDesc');
+            const eq = document.getElementById('equation');
+            if (solidKey === solutionKey) {
+                resultTitle.innerText = LANG==='zh' ? "😐 沒有反應" : "😐 No reaction";
+                resultTitle.style.color = "#888";
+                resultDesc.innerText = LANG==='zh'
+                    ? `這是同一種金屬 (${nm(solidKey)})，倉鼠看著鏡子裡的自己，什麼事也沒發生。`
+                    : `Same metal (${nm(solidKey)}) — the hamster just looks at its reflection and nothing happens.`;
+                eq.innerText = LANG==='zh' ? "無化學反應" : "No chemical reaction";
+            } else if (solid.reactivity > solution.reactivity) {
+                resultTitle.innerText = LANG==='zh' ? "🎉 成功！發生置換反應" : "🎉 Success! A displacement reaction occurs";
+                resultTitle.style.color = "var(--success)";
+                resultDesc.innerHTML = LANG==='zh'
+                    ? `<b>${nm(solidKey)}</b> 比 <b>${nm(solutionKey)}</b> 更活潑！<br>強壯的 ${nm(solidKey)} 倉鼠把 ${nm(solutionKey)} 倉鼠踢出了溶液。<br>觀察：溶液顏色改變，金屬條表面出現 ${nm(solutionKey)} 的沉澱。`
+                    : `<b>${nm(solidKey)}</b> is more reactive than <b>${nm(solutionKey)}</b>!<br>The strong ${nm(solidKey)} hamster kicks the ${nm(solutionKey)} hamster out of the solution.<br>Observe: the solution changes colour and ${nm(solutionKey)} deposits on the metal strip.`;
+                const c1 = solid.charge, c2 = solution.charge;
+                const lcm = getLCM(c1, c2);
+                const coeffSolid = lcm / c1, coeffSolution = lcm / c2;
+                const strCoeffSolid = coeffSolid === 1 ? '' : coeffSolid;
+                const strCoeffSol = coeffSolution === 1 ? '' : coeffSolution;
+                const chargeStrSolid = c1 === 1 ? '+' : `${c1}+`;
+                const chargeStrSol = c2 === 1 ? '+' : `${c2}+`;
+                eq.innerHTML = `${strCoeffSolid}${solidKey} (s) + ${strCoeffSol}${solutionKey}<sup>${chargeStrSol}</sup> (aq) ➝ ${strCoeffSolid}${solidKey}<sup>${chargeStrSolid}</sup> (aq) + ${strCoeffSol}${solutionKey} (s)`;
+            } else {
+                resultTitle.innerText = LANG==='zh' ? "❌ 無法反應" : "❌ No reaction";
+                resultTitle.style.color = "var(--fail)";
+                resultDesc.innerHTML = LANG==='zh'
+                    ? `<b>${nm(solidKey)}</b> 比 <b>${nm(solutionKey)}</b> 不活潑。<br>${nm(solidKey)} 倉鼠太弱了，搶不走 ${nm(solutionKey)} 倉鼠的食物。<br>觀察：沒有任何變化。`
+                    : `<b>${nm(solidKey)}</b> is less reactive than <b>${nm(solutionKey)}</b>.<br>The ${nm(solidKey)} hamster is too weak to take the ${nm(solutionKey)} hamster's food.<br>Observe: no change.`;
+                eq.innerText = LANG==='zh' ? "沒有反應" : "No Reaction";
+            }
+        }
+
         function runExperiment() {
             const solidKey = document.getElementById('metalSolid').value;
             const solutionKey = document.getElementById('metalSolution').value;
-            
-            const solid = metalsData[solidKey];
-            const solution = metalsData[solutionKey];
-
+            const solid = metalsData[solidKey], solution = metalsData[solutionKey];
             const beaker = document.getElementById('beaker');
             const liquid = document.getElementById('visualLiquid');
             const strip = document.getElementById('visualStrip');
             const resultBox = document.getElementById('resultBox');
-            const resultTitle = document.getElementById('resultTitle');
-            const resultDesc = document.getElementById('resultDesc');
-            const eq = document.getElementById('equation');
 
-            // Reset Animation
             beaker.classList.remove('reaction-active');
-            void beaker.offsetWidth; // trigger reflow
-
-            // Initial Visuals
+            void beaker.offsetWidth;
             strip.style.backgroundColor = solid.color;
             liquid.style.backgroundColor = solution.ionColor;
-            
             resultBox.classList.remove('hidden');
 
-            // Logic Check
-            if (solidKey === solutionKey) {
-                // Same metal
-                resultTitle.innerText = "😐 沒有反應";
-                resultTitle.style.color = "#555";
-                resultDesc.innerText = `這是同一種金屬 (${solid.name})，倉鼠看著鏡子裡的自己，什麼事也沒發生。`;
-                eq.innerText = "無化學反應";
-            } else if (solid.reactivity > solution.reactivity) {
-                // Reaction Occurs!
+            if (solidKey !== solutionKey && solid.reactivity > solution.reactivity) {
                 beaker.classList.add('reaction-active');
-                
-                // Change liquid color to the new metal ion's color (after a delay)
                 setTimeout(() => {
                     liquid.style.backgroundColor = solid.ionColor;
-                    // Strip gets coated with the displaced metal
-                    strip.style.backgroundColor = solution.color; 
+                    strip.style.backgroundColor = solution.color;
                 }, 500);
-
-                resultTitle.innerText = "🎉 成功！發生置換反應";
-                resultTitle.style.color = "var(--success)";
-                resultDesc.innerHTML = `<b>${solid.name}</b> 比 <b>${solution.name}</b> 更活潑！<br>
-                強壯的 ${solid.name} 倉鼠把 ${solution.name} 倉鼠踢出了溶液。<br>
-                觀察：溶液顏色改變，金屬條表面出現 ${solution.name} 的沉澱。`;
-                
-                // Ionic Equation Generation
-                // 1. Get charges
-                const c1 = solid.charge;
-                const c2 = solution.charge;
-                
-                // 2. Balance charges using LCM
-                const lcm = getLCM(c1, c2);
-                
-                // 3. Determine coefficients
-                const coeffSolid = lcm / c1;     // e.g. Al(3+) vs Cu(2+) -> LCM=6 -> 2 Al
-                const coeffSolution = lcm / c2;  // e.g. Al(3+) vs Cu(2+) -> LCM=6 -> 3 Cu2+
-
-                // 4. Format Output strings
-                const strCoeffSolid = coeffSolid === 1 ? '' : coeffSolid;
-                const strCoeffSol = coeffSolution === 1 ? '' : coeffSolution;
-
-                const chargeStrSolid = c1 === 1 ? '+' : `${c1}+`;
-                const chargeStrSol = c2 === 1 ? '+' : `${c2}+`;
-
-                // Equation: x A(s) + y B^+(aq) -> x A^+(aq) + y B(s)
-                eq.innerHTML = `${strCoeffSolid}${solidKey} (s) + ${strCoeffSol}${solutionKey}<sup>${chargeStrSol}</sup> (aq) ➝ ${strCoeffSolid}${solidKey}<sup>${chargeStrSolid}</sup> (aq) + ${strCoeffSol}${solutionKey} (s)`;
-
-            } else {
-                // No Reaction
-                resultTitle.innerText = "❌ 無法反應";
-                resultTitle.style.color = "var(--fail)";
-                resultDesc.innerHTML = `<b>${solid.name}</b> 比 <b>${solution.name}</b> 不活潑。<br>
-                ${solid.name} 倉鼠太弱了，搶不走 ${solution.name} 倉鼠的食物。<br>
-                觀察：沒有任何變化。`;
-                eq.innerText = "No Reaction";
             }
+            _lastExp = { solidKey, solutionKey };
+            renderResult(solidKey, solutionKey);
         }
 
         // --- Challenge Logic ---
@@ -514,85 +288,69 @@
 
         function startChallenge() {
             const name = document.getElementById('challengerName').value;
-            if(!name) { alert('請輸入名字！'); return; }
-            
+            if(!name) { alert(LANG==='zh'?'請輸入名字！':'Please enter your name!'); return; }
+            _challengerName = name;
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('victoryScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.remove('hidden');
-            document.getElementById('displayName').innerText = `挑戰者: ${name} 🐹`;
-            
-            // Ensure score starts at 0
+            document.getElementById('displayName').innerText = LANG==='zh' ? `挑戰者: ${name} 🐹` : `Challenger: ${name} 🐹`;
             currentScore = 0;
             document.getElementById('score').innerText = currentScore;
-
             nextQuestion();
+        }
+
+        function renderQuestion(){
+            document.getElementById('qMetal').innerText = `${nm(qSolid)} (${qSolid})`;
+            document.getElementById('qSolution').innerText = solutionName(qSolution);
         }
 
         function nextQuestion() {
             isAnswered = false;
+            _feedback = null;
             document.getElementById('feedback').innerText = '';
             document.getElementById('nextBtn').classList.add('hidden');
-            
             const keys = Object.keys(metalsData);
-            // Pick random solid
             const r1 = Math.floor(Math.random() * keys.length);
-            // Pick random solution (ensure not same)
             let r2 = Math.floor(Math.random() * keys.length);
-            while(r1 === r2) {
-                r2 = Math.floor(Math.random() * keys.length);
-            }
-
+            while(r1 === r2) { r2 = Math.floor(Math.random() * keys.length); }
             qSolid = keys[r1];
             qSolution = keys[r2];
+            renderQuestion();
+        }
 
-            const solName = qSolution === 'Ag' ? '硝酸銀溶液' : `硫酸${metalsData[qSolution].name}溶液`;
-
-            document.getElementById('qMetal').innerText = `${metalsData[qSolid].name} (${qSolid})`;
-            document.getElementById('qSolution').innerText = solName;
+        function renderFeedback(){
+            const feedback = document.getElementById('feedback');
+            if(!_feedback){ feedback.innerText=''; return; }
+            feedback.innerText = L(_feedback.msg);
+            feedback.style.color = _feedback.ok ? "var(--success)" : "var(--fail)";
         }
 
         function answerChallenge(userPrediction) {
             if(isAnswered) return;
             isAnswered = true;
-
-            const solidReact = metalsData[qSolid].reactivity;
-            const solReact = metalsData[qSolution].reactivity;
-            
-            // True if Solid > Solution
-            const actualResult = solidReact > solReact;
-
-            const feedback = document.getElementById('feedback');
-            
+            const actualResult = metalsData[qSolid].reactivity > metalsData[qSolution].reactivity;
             if (userPrediction === actualResult) {
                 currentScore += 10;
-                feedback.innerText = "✨ 答對了！倉鼠為你歡呼！ (+10分)";
-                feedback.style.color = "var(--success)";
+                _feedback = { ok:true, msg:{zh:"✨ 答對了！倉鼠為你歡呼！ (+10分)", en:"✨ Correct! The hamsters cheer for you! (+10 pts)"} };
             } else {
-                feedback.innerText = "💥 答錯了... 再複習一下活性表吧！";
-                feedback.style.color = "var(--fail)";
+                _feedback = { ok:false, msg:{zh:"💥 答錯了... 再複習一下活性表吧！", en:"💥 Wrong... review the reactivity series!"} };
             }
-
+            renderFeedback();
             document.getElementById('score').innerText = currentScore;
+            if (currentScore >= 100) { setTimeout(showVictory, 1000); }
+            else { document.getElementById('nextBtn').classList.remove('hidden'); }
+        }
 
-            // Check for victory (Score >= 100)
-            if (currentScore >= 100) {
-                setTimeout(showVictory, 1000); // Wait 1 second before showing victory
-            } else {
-                document.getElementById('nextBtn').classList.remove('hidden');
-            }
+        function renderVictory(){
+            document.getElementById('victoryMessage').innerHTML = LANG==='zh'
+                ? `恭喜 <b>${_challengerName}</b>！<br>你已經集滿 100 分，成功通過了倉鼠化學家的試煉！<br>願你的智慧像鎂帶一樣耀眼，對知識的熱情永遠保持最高活性！🌟`
+                : `Congratulations <b>${_challengerName}</b>!<br>You reached 100 points and passed the hamster chemist's trial!<br>May your wisdom shine like burning magnesium and your passion stay at maximum reactivity! 🌟`;
         }
 
         function showVictory() {
-            const name = document.getElementById('challengerName').value;
             document.getElementById('gameScreen').classList.add('hidden');
             document.getElementById('victoryScreen').classList.remove('hidden');
-            
-            // Custom Victory Message
-            document.getElementById('victoryMessage').innerHTML = `
-                恭喜 <b>${name}</b>！<br>
-                你已經集滿 100 分，成功通過了倉鼠化學家的試煉！<br>
-                願你的智慧像鎂帶一樣耀眼，對知識的熱情永遠保持最高活性！🌟
-            `;
+            renderVictory();
         }
 
         function resetGame() {
@@ -600,8 +358,36 @@
             document.getElementById('score').innerText = '0';
             document.getElementById('victoryScreen').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('challengerName').value = ''; 
+            document.getElementById('challengerName').value = '';
         }
+
+        // --- 主題 / 語言切換 ---
+        function toggleTheme(){
+            const dark = !document.body.classList.contains('dark');
+            document.body.classList.toggle('dark', dark);
+            document.getElementById('theme-ic').innerHTML = `<i data-lucide="${dark?'sun':'moon'}" width="15" height="15"></i>`;
+            if(window.lucide) lucide.createIcons();
+        }
+        function toggleLang(){
+            LANG = LANG==='zh' ? 'en' : 'zh';
+            document.getElementById('lang-label').textContent = LANG==='zh' ? 'EN' : '中';
+            document.querySelectorAll('[data-zh][data-en]').forEach(el=>{
+                el.textContent = el.getAttribute(LANG==='zh'?'data-zh':'data-en');
+            });
+            document.querySelectorAll('[data-ph-zh][data-ph-en]').forEach(el=>{
+                el.placeholder = el.getAttribute(LANG==='zh'?'data-ph-zh':'data-ph-en');
+            });
+            document.querySelectorAll('.lang-zh').forEach(el=>{ el.style.display = LANG==='zh'?'':'none'; });
+            document.querySelectorAll('.lang-en').forEach(el=>{ el.style.display = LANG==='en'?'':'none'; });
+            if(_lastExp && !document.getElementById('resultBox').classList.contains('hidden')) renderResult(_lastExp.solidKey, _lastExp.solutionKey);
+            if(!document.getElementById('gameScreen').classList.contains('hidden')){
+                document.getElementById('displayName').innerText = LANG==='zh' ? `挑戰者: ${_challengerName} 🐹` : `Challenger: ${_challengerName} 🐹`;
+                renderQuestion(); renderFeedback();
+            }
+            if(!document.getElementById('victoryScreen').classList.contains('hidden')) renderVictory();
+        }
+
+        if(window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>
