@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNS 域名解析 · DNS Resolution</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ input.numin{ background:transparent;border:1px solid #c3ccd8;border-radius:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace; } body.dark input.numin{ border-color:#2c3e57;color:#e2e8f0; }
+ input.numin:focus{ outline:none;border-color:var(--ac); }
+ .srv{ border:1px solid #c3ccd8;border-radius:8px;padding:10px 12px;transition:all .3s; } body.dark .srv{ border-color:#2c3e57; }
+ .srv.active{ border-color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,transparent);box-shadow:0 0 16px -4px var(--ac); }
+ .msg{ opacity:0;transition:opacity .3s; } .msg.show{ opacity:1; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.15</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">DNS 域名解析</span><span class="lang-en hidden">DNS Resolution</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Domain Name System</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="flex flex-wrap items-center gap-2 mb-5">
+      <input id="domain" class="numin flex-grow min-w-[200px]" value="www.tbssl.edu.hk">
+      <button onclick="resolve()" id="rbtn" class="bp-btn" style="border-color:var(--ac)"><i data-lucide="search" width="14" height="14"></i><span class="lang-zh">解析</span><span class="lang-en hidden">Resolve</span></button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+      <div class="space-y-3">
+        <div id="srv-resolver" class="srv"><div class="flex items-center gap-2"><span class="text-xl">🧭</span><div><b class="mono text-sm">Recursive Resolver</b><div class="mono text-[10px] text-slate-400"><span class="lang-zh">遞迴解析器 (代你逐層查詢)</span><span class="lang-en hidden">queries each level for you</span></div></div></div></div>
+        <div id="msgbox" class="bp-panel rounded p-3 min-h-[120px] mono text-xs space-y-1.5"></div>
+      </div>
+      <div class="space-y-3">
+        <div id="srv-root" class="srv"><div class="flex items-center gap-2"><span class="text-xl">🌐</span><div><b class="mono text-sm">Root <span class="text-slate-400">(.)</span></b><div class="mono text-[10px] text-slate-400"><span class="lang-zh">根伺服器 → 指向 TLD</span><span class="lang-en hidden">points to the TLD</span></div></div></div></div>
+        <div id="srv-tld" class="srv"><div class="flex items-center gap-2"><span class="text-xl">🏳</span><div><b class="mono text-sm">TLD <span id="tldlabel" class="text-slate-400"></span></b><div class="mono text-[10px] text-slate-400"><span class="lang-zh">頂級域 → 指向權威伺服器</span><span class="lang-en hidden">top-level domain → authoritative</span></div></div></div></div>
+        <div id="srv-auth" class="srv"><div class="flex items-center gap-2"><span class="text-xl">📌</span><div><b class="mono text-sm">Authoritative</b><div class="mono text-[10px] text-slate-400"><span class="lang-zh">權威伺服器 → 回傳 IP</span><span class="lang-en hidden">holds the record → returns IP</span></div></div></div></div>
+      </div>
+    </div>
+
+    <div id="answer" class="mt-4 rounded p-4 mono text-center font-bold hidden"></div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">DNS</b> 像互聯網的電話簿。解析器由最頂層 (根) 開始,逐層被指引到管理該網域的<b>權威伺服器</b>,最終取得 IP。查得的結果會被<b>快取</b>一段時間 (TTL),下次更快。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">DNS</b> is the internet's phone book. The resolver starts at the top (root) and is referred down level by level to the <b>authoritative server</b> that owns the domain, finally getting the IP. Results are <b>cached</b> for a while (TTL) so the next lookup is faster.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let busy=false;
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  function clearA(){ ['resolver','root','tld','auth'].forEach(x=>$('srv-'+x).classList.remove('active')); }
+  function addMsg(t){ const d=document.createElement('div'); d.className='msg'; d.innerHTML=t; $('msgbox').appendChild(d); requestAnimationFrame(()=>d.classList.add('show')); }
+
+  async function resolve(){
+    if(busy) return; busy=true;
+    $('msgbox').innerHTML=''; $('answer').classList.add('hidden'); clearA();
+    const domain=$('domain').value.trim()||'www.example.com';
+    const tld='.'+domain.split('.').pop();
+    $('tldlabel').textContent='('+tld+')';
+    const ip='103.'+((domain.length*13)%254)+'.24.'+((domain.length*7)%254+1);
+
+    $('srv-resolver').classList.add('active');
+    addMsg(`<span style="color:var(--ac)">▶</span> ${__lang==='zh'?'查詢':'query'} <b>${domain}</b> ...`);
+    await sleep(700);
+
+    clearA(); $('srv-resolver').classList.add('active'); $('srv-root').classList.add('active');
+    addMsg(`→ Root: ${__lang==='zh'?'我不知,但':'don\'t know, but'} <b>${tld}</b> ${__lang==='zh'?'的伺服器在這':'server is over there'}`);
+    await sleep(900);
+
+    clearA(); $('srv-resolver').classList.add('active'); $('srv-tld').classList.add('active');
+    addMsg(`→ TLD ${tld}: ${__lang==='zh'?'去問':'ask'} <b>${domain.replace(/^www\./,'')}</b> ${__lang==='zh'?'的權威伺服器':'authoritative server'}`);
+    await sleep(900);
+
+    clearA(); $('srv-resolver').classList.add('active'); $('srv-auth').classList.add('active');
+    addMsg(`→ Authoritative: <b>${domain}</b> = <span style="color:#10b981">${ip}</span>`);
+    await sleep(800);
+
+    clearA(); $('srv-resolver').classList.add('active');
+    addMsg(`<span style="color:#10b981">✓</span> ${__lang==='zh'?'快取結果並回覆瀏覽器':'cache the result and reply to the browser'}`);
+    const a=$('answer'); a.classList.remove('hidden'); a.style.background='rgba(16,185,129,.13)'; a.style.color='#10b981';
+    a.innerHTML=`${domain} &nbsp;→&nbsp; ${ip}`;
+    await sleep(300);
+    busy=false;
+  }
+  window.resolve=resolve;
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

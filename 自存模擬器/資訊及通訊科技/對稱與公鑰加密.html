@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>對稱 vs 公鑰加密 · Symmetric vs Public-Key</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ input.numin{ background:transparent;border:1px solid #c3ccd8;border-radius:6px;padding:8px 12px;font-family:'Noto Sans HK',sans-serif; } body.dark input.numin{ border-color:#2c3e57;color:#e2e8f0; }
+ input.numin:focus{ outline:none;border-color:var(--ac); }
+ input[type=range]{ -webkit-appearance:none;width:100%;height:4px;background:#c3ccd8;border-radius:2px; } body.dark input[type=range]{ background:#2c3e57; }
+ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none;height:16px;width:16px;border-radius:4px;background:#fff;border:2px solid var(--ac);cursor:pointer; }
+ .cipher{ word-break:break-all; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.18</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">對稱 vs 公鑰加密</span><span class="lang-en hidden">Symmetric vs Public-Key</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Cryptography</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="flex gap-2 mb-5">
+      <button onclick="setMode('sym')" id="m-sym" class="bp-btn"><span class="lang-zh">對稱式 (共用密鑰)</span><span class="lang-en hidden">Symmetric (shared key)</span></button>
+      <button onclick="setMode('pub')" id="m-pub" class="bp-btn"><span class="lang-zh">公鑰式 (非對稱)</span><span class="lang-en hidden">Public-key (asymmetric)</span></button>
+    </div>
+
+    <label class="mono text-[11px] uppercase text-slate-400 block mb-1"><span class="lang-zh">訊息 (Alice 想傳給 Bob)</span><span class="lang-en hidden">Message (Alice → Bob)</span></label>
+    <input id="msg" class="numin w-full mb-4" value="MEET AT 8PM" maxlength="24" oninput="update()">
+
+    <!-- SYMMETRIC -->
+    <div id="panel-sym">
+      <div class="bp-panel rounded p-4 mb-3">
+        <div class="flex justify-between mono text-xs mb-1"><span class="lang-zh">共用密鑰 K (Alice 與 Bob 皆知)</span><span class="lang-en hidden">Shared key K (both know)</span><span id="ksym" class="font-bold" style="color:var(--ac)"></span></div>
+        <input id="key" type="range" min="1" max="255" value="42" oninput="update()">
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center text-center">
+        <div class="bp-panel rounded p-3"><div class="mono text-[10px] text-slate-400">Alice 🔒</div><div class="mono text-[11px] cipher" id="sym-cipher" style="color:#f59e0b"></div></div>
+        <div class="text-center"><i data-lucide="arrow-right" class="inline sm:block mx-auto"></i><div class="mono text-[9px] text-slate-400"><span class="lang-zh">同一把 K</span><span class="lang-en hidden">same K</span></div></div>
+        <div class="bp-panel rounded p-3"><div class="mono text-[10px] text-slate-400">Bob 🔑</div><div class="mono text-sm font-bold" id="sym-plain" style="color:#10b981"></div></div>
+      </div>
+      <div class="mt-3">
+        <label class="mono text-xs flex items-center gap-2 cursor-pointer"><input type="checkbox" id="wrongsym" onchange="update()"><span class="lang-zh">竊聽者用錯誤密鑰嘗試解密</span><span class="lang-en hidden">Eavesdropper tries a wrong key</span></label>
+        <div id="sym-eve" class="mono text-[11px] cipher mt-1 text-red-500"></div>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-3"><span class="lang-zh">⚠ <b>密鑰分發問題</b>：雙方必須先安全地共用同一把密鑰,但如何在不安全的網絡上傳這把鑰匙?</span><span class="lang-en hidden">⚠ <b>Key-distribution problem:</b> both sides must first share the same secret key — but how do you send that key safely over an insecure network?</span></p>
+    </div>
+
+    <!-- PUBLIC KEY -->
+    <div id="panel-pub" class="hidden">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+        <div class="bp-panel rounded p-3"><div class="mono text-[10px] text-slate-400">Bob's <b style="color:#10b981">PUBLIC</b> key <span class="lang-zh">(公開)</span></div><div class="mono text-sm font-bold">n=187, e=7</div><div class="mono text-[9px] text-slate-400"><span class="lang-zh">任何人可用來加密</span><span class="lang-en hidden">anyone can encrypt with it</span></div></div>
+        <div class="bp-panel rounded p-3"><div class="mono text-[10px] text-slate-400">Bob's <b style="color:#ef4444">PRIVATE</b> key <span class="lang-zh">(保密)</span></div><div class="mono text-sm font-bold">d=23 🔒</div><div class="mono text-[9px] text-slate-400"><span class="lang-zh">只有 Bob 知道,用來解密</span><span class="lang-en hidden">only Bob knows it — decrypts</span></div></div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center text-center">
+        <div class="bp-panel rounded p-3"><div class="mono text-[10px] text-slate-400">Alice <span class="lang-zh">用公鑰加密</span><span class="lang-en hidden">encrypts w/ public</span></div><div class="mono text-[11px] cipher" id="pub-cipher" style="color:#f59e0b"></div></div>
+        <div class="text-center"><i data-lucide="arrow-right" class="inline sm:block mx-auto"></i></div>
+        <div class="bp-panel rounded p-3"><div class="mono text-[10px] text-slate-400">Bob <span class="lang-zh">用私鑰解密</span><span class="lang-en hidden">decrypts w/ private</span></div><div class="mono text-sm font-bold" id="pub-plain" style="color:#10b981"></div></div>
+      </div>
+      <div class="mt-3">
+        <label class="mono text-xs flex items-center gap-2 cursor-pointer"><input type="checkbox" id="wrongpub" onchange="update()"><span class="lang-zh">竊聽者只有公鑰,嘗試解密</span><span class="lang-en hidden">Eavesdropper has only the public key</span></label>
+        <div id="pub-eve" class="mono text-[11px] cipher mt-1 text-red-500"></div>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-3"><span class="lang-zh">✓ <b>解決分發問題</b>：公鑰可公開分發,只有對應的私鑰能解密,毋須事先共用秘密。密鑰越長越難破解。(此處為教學用的極小 RSA)</span><span class="lang-en hidden">✓ <b>Solves key distribution:</b> the public key can be shared openly; only the matching private key decrypts, so no secret needs pre-sharing. Longer keys are harder to break. (Tiny RSA shown for teaching.)</span></p>
+    </div>
+
+    <div class="mt-5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">對稱</b>加解密用同一把密鑰,快但難安全分發。<b>公鑰 (非對稱)</b>用一對鑰匙:公鑰加密、私鑰解密。HTTPS 常先用公鑰安全交換一把對稱密鑰,再用對稱加密傳大量資料。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">Symmetric</b> uses one key for both encrypt and decrypt — fast but hard to distribute safely. <b>Public-key (asymmetric)</b> uses a pair: public to encrypt, private to decrypt. HTTPS typically uses public-key to exchange a symmetric key safely, then symmetric encryption for the bulk data.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();update();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let mode='sym';
+  // toy RSA
+  function modpow(b,e,m){ let r=1; b%=m; while(e>0){ if(e&1) r=(r*b)%m; e>>=1; b=(b*b)%m; } return r; }
+  const N=187,E=7,D=23;
+  function toHex(arr){ return arr.map(n=>n.toString(16).padStart(2,'0')).join(' '); }
+
+  function update(){
+    const msg=$('msg').value;
+    const codes=[...msg].map(c=>c.charCodeAt(0));
+    if(mode==='sym'){
+      const k=+$('key').value; $('ksym').textContent=k+' (0x'+k.toString(16).toUpperCase()+')';
+      const cipher=codes.map(c=>c^k);
+      $('sym-cipher').textContent=toHex(cipher);
+      $('sym-plain').textContent=cipher.map(c=>String.fromCharCode(c^k)).join('');
+      if($('wrongsym').checked){ const wk=(k+37)%256; $('sym-eve').textContent='('+(__lang==='zh'?'錯誤密鑰 K='+wk:'wrong K='+wk)+') → '+cipher.map(c=>{const x=c^wk;return x>=32&&x<127?String.fromCharCode(x):'�';}).join(''); }
+      else $('sym-eve').textContent='';
+    } else {
+      const cipher=codes.map(c=>modpow(c,E,N));
+      $('pub-cipher').textContent=cipher.join(' ');
+      $('pub-plain').textContent=cipher.map(c=>String.fromCharCode(modpow(c,D,N))).join('');
+      if($('wrongpub').checked){ $('pub-eve').textContent='('+(__lang==='zh'?'用公鑰解密':'decrypt with public key')+') → '+cipher.map(c=>{const x=modpow(c,E,N);return x>=32&&x<127?String.fromCharCode(x):'�';}).join(''); }
+      else $('pub-eve').textContent='';
+    }
+  }
+  window.update=update;
+  window.setMode=function(m){ mode=m; $('panel-sym').classList.toggle('hidden',m!=='sym'); $('panel-pub').classList.toggle('hidden',m!=='pub'); $('m-sym').style.borderColor=m==='sym'?'var(--ac)':''; $('m-pub').style.borderColor=m==='pub'?'var(--ac)':''; update(); if(window.lucide)lucide.createIcons(); };
+  setMode('sym');
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

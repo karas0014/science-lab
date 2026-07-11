@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>網址到網頁的旅程 · URL to Web Page Journey</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ input.numin{ background:transparent;border:1px solid #c3ccd8;border-radius:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace; } body.dark input.numin{ border-color:#2c3e57;color:#e2e8f0; }
+ input.numin:focus{ outline:none;border-color:var(--ac); }
+ .node{ transition:all .3s; } .node.active rect{ stroke:var(--ac);stroke-width:2.5; }
+ .step-item{ opacity:.4;transition:opacity .3s; } .step-item.done{ opacity:1; } .step-item.cur{ opacity:1;font-weight:700; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-5xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.14</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">網址到網頁的旅程</span><span class="lang-en hidden">URL to Web Page Journey</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · DNS · HTTP · HTTPS</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <input id="url" class="numin flex-grow min-w-[220px]" value="https://www.tbssl.edu.hk/index.html">
+      <button onclick="go()" id="gobtn" class="bp-btn" style="border-color:var(--ac)"><i data-lucide="send" width="14" height="14"></i><span class="lang-zh">前往</span><span class="lang-en hidden">Go</span></button>
+      <button onclick="stepFwd()" class="bp-btn"><i data-lucide="step-forward" width="14" height="14"></i><span class="lang-zh">單步</span><span class="lang-en hidden">Step</span></button>
+    </div>
+
+    <!-- URL parse -->
+    <div id="parse" class="mono text-xs flex flex-wrap gap-2 mb-4"></div>
+
+    <!-- diagram -->
+    <div class="bp-panel rounded p-2">
+      <svg id="diagram" viewBox="0 0 620 180" class="w-full"></svg>
+    </div>
+
+    <!-- steps -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mt-4" id="steps"></div>
+
+    <div class="bp-panel rounded p-4 mt-4 min-h-[54px]">
+      <div id="narr" class="text-sm"></div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">DNS</b> 把網域名稱翻譯成 IP 位址;<b>HTTP/HTTPS</b> 是瀏覽器與伺服器溝通的協定 (HTTPS 加密);瀏覽器發出 <b>GET</b> 請求,伺服器回傳 HTML,再由瀏覽器渲染成畫面。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">DNS</b> translates a domain name into an IP address; <b>HTTP/HTTPS</b> is the protocol the browser and server talk with (HTTPS is encrypted). The browser sends a <b>GET</b> request, the server returns HTML, and the browser renders it.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();render();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();renderSteps();render();narrate();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const STEPS=[
+    {node:'browser',zh:'解析網址：分出協定、網域、路徑',en:'Parse URL: split protocol, domain, path'},
+    {node:'dns',zh:'向 DNS 查詢網域對應的 IP 位址',en:'Ask DNS for the domain\'s IP address'},
+    {node:'browser',zh:'DNS 回覆 IP → 與伺服器建立 TCP 連線',en:'DNS returns IP → open a TCP connection to the server'},
+    {node:'server',zh:'發送 HTTP(S) GET 請求 (若 HTTPS 先 SSL 加密)',en:'Send an HTTP(S) GET request (SSL handshake first if HTTPS)'},
+    {node:'server',zh:'伺服器處理請求，找出所需網頁',en:'Server processes the request and locates the page'},
+    {node:'browser',zh:'伺服器回傳 HTTP 回應 (狀態碼 200 + HTML)',en:'Server sends an HTTP response (status 200 + HTML)'},
+    {node:'browser',zh:'瀏覽器渲染 HTML → 顯示網頁 ✓',en:'Browser renders the HTML → page appears ✓'},
+  ];
+  let idx=-1, parts={};
+
+  function parseURL(){
+    const u=$('url').value.trim();
+    const m=u.match(/^(https?):\/\/([^\/]+)(\/.*)?$/i);
+    if(m){ parts={proto:m[1],domain:m[2],path:m[3]||'/'}; }
+    else { parts={proto:'https',domain:u.replace(/\/.*/,'')||'example.com',path:'/'}; }
+    parts.ip='203.0.'+(113)+'.'+((parts.domain.length*7)%254+1);
+    parts.secure=parts.proto.toLowerCase()==='https';
+  }
+  function renderParse(){
+    $('parse').innerHTML=
+      `<span class="bp-btn" style="cursor:default;border-color:${parts.secure?'#10b981':'#f59e0b'}">${parts.proto}://</span>`+
+      `<span class="bp-btn" style="cursor:default;color:var(--ac)">${parts.domain}</span>`+
+      `<span class="bp-btn" style="cursor:default">${parts.path}</span>`+
+      `<span class="bp-btn" style="cursor:default;color:#3b82f6">→ ${parts.ip}</span>`;
+  }
+
+  const NODES={ browser:{x:40,label:{zh:'瀏覽器',en:'Browser'},icon:'🖥'}, dns:{x:250,label:{zh:'DNS 伺服器',en:'DNS Server'},icon:'📇'}, server:{x:460,label:{zh:'網頁伺服器',en:'Web Server'},icon:'🗄'} };
+  function render(packet){
+    let s='';
+    // connection lines
+    s+=`<line x1="150" y1="70" x2="250" y2="70" class="svg-line" stroke="#94a3b8" stroke-dasharray="4 3"/>`;
+    s+=`<line x1="360" y1="70" x2="460" y2="70" class="svg-line" stroke="#94a3b8" stroke-dasharray="4 3"/>`;
+    Object.entries(NODES).forEach(([k,n])=>{
+      const active=(idx>=0&&STEPS[idx]&&STEPS[idx].node===k);
+      s+=`<g class="node ${active?'active':''}">
+        <rect x="${n.x}" y="35" width="110" height="70" rx="8" fill="${__isDark?'#0d192b':'#fff'}" stroke="${active?'#8b5cf6':'#c3ccd8'}" stroke-width="${active?2.5:1}"/>
+        <text x="${n.x+55}" y="70" font-size="26" text-anchor="middle">${n.icon}</text>
+        <text x="${n.x+55}" y="96" font-size="10" text-anchor="middle" fill="${__isDark?'#94a3b8':'#475569'}" class="mono">${__lang==='zh'?n.label.zh:n.label.en}</text>
+      </g>`;
+    });
+    // packet
+    if(packet){ s+=`<circle cx="${packet.x}" cy="70" r="7" fill="${packet.color}"><animate attributeName="r" values="6;8;6" dur="0.6s" repeatCount="indefinite"/></circle><text x="${packet.x}" y="55" font-size="8" text-anchor="middle" fill="${packet.color}" class="mono">${packet.label}</text>`; }
+    $('diagram').innerHTML=s;
+  }
+
+  function renderSteps(){
+    $('steps').innerHTML=STEPS.map((st,i)=>
+      `<div class="step-item mono text-[11px] py-0.5 ${i<idx?'done':''} ${i===idx?'cur':''}" style="${i===idx?'color:var(--ac)':''}">
+        <span style="color:var(--ac)">${String(i+1).padStart(2,'0')}</span> ${__lang==='zh'?st.zh:st.en}</div>`
+    ).join('');
+  }
+  function narrate(){
+    if(idx<0){ $('narr').innerHTML=`<span class="text-slate-400">${__lang==='zh'?'輸入網址，按「前往」或「單步」開始…':'Enter a URL and press Go or Step…'}</span>`; return; }
+    $('narr').innerHTML=`<b style="color:var(--ac)">${String(idx+1).padStart(2,'0')}.</b> ${__lang==='zh'?STEPS[idx].zh:STEPS[idx].en}`;
+  }
+
+  function packetFor(i){
+    if(i===1) return {x:200,color:'#3b82f6',label:'DNS?'};
+    if(i===2) return {x:200,color:'#10b981',label:'IP'};
+    if(i===3) return {x:410,color:'#8b5cf6',label:'GET'};
+    if(i===5) return {x:410,color:'#10b981',label:'200 OK'};
+    return null;
+  }
+  function stepFwd(){ if(idx<STEPS.length-1){ idx++; if(idx===0){parseURL();renderParse();} renderSteps(); render(packetFor(idx)); narrate(); if(window.lucide)lucide.createIcons(); } }
+  window.stepFwd=stepFwd;
+  window.go=function(){ idx=-1; parseURL(); renderParse(); renderSteps(); render(); narrate();
+    const t=setInterval(()=>{ if(idx>=STEPS.length-1){clearInterval(t);return;} stepFwd(); },900);
+  };
+  window.render=render; window.renderSteps=renderSteps; window.narrate=narrate;
+  parseURL(); renderParse(); renderSteps(); render(); narrate();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAN／WAN 網絡拓撲 · Network Topology</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .svg-line{ stroke:#94a3b8; } body.dark .svg-line{ stroke:#64748b; }
+ .svg-ink{ fill:#475569; } body.dark .svg-ink{ fill:#94a3b8; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.17</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">LAN／WAN 網絡拓撲</span><span class="lang-en hidden">Network Topology</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Networking</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="flex flex-wrap gap-2 mb-4" id="topobtns"></div>
+    <div class="bp-panel rounded p-2">
+      <svg id="net" viewBox="0 0 480 300" class="w-full"></svg>
+    </div>
+    <p class="mono text-[10px] text-slate-400 text-center mt-1"><span class="lang-zh">點擊兩部電腦顯示資料傳送路徑</span><span class="lang-en hidden">Click two computers to show the data path</span></p>
+
+    <div class="bp-panel rounded p-4 mt-3">
+      <h3 id="topo-title" class="serif-font font-bold text-lg mb-1" style="color:var(--ac)"></h3>
+      <p id="topo-desc" class="text-sm text-slate-600 dark:text-slate-300"></p>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 mono text-[10px] text-center">
+      <div class="bp-panel rounded p-2">🖥 <span class="lang-zh">電腦(NIC)</span><span class="lang-en hidden">PC(NIC)</span></div>
+      <div class="bp-panel rounded p-2">🔀 <span class="lang-zh">交換器</span><span class="lang-en hidden">Switch</span></div>
+      <div class="bp-panel rounded p-2">📡 <span class="lang-zh">路由器</span><span class="lang-en hidden">Router</span></div>
+      <div class="bp-panel rounded p-2">☁ <span class="lang-zh">互聯網/WAN</span><span class="lang-en hidden">Internet/WAN</span></div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">LAN (局域網)</b> 覆蓋小範圍 (如一間學校),常以<b>交換器</b>組成星型;<b>WAN (廣域網)</b> 跨越大距離,把多個 LAN 經<b>路由器</b>連接 (互聯網即最大的 WAN)。每部裝置靠<b>網絡介面卡 (NIC)</b> 連網。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">A LAN</b> covers a small area (e.g. one school), often a star built around a <b>switch</b>; a <b>WAN</b> spans large distances, joining many LANs through <b>routers</b> (the internet is the biggest WAN). Every device connects via a <b>NIC</b>.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();draw();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();draw();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let cur='star', sel=[];
+  // topologies define nodes (pc) + hubs + edges(list of [a,b]) with ids
+  function genStar(){ const c={id:'sw',x:240,y:150,ic:'🔀'}; const pcs=[]; const n=6; for(let i=0;i<n;i++){ const a=i/n*2*Math.PI-Math.PI/2; pcs.push({id:'p'+i,x:240+130*Math.cos(a),y:150+110*Math.sin(a),ic:'🖥'}); } const edges=pcs.map(p=>[p.id,'sw']); return{nodes:[c,...pcs],edges}; }
+  function genBus(){ const nodes=[]; const edges=[]; const n=6; for(let i=0;i<n;i++){ nodes.push({id:'p'+i,x:60+i*72,y:90,ic:'🖥'}); } // backbone
+    for(let i=0;i<n;i++){ nodes.push({id:'b'+i,x:60+i*72,y:210,ic:null,bus:true}); edges.push(['p'+i,'b'+i]); } for(let i=0;i<n-1;i++) edges.push(['b'+i,'b'+(i+1)]); return{nodes,edges,bus:true}; }
+  function genRing(){ const pcs=[]; const n=6; for(let i=0;i<n;i++){ const a=i/n*2*Math.PI-Math.PI/2; pcs.push({id:'p'+i,x:240+120*Math.cos(a),y:150+110*Math.sin(a),ic:'🖥'}); } const edges=[]; for(let i=0;i<n;i++) edges.push(['p'+i,'p'+((i+1)%n)]); return{nodes:pcs,edges}; }
+  function genMesh(){ const pcs=[]; const n=5; for(let i=0;i<n;i++){ const a=i/n*2*Math.PI-Math.PI/2; pcs.push({id:'p'+i,x:240+120*Math.cos(a),y:150+110*Math.sin(a),ic:'🖥'}); } const edges=[]; for(let i=0;i<n;i++)for(let j=i+1;j<n;j++) edges.push(['p'+i,'p'+j]); return{nodes:pcs,edges}; }
+  function genWan(){ // two star LANs + routers + cloud
+    const nodes=[{id:'sw1',x:80,y:150,ic:'🔀'},{id:'r1',x:160,y:150,ic:'📡'},{id:'cloud',x:240,y:80,ic:'☁'},{id:'r2',x:320,y:150,ic:'📡'},{id:'sw2',x:400,y:150,ic:'🔀'}];
+    [[40,90],[40,210]].forEach((p,i)=>nodes.push({id:'a'+i,x:p[0],y:p[1],ic:'🖥'}));
+    [[440,90],[440,210]].forEach((p,i)=>nodes.push({id:'b'+i,x:p[0],y:p[1],ic:'🖥'}));
+    const edges=[['a0','sw1'],['a1','sw1'],['sw1','r1'],['r1','cloud'],['cloud','r2'],['r2','sw2'],['sw2','b0'],['sw2','b1']];
+    return{nodes,edges,wan:true};
+  }
+  const GEN={star:genStar,bus:genBus,ring:genRing,mesh:genMesh,wan:genWan};
+  const INFO={
+    star:{zh:'星型 (Star) — LAN',en:'Star — LAN',dz:'所有電腦連到中央交換器。某條線斷開只影響該部電腦;但交換器故障則全網癱瘓。最常見的 LAN 佈局。',de:'Every PC connects to a central switch. One broken cable affects only that PC, but if the switch fails the whole network goes down. The most common LAN layout.'},
+    bus:{zh:'匯流排 (Bus)',en:'Bus',dz:'所有裝置共用一條主幹電纜。佈線省、簡單;但主幹斷裂會令整個網絡失效,且流量大時容易碰撞。',de:'All devices share one backbone cable. Cheap and simple, but a break in the backbone kills the whole network and heavy traffic causes collisions.'},
+    ring:{zh:'環型 (Ring)',en:'Ring',dz:'資料沿環單向傳遞經過每個節點。任一節點或連線故障可中斷全環 (除非用雙環)。',de:'Data passes around the ring through each node in one direction. A single node or link failure can break the whole ring (unless a dual ring is used).'},
+    mesh:{zh:'網狀 (Mesh)',en:'Mesh',dz:'每對節點都有直接連線,容錯性最高、路徑多;但佈線成本與複雜度隨節點數急升。',de:'Every pair of nodes is directly linked — highest fault tolerance and many paths, but cabling cost and complexity rise sharply with node count.'},
+    wan:{zh:'廣域網 (WAN)',en:'Wide Area Network',dz:'兩個 LAN (各自的星型 + 交換器) 經路由器接入互聯網雲,跨越大距離溝通。路由器負責在不同網絡之間轉發封包。',de:'Two LANs (each a star with a switch) connect through routers into the internet cloud, communicating across large distances. Routers forward packets between different networks.'},
+  };
+
+  function draw(){
+    const g=GEN[cur](); const map={}; g.nodes.forEach(n=>map[n.id]=n);
+    let s='';
+    // edges
+    g.edges.forEach(([a,b])=>{ const A=map[a],B=map[b]; s+=`<line class="svg-line" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke-width="2"/>`; });
+    // highlighted path (only meaningful for star/wan where path is via hub)
+    if(sel.length===2){ const path=findPath(g,sel[0],sel[1]); for(let i=0;i<path.length-1;i++){ const A=map[path[i]],B=map[path[i+1]]; s+=`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="var(--ac)" stroke-width="4"/>`; } }
+    // nodes
+    g.nodes.forEach(n=>{
+      if(n.bus){ s+=`<circle cx="${n.x}" cy="${n.y}" r="3" class="svg-ink" fill="currentColor"/>`; return; }
+      const isSel=sel.includes(n.id); const clickable=n.ic==='🖥';
+      s+=`<g style="cursor:${clickable?'pointer':'default'}" data-id="${n.id}">
+        <circle cx="${n.x}" cy="${n.y}" r="18" fill="${__isDark?'#0d192b':'#fff'}" stroke="${isSel?'var(--ac)':'#c3ccd8'}" stroke-width="${isSel?3:1.5}"/>
+        <text x="${n.x}" y="${n.y+7}" font-size="18" text-anchor="middle">${n.ic}</text></g>`;
+    });
+    $('net').innerHTML=s;
+    $('net').querySelectorAll('g[data-id]').forEach(el=>{ const id=el.dataset.id; if(map[id].ic==='🖥') el.addEventListener('click',()=>{ if(sel.includes(id)) sel=sel.filter(x=>x!==id); else { sel.push(id); if(sel.length>2) sel.shift(); } draw(); }); });
+    $('topo-title').textContent=__lang==='zh'?INFO[cur].zh:INFO[cur].en;
+    $('topo-desc').textContent=__lang==='zh'?INFO[cur].dz:INFO[cur].de;
+  }
+  // simple BFS path
+  function findPath(g,a,b){ const adj={}; g.nodes.forEach(n=>adj[n.id]=[]); g.edges.forEach(([x,y])=>{adj[x].push(y);adj[y].push(x);}); const q=[[a]],seen=new Set([a]); while(q.length){ const p=q.shift(); if(p[p.length-1]===b) return p; for(const nx of adj[p[p.length-1]]){ if(!seen.has(nx)){ seen.add(nx); q.push([...p,nx]); } } } return []; }
+
+  window.draw=draw;
+  const tb=$('topobtns');
+  const LBL={star:['星型','Star'],bus:['匯流排','Bus'],ring:['環型','Ring'],mesh:['網狀','Mesh'],wan:['WAN','WAN']};
+  Object.keys(GEN).forEach(k=>{ const b=document.createElement('button'); b.className='bp-btn';
+    b.innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${LBL[k][0]}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${LBL[k][1]}</span>`;
+    b.onclick=()=>{ cur=k; sel=[]; tb.querySelectorAll('button').forEach(x=>x.style.borderColor=''); b.style.borderColor='var(--ac)'; draw(); };
+    tb.appendChild(b);
+  });
+  tb.querySelector('button').style.borderColor='var(--ac)';
+  draw();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>
