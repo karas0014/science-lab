@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知識產權與版權 · Copyright &amp; Creative Commons</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .opt{ display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid #c3ccd8;border-radius:10px;cursor:pointer;transition:all .18s; } body.dark .opt{ border-color:#2c3e57; }
+ .opt.on{ border-color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,transparent); }
+ .opt.dis{ opacity:.4;cursor:not-allowed; }
+ .badge{ display:inline-flex;align-items:center;justify-content:center;width:2.4rem;height:2.4rem;border-radius:99px;border:2px solid currentColor;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.72rem; }
+ .lozenge{ font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.04em; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.34</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">知識產權與版權</span><span class="lang-en hidden">Copyright &amp; Creative Commons</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · CC Licence</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <p class="text-sm text-slate-600 dark:text-slate-300 mb-4"><span class="lang-zh">你創作了一件作品,想以 <b style="color:var(--ac)">Creative Commons (共享創意)</b> 授權別人使用。選擇你的條件,看看組成哪一款授權。</span><span class="lang-en hidden">You made a work and want to license it via <b style="color:var(--ac)">Creative Commons</b>. Pick your terms and see which licence they form.</span></p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div class="flex flex-col gap-2" id="opts"></div>
+
+      <div class="bp-panel rounded p-4 flex flex-col items-center justify-center text-center">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">產生的授權</span><span class="lang-en hidden">Resulting licence</span></div>
+        <div id="badges" class="flex gap-2 mb-3"></div>
+        <div id="licname" class="lozenge text-2xl mb-1" style="color:var(--ac)"></div>
+        <div id="licfull" class="text-xs text-slate-500 dark:text-slate-400 mb-3"></div>
+        <div class="w-full text-left">
+          <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1"><span class="lang-zh">別人可以</span><span class="lang-en hidden">Others may</span></div>
+          <div id="allow" class="text-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">版權</b>在作品完成時自動產生,毋須註冊。<b>Creative Commons</b> 讓創作者保留版權之餘,預先授予公眾部分權利。四個條件:<b>BY</b> 署名 (必選)、<b>NC</b> 非商業、<b>ND</b> 禁止改作、<b>SA</b> 相同方式共享。ND 與 SA 互相排斥。用別人有版權的作品前,先看清授權條款。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">Copyright</b> arises automatically when a work is created — no registration needed. <b>Creative Commons</b> lets creators keep copyright while granting some rights up front. Four terms: <b>BY</b> attribution (always required), <b>NC</b> non-commercial, <b>ND</b> no derivatives, <b>SA</b> share-alike. ND and SA are mutually exclusive. Always check the licence before reusing someone's work.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();render();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const OPTS=[
+    {id:'BY',icon:'user-check',zh:'署名 BY',en:'Attribution BY',desc:{zh:'使用時須註明原作者 (CC 必備)',en:'must credit the author (required in CC)'},locked:true},
+    {id:'NC',icon:'ban',zh:'非商業 NC',en:'NonCommercial NC',desc:{zh:'不得用於商業用途',en:'no commercial use'}},
+    {id:'ND',icon:'square',zh:'禁止改作 ND',en:'NoDerivatives ND',desc:{zh:'只可原樣分享,不可改編',en:'share as-is, no remixing'}},
+    {id:'SA',icon:'repeat',zh:'相同方式共享 SA',en:'ShareAlike SA',desc:{zh:'改作品須用相同授權釋出',en:'derivatives must use the same licence'}},
+  ];
+  const state={BY:true,NC:false,ND:false,SA:false};
+
+  function render(){
+    $('opts').innerHTML=OPTS.map(o=>{
+      const disabled=(o.id==='SA'&&state.ND)||(o.id==='ND'&&state.SA);
+      return `<div class="opt ${state[o.id]?'on':''} ${disabled?'dis':''}" ${disabled?'':`onclick="tog('${o.id}')"`}>
+        <i data-lucide="${o.icon}" width="20" height="20" style="color:var(--ac)"></i>
+        <div class="flex-grow">
+          <div class="font-bold text-sm mono">${o.id}${o.locked?' 🔒':''}</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${o.desc.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${o.desc.en}</span></div>
+        </div>
+        <span class="text-lg" style="color:${state[o.id]?'var(--ac)':'#94a3b8'}">${state[o.id]?'●':'○'}</span></div>`;
+    }).join('');
+    // build code
+    const parts=['BY']; if(state.NC)parts.push('NC'); if(state.ND)parts.push('ND'); else if(state.SA)parts.push('SA');
+    const code=parts.join('-');
+    $('badges').innerHTML=parts.map(p=>`<span class="badge" style="color:var(--ac)">${p}</span>`).join('');
+    $('licname').textContent='CC '+code;
+    const nameZh={BY:'署名',NC:'非商業',ND:'禁止改作',SA:'相同方式共享'};
+    const nameEn={BY:'Attribution',NC:'NonCommercial',ND:'NoDerivatives',SA:'ShareAlike'};
+    $('licfull').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${parts.map(p=>nameZh[p]).join(' · ')}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${parts.map(p=>nameEn[p]).join(' · ')}</span>`;
+    const can=[];
+    can.push({zh:'複製及分享作品',en:'copy and share the work',ok:true});
+    can.push({zh:'商業使用',en:'use commercially',ok:!state.NC});
+    can.push({zh:'改編／二次創作',en:'remix / adapt',ok:!state.ND});
+    if(!state.ND&&state.SA) can.push({zh:'改作須沿用 CC '+code,en:'derivatives must stay CC '+code,ok:true,note:true});
+    $('allow').innerHTML=can.map(c=>`<div class="flex items-center gap-2 py-0.5"><span style="color:${c.ok?'#10b981':'#f43f5e'}">${c.ok?'✓':'✗'}</span><span class="${c.note?'text-slate-400':''}"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${c.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${c.en}</span></span></div>`).join('');
+    if(window.lucide)lucide.createIcons();
+  }
+  window.tog=id=>{ if(id==='BY')return; state[id]=!state[id]; if(id==='ND'&&state.ND)state.SA=false; if(id==='SA'&&state.SA)state.ND=false; render(); };
+  render();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

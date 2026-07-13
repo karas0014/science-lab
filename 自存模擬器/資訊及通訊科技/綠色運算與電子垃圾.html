@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>綠色運算與電子垃圾 · Green Computing &amp; E-waste</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ input[type=range]{ -webkit-appearance:none;width:100%;height:5px;border-radius:99px;background:#c3ccd8;outline:none; } body.dark input[type=range]{ background:#2c3e57; }
+ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none;width:17px;height:17px;border-radius:99px;background:var(--ac);cursor:pointer;box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 25%,transparent); }
+ input[type=range]::-moz-range-thumb{ width:17px;height:17px;border:none;border-radius:99px;background:var(--ac);cursor:pointer; }
+ .stat{ text-align:center;padding:10px;border:1px solid #c3ccd8;border-radius:9px; } body.dark .stat{ border-color:#2c3e57; }
+ .stat .n{ font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.5rem;color:var(--ac);transition:color .3s; }
+ .seg{ display:inline-flex;border:1px solid #c3ccd8;border-radius:7px;overflow:hidden; } body.dark .seg{ border-color:#2c3e57; }
+ .seg button{ padding:4px 10px;font-size:.75rem;font-family:'JetBrains Mono',monospace;cursor:pointer;background:transparent;color:#64748b; } .seg button.on{ background:var(--ac);color:#fff;font-weight:700; }
+ .tip{ font-size:.78rem;padding:3px 0; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.38</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">綠色運算與電子垃圾</span><span class="lang-en hidden">Green Computing &amp; E-waste</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Sustainability</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div>
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-3"><span class="lang-zh">你的數碼習慣</span><span class="lang-en hidden">Your digital habits</span></div>
+
+        <label class="block mb-4 text-sm"><div class="flex justify-between mb-1"><span><span class="lang-zh">裝置數目</span><span class="lang-en hidden">Devices</span></span><b id="v-dev" class="mono" style="color:var(--ac)"></b></div>
+          <input type="range" id="dev" min="1" max="8" value="3"></label>
+
+        <label class="block mb-4 text-sm"><div class="flex justify-between mb-1"><span><span class="lang-zh">每日使用</span><span class="lang-en hidden">Daily use</span></span><b id="v-hrs" class="mono" style="color:var(--ac)"></b></div>
+          <input type="range" id="hrs" min="1" max="16" value="6"></label>
+
+        <label class="block mb-4 text-sm"><div class="flex justify-between mb-1"><span><span class="lang-zh">更換周期</span><span class="lang-en hidden">Replace every</span></span><b id="v-cyc" class="mono" style="color:var(--ac)"></b></div>
+          <input type="range" id="cyc" min="1" max="8" value="2"></label>
+
+        <div class="flex items-center justify-between mb-3 text-sm">
+          <span><span class="lang-zh">省電設定</span><span class="lang-en hidden">Power saving</span></span>
+          <span class="seg" id="pw"><button data-v="0" class="on"><span class="lang-zh">關</span><span class="lang-en hidden">Off</span></button><button data-v="1"><span class="lang-zh">開</span><span class="lang-en hidden">On</span></button></span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span><span class="lang-zh">舊裝置處理</span><span class="lang-en hidden">Old device</span></span>
+          <span class="seg" id="disp"><button data-v="0" class="on"><span class="lang-zh">丟棄</span><span class="lang-en hidden">Trash</span></button><button data-v="1"><span class="lang-zh">回收</span><span class="lang-en hidden">Recycle</span></button></span>
+        </div>
+      </div>
+
+      <div>
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-3"><span class="lang-zh">每年環境足跡</span><span class="lang-en hidden">Annual footprint</span></div>
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          <div class="stat"><div class="n" id="o-kwh"></div><div class="text-[10px] text-slate-400 mt-1"><span class="lang-zh">耗電 kWh</span><span class="lang-en hidden">energy kWh</span></div></div>
+          <div class="stat"><div class="n" id="o-co2"></div><div class="text-[10px] text-slate-400 mt-1"><span class="lang-zh">CO₂ 公斤</span><span class="lang-en hidden">CO₂ kg</span></div></div>
+          <div class="stat"><div class="n" id="o-waste"></div><div class="text-[10px] text-slate-400 mt-1"><span class="lang-zh">電子垃圾 kg</span><span class="lang-en hidden">e-waste kg</span></div></div>
+        </div>
+        <div class="bp-panel rounded p-3">
+          <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1"><span class="lang-zh">綠色貼士</span><span class="lang-en hidden">Green tips</span></div>
+          <div id="tips"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">綠色運算</b>指以環保方式設計、製造、使用及棄置電腦。裝置耗電產生<b>碳排放</b>;過早更換及棄置則造成<b>電子垃圾</b> — 內含鉛、水銀等有毒物,亂棄污染土壤及水源。做法:啟用省電模式、延長使用年期、維修而非更換,以及送到<b>正規回收</b>。(數字為示意教學估算。)</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">Green computing</b> means designing, making, using and disposing of computers in an eco-friendly way. Devices consume power → <b>carbon emissions</b>; frequent replacement and dumping create <b>e-waste</b> — containing toxic lead and mercury that pollute soil and water. Do: enable power-saving, extend device life, repair rather than replace, and use <b>proper recycling</b>. (Figures are illustrative estimates.)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();update();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let pw=0, disp=0;
+  function calc(){
+    const dev=+$('dev').value, hrs=+$('hrs').value, cyc=+$('cyc').value;
+    const wattAvg=55*(pw?0.6:1);                       // avg W per device, power-saving cuts 40%
+    const kwh=Math.round(dev*wattAvg*hrs*365/1000);
+    const co2=Math.round(kwh*0.7);                      // ~0.7 kg CO2 per kWh (HK grid, illustrative)
+    const wastePerDev=12;                               // kg embodied per device at end of life
+    const wasteGross=dev*wastePerDev/cyc;               // kg/year
+    const waste=Math.round(wasteGross*(disp?0.15:1));   // recycling recovers 85%
+    return {dev,hrs,cyc,kwh,co2,waste};
+  }
+  function update(){
+    $('v-dev').textContent=$('dev').value;
+    $('v-hrs').textContent=$('hrs').value+(__lang==='zh'?' 小時':' h');
+    $('v-cyc').textContent=$('cyc').value+(__lang==='zh'?' 年':' yr');
+    const r=calc();
+    $('o-kwh').textContent=r.kwh; $('o-co2').textContent=r.co2; $('o-waste').textContent=r.waste;
+    const col=v=>v>=1500?'#f43f5e':v>=700?'#f59e0b':'#10b981';
+    $('o-kwh').style.color=col(r.kwh); $('o-co2').style.color=col(r.co2*1.0); $('o-waste').style.color=r.waste>=30?'#f43f5e':r.waste>=12?'#f59e0b':'#10b981';
+    const tips=[];
+    if(!pw) tips.push({zh:'開啟省電模式可省約 40% 耗電。',en:'Enabling power-saving cuts ~40% energy.'});
+    if(r.cyc<=2) tips.push({zh:'延長更換周期,少製造電子垃圾。',en:'Keep devices longer to make less e-waste.'});
+    if(!disp) tips.push({zh:'把舊裝置送去正規回收,回收 85% 物料。',en:'Recycle old devices properly — recovers 85% of materials.'});
+    if(r.hrs>=10) tips.push({zh:'減少不必要的螢幕時間。',en:'Cut unnecessary screen time.'});
+    if(tips.length===0) tips.push({zh:'做得好!這是低碳的數碼習慣。',en:'Well done — these are low-carbon habits.'});
+    $('tips').innerHTML=tips.map(t=>`<div class="tip flex items-start gap-2"><i data-lucide="${tips.length===1&&pw&&disp?'leaf':'chevron-right'}" width="13" height="13" style="color:var(--ac);margin-top:3px;flex-shrink:0"></i><span><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${t.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${t.en}</span></span></div>`).join('');
+    if(window.lucide)lucide.createIcons();
+  }
+  ['dev','hrs','cyc'].forEach(id=>$(id).addEventListener('input',update));
+  $('pw').querySelectorAll('button').forEach(b=>b.onclick=()=>{ pw=+b.dataset.v; $('pw').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); update(); });
+  $('disp').querySelectorAll('button').forEach(b=>b.onclick=()=>{ disp=+b.dataset.v; $('disp').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); update(); });
+  update();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>私隱與個人資料 · Privacy &amp; Personal Data</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .chip{ padding:7px 11px;border:1px solid #c3ccd8;border-radius:99px;cursor:pointer;font-size:.8rem;transition:all .15s;display:inline-flex;align-items:center;gap:5px; } body.dark .chip{ border-color:#2c3e57; }
+ .chip.on{ border-color:var(--ac);background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac);font-weight:600; }
+ .meterbar{ height:14px;border-radius:99px;background:#d7dee7;overflow:hidden; } body.dark .meterbar{ background:#1e2c44; }
+ .meterfill{ height:100%;border-radius:99px;transition:width .35s,background .35s; }
+ .dpp{ padding:5px 2px;border-bottom:1px dashed #c3ccd8;font-size:.78rem; } body.dark .dpp{ border-color:#2c3e57; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.33</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">私隱與個人資料</span><span class="lang-en hidden">Privacy &amp; Personal Data</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Data Profiling</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <p class="text-sm text-slate-600 dark:text-slate-300 mb-3"><span class="lang-zh">點選你在網上「分享」的資料,看看單獨無害的資料如何<b style="color:var(--ac)">聚合</b>成可辨識你身分的檔案。</span><span class="lang-en hidden">Tick the data you "share" online, and watch how individually-harmless items <b style="color:var(--ac)">aggregate</b> into a profile that can identify you.</span></p>
+
+    <div class="flex flex-wrap gap-2 mb-5" id="chips"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bp-panel rounded p-4">
+        <div class="flex items-center justify-between mb-1">
+          <span class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400"><span class="lang-zh">重新辨識風險</span><span class="lang-en hidden">Re-identification risk</span></span>
+          <span id="risklabel" class="text-sm font-bold"></span>
+        </div>
+        <div class="meterbar mb-3"><div id="meter" class="meterfill" style="width:0%"></div></div>
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1"><span class="lang-zh">可推斷出</span><span class="lang-en hidden">Can be inferred</span></div>
+        <div id="infer" class="text-sm text-slate-500 dark:text-slate-400"></div>
+      </div>
+
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1"><span class="lang-zh">香港《個人資料(私隱)條例》六大保障原則</span><span class="lang-en hidden">HK PDPO — 6 Data Protection Principles</span></div>
+        <div id="dpps"></div>
+      </div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">個人資料</b>是任何可直接或間接辨識某人的資料。零碎資料經<b>資料聚合 (data aggregation)</b> 可拼出完整檔案,用於定向廣告甚至身分盜竊。香港《<b>個人資料(私隱)條例</b>》以六大原則保障個人資料 — 收集要有目的、要準確、要保安、當事人有<b>查閱及改正</b>權。分享前先想清楚。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">Personal data</b> is anything that can identify a person directly or indirectly. Scattered items, through <b>data aggregation</b>, assemble into a full profile used for targeted ads or even identity theft. Hong Kong's <b>PDPO</b> protects data through six principles — collection must have purpose, data must be accurate and secure, and you have rights of <b>access and correction</b>. Think before you share.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();renderChips();update();renderDpp();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const ITEMS=[
+    {id:'name',zh:'姓名',en:'Full name',icon:'user',w:12,inf:{zh:'身分',en:'identity'}},
+    {id:'dob',zh:'生日',en:'Birthday',icon:'cake',w:12,inf:{zh:'年齡層',en:'age group'}},
+    {id:'photo',zh:'自拍照',en:'Selfies',icon:'camera',w:11,inf:{zh:'長相、種族',en:'appearance, ethnicity'}},
+    {id:'loc',zh:'打卡定位',en:'Check-in location',icon:'map-pin',w:16,inf:{zh:'居所、行蹤',en:'home & routine'}},
+    {id:'school',zh:'學校',en:'School',icon:'graduation-cap',w:10,inf:{zh:'社交圈',en:'social circle'}},
+    {id:'phone',zh:'電話號碼',en:'Phone number',icon:'phone',w:13,inf:{zh:'直接聯絡',en:'direct contact'}},
+    {id:'likes',zh:'讚好／興趣',en:'Likes / interests',icon:'heart',w:9,inf:{zh:'喜好、政治傾向',en:'tastes, leanings'}},
+    {id:'buys',zh:'購物紀錄',en:'Purchase history',icon:'shopping-bag',w:9,inf:{zh:'消費能力',en:'spending power'}},
+  ];
+  const state={}; ITEMS.forEach(i=>state[i.id]=false);
+  const DPP=[
+    {zh:'1. 收集目的及方式 — 有需要、合法、公平',en:'1. Purpose & manner — necessary, lawful, fair'},
+    {zh:'2. 準確性及保留 — 資料須準確、不過度保留',en:'2. Accuracy & retention — keep accurate, not too long'},
+    {zh:'3. 使用 — 只作收集時的目的',en:'3. Use — only for the stated purpose'},
+    {zh:'4. 保安 — 妥善保護,防止外洩',en:'4. Security — safeguard against leaks'},
+    {zh:'5. 透明 — 公開其私隱政策',en:'5. Openness — publish privacy policy'},
+    {zh:'6. 查閱及改正 — 當事人可查閱、要求更正',en:'6. Access & correction — data subject may access/correct'},
+  ];
+
+  function renderChips(){ $('chips').innerHTML=ITEMS.map(i=>`<button class="chip ${state[i.id]?'on':''}" onclick="tog('${i.id}')"><i data-lucide="${i.icon}" width="14" height="14"></i><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${i.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${i.en}</span></button>`).join('');
+    if(window.lucide)lucide.createIcons(); }
+  function renderDpp(){ $('dpps').innerHTML=DPP.map(d=>`<div class="dpp"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${d.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${d.en}</span></div>`).join(''); }
+  function update(){
+    const on=ITEMS.filter(i=>state[i.id]);
+    let score=on.reduce((s,i)=>s+i.w,0);
+    // aggregation bonus: combining many items is disproportionately revealing
+    if(on.length>=3) score+=8; if(on.length>=5) score+=12; if(on.length>=7) score+=10;
+    score=Math.min(100,score);
+    const col= score<25?'#10b981': score<55?'#f59e0b': score<80?'#f97316':'#f43f5e';
+    $('meter').style.width=score+'%'; $('meter').style.background=col;
+    const lv = score<25?{zh:'低',en:'Low'}: score<55?{zh:'中',en:'Medium'}: score<80?{zh:'高',en:'High'}:{zh:'極高',en:'Critical'};
+    $('risklabel').innerHTML=`<span style="color:${col}">${score}% · <span class="lang-zh ${__lang!=='zh'?'hidden':''}">${lv.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${lv.en}</span></span>`;
+    if(on.length===0){ $('infer').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">未分享任何資料。</span><span class="lang-en ${__lang!=='en'?'hidden':''}">nothing shared yet.</span>`; return; }
+    const infs=on.map(i=>__lang==='zh'?i.inf.zh:i.inf.en);
+    let extra=''; if(on.length>=5) extra = __lang==='zh'? ' … 足以拼出完整身分檔案並定位到你本人!' : ' … enough to assemble a full identity profile and pinpoint you!';
+    $('infer').innerHTML= infs.join('、')+`<b style="color:${col}">${extra}</b>`;
+  }
+  window.tog=id=>{ state[id]=!state[id]; renderChips(); update(); };
+
+  renderChips(); renderDpp(); update();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

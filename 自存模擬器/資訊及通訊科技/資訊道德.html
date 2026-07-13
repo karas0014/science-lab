@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資訊道德 · Information Ethics</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .choice{ text-align:left;padding:11px 13px;border:1px solid #c3ccd8;border-radius:9px;cursor:pointer;transition:all .15s;width:100%;font-size:.9rem; } body.dark .choice{ border-color:#2c3e57; }
+ .choice:hover{ border-color:var(--ac); }
+ .choice.sel{ border-width:2px; } .choice.dim{ opacity:.45; }
+ .gauge{ display:inline-flex;gap:2px; } .gauge span{ width:12px;height:7px;border-radius:2px;background:#d7dee7; } body.dark .gauge span{ background:#2c3e57; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-3xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.39</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">資訊道德</span><span class="lang-en hidden">Information Ethics</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Ethics</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex gap-1.5" id="progress"></div>
+      <div class="mono text-xs"><span class="lang-zh">道德分</span><span class="lang-en hidden">ethics</span> <b id="score" style="color:var(--ac)">0</b></div>
+    </div>
+
+    <div class="bp-panel rounded p-4 mb-4">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-1" id="sceneTag"></div>
+      <p id="scenario" class="text-[15px] font-medium"></p>
+    </div>
+
+    <div class="flex flex-col gap-2" id="choices"></div>
+
+    <div id="feedback" class="text-sm mt-3 hidden bp-panel rounded p-3"></div>
+
+    <div class="flex gap-2 mt-4">
+      <button id="nextbtn" onclick="next()" class="bp-btn" style="border-color:var(--ac)" disabled><span class="lang-zh">下一個情境</span><span class="lang-en hidden">Next</span><i data-lucide="arrow-right" width="14" height="14"></i></button>
+      <button onclick="restart()" class="bp-btn"><i data-lucide="rotate-ccw" width="13" height="13"></i><span class="lang-zh">重新開始</span><span class="lang-en hidden">Restart</span></button>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">資訊道德</b>關乎在數碼世界中作出負責任的抉擇 — 尊重<b>知識產權</b>、保護<b>私隱</b>、誠實不抄襲、不散播<b>假資訊</b>或作網絡欺凌。法律定下底線,道德要求更高。每個情境沒有「技術對錯」,而是問:這樣做對他人公平嗎?你願意公開承認嗎?</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">Information ethics</b> is about responsible choices in the digital world — respecting <b>intellectual property</b>, protecting <b>privacy</b>, being honest (no plagiarism), and not spreading <b>misinformation</b> or cyberbullying. Law sets the floor; ethics asks for more. Each scenario has no "technical" right answer — it asks: is this fair to others, and would you own it publicly?</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();render();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  // score: 2 = best, 1 = so-so, 0 = wrong
+  const Q=[
+    {tag:{zh:'學術誠信',en:'Academic integrity'},
+     s:{zh:'功課死線將至,你在網上找到一篇完美的文章。你會?',en:'A deadline looms and you find a perfect essay online. You…'},
+     opts:[
+       {t:{zh:'整篇複製當成自己的功課交',en:'Copy it whole and submit as your own'},sc:0,f:{zh:'這是抄襲 (剽竊),既不誠實亦侵犯版權。',en:'That is plagiarism — dishonest and a copyright breach.'}},
+       {t:{zh:'參考其觀點,用自己文字重寫並註明出處',en:'Use its ideas, rewrite in your words and cite the source'},sc:2,f:{zh:'正確!參考並註明來源是尊重原創的做法。',en:'Correct — referencing and citing respects the original author.'}},
+       {t:{zh:'改幾個字就交,應該看不出來',en:'Change a few words and submit — no one will notice'},sc:0,f:{zh:'改寫少量字仍屬抄襲,學術上不誠實。',en:'Light paraphrasing is still plagiarism and academic dishonesty.'}},
+     ]},
+    {tag:{zh:'私隱',en:'Privacy'},
+     s:{zh:'你影到同學一張很搞笑但尷尬的照片。你會?',en:'You snap a funny but embarrassing photo of a classmate. You…'},
+     opts:[
+       {t:{zh:'先問對方是否願意才決定分享',en:'Ask them first before sharing anything'},sc:2,f:{zh:'正確!分享他人影像前應取得同意,尊重私隱。',en:'Correct — get consent before sharing someone\'s image.'}},
+       {t:{zh:'直接發上群組讓大家笑一下',en:'Post it to the group chat for laughs'},sc:0,f:{zh:'未經同意公開他人尷尬照片可構成欺凌並侵犯私隱。',en:'Posting without consent can be bullying and a privacy violation.'}},
+     ]},
+    {tag:{zh:'版權',en:'Copyright'},
+     s:{zh:'你想在專題報告用一張很美的網上相片。你會?',en:'You want a beautiful online photo for your project. You…'},
+     opts:[
+       {t:{zh:'直接下載使用,反正是教育用途',en:'Just download and use it — it\'s for school'},sc:1,f:{zh:'教育用途未必自動豁免;應優先選有授權的素材。',en:'Educational use isn\'t an automatic exemption — prefer licensed media.'}},
+       {t:{zh:'找 CC 授權或公有領域圖片並註明作者',en:'Find a CC-licensed / public-domain image and credit it'},sc:2,f:{zh:'正確!選用開放授權素材並註明來源最穩妥。',en:'Correct — use openly-licensed media and attribute it.'}},
+     ]},
+    {tag:{zh:'假資訊',en:'Misinformation'},
+     s:{zh:'你收到一則「震撼」健康消息,叫你快轉發。你會?',en:'You get a "shocking" health message urging you to forward it fast. You…'},
+     opts:[
+       {t:{zh:'立即轉發,寧可信其有',en:'Forward immediately, just in case'},sc:0,f:{zh:'未經核實就轉發會助長假資訊擴散。',en:'Forwarding unverified claims spreads misinformation.'}},
+       {t:{zh:'先向可靠來源查證才決定',en:'Verify with a reliable source before doing anything'},sc:2,f:{zh:'正確!核實資訊真偽是負責任的網絡公民之道。',en:'Correct — verifying facts is responsible digital citizenship.'}},
+       {t:{zh:'不理它,但也不提醒轉發我的人',en:'Ignore it, but don\'t warn whoever sent it'},sc:1,f:{zh:'不轉發是好的;若能善意提醒對方則更佳。',en:'Not forwarding is good; gently flagging it to the sender is better.'}},
+     ]},
+    {tag:{zh:'帳戶安全',en:'Account security'},
+     s:{zh:'好友想借你的串流帳戶密碼「用幾天」。你會?',en:'A friend asks to borrow your streaming account password "for a few days". You…'},
+     opts:[
+       {t:{zh:'把密碼給他,朋友嘛',en:'Give the password — we\'re friends'},sc:0,f:{zh:'共享密碼多違反服務條款,亦增加帳戶被盜風險。',en:'Sharing passwords usually breaches the terms and risks your account.'}},
+       {t:{zh:'婉拒,並解釋共享密碼的風險',en:'Politely decline and explain the risks'},sc:2,f:{zh:'正確!保護帳戶憑證是良好的資訊安全習慣。',en:'Correct — protecting credentials is good security practice.'}},
+     ]},
+  ];
+  let qi=0, score=0, answered=false, results=Q.map(()=>null);
+
+  function render(){
+    const q=Q[qi];
+    $('sceneTag').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">情境 ${qi+1}／${Q.length} · ${q.tag.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">Case ${qi+1}/${Q.length} · ${q.tag.en}</span>`;
+    $('scenario').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${q.s.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${q.s.en}</span>`;
+    $('choices').innerHTML=q.opts.map((o,i)=>`<button class="choice" data-i="${i}"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${o.t.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${o.t.en}</span></button>`).join('');
+    $('choices').querySelectorAll('button').forEach(b=>b.onclick=()=>choose(+b.dataset.i));
+    $('feedback').classList.add('hidden'); $('nextbtn').disabled=true; answered=false;
+    renderProg(); $('score').textContent=score;
+    if(qi===Q.length-1) $('nextbtn').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">看結果</span><span class="lang-en ${__lang!=='en'?'hidden':''}">Result</span>`;
+  }
+  function renderProg(){ $('progress').innerHTML=Q.map((x,i)=>{ const r=results[i]; const c= r===2?'var(--ac)': r===1?'#f59e0b': r===0?'#f43f5e':(__isDark?'#2c3e57':'#c3ccd8'); return `<span style="width:9px;height:9px;border-radius:99px;background:${c};display:inline-block"></span>`; }).join(''); }
+  function choose(i){
+    if(answered)return; answered=true; const q=Q[qi]; const o=q.opts[i];
+    results[qi]=o.sc; score+=o.sc;
+    $('choices').querySelectorAll('button').forEach((b,bi)=>{ b.onclick=null; if(bi===i){ b.classList.add('sel'); const col=o.sc===2?'#10b981':o.sc===1?'#f59e0b':'#f43f5e'; b.style.borderColor=col; b.style.color=col; } else b.classList.add('dim'); });
+    const col=o.sc===2?'#10b981':o.sc===1?'#f59e0b':'#f43f5e'; const icon=o.sc===2?'✓':o.sc===1?'～':'✗';
+    $('feedback').classList.remove('hidden');
+    $('feedback').innerHTML=`<span style="color:${col};font-weight:700" class="mr-1">${icon} +${o.sc}</span><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${o.f.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${o.f.en}</span>`;
+    $('nextbtn').disabled=false; $('score').textContent=score; renderProg();
+    if(qi===Q.length-1) showResultBtn();
+  }
+  function showResultBtn(){ /* result shown on next() */ }
+  window.next=()=>{ if(qi<Q.length-1){ qi++; render(); } else result(); };
+  function result(){
+    const max=Q.reduce((s,q)=>s+Math.max(...q.opts.map(o=>o.sc)),0);
+    const pct=Math.round(score/max*100);
+    const grade= pct>=85?{zh:'數碼公民典範',en:'Model digital citizen'}: pct>=60?{zh:'大致負責任',en:'Mostly responsible'}:{zh:'仍需反思',en:'Room to reflect'};
+    $('scenario').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">你的道德分:<b style="color:var(--ac)">${score}/${max}</b>（${pct}%）— ${grade.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">Your ethics score: <b style="color:var(--ac)">${score}/${max}</b> (${pct}%) — ${grade.en}</span>`;
+    $('sceneTag').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">總結</span><span class="lang-en ${__lang!=='en'?'hidden':''}">Summary</span>`;
+    $('choices').innerHTML=''; $('feedback').classList.add('hidden'); $('nextbtn').disabled=true;
+  }
+  window.restart=()=>{ qi=0; score=0; results=Q.map(()=>null); render(); applyLang(); if(window.lucide)lucide.createIcons(); };
+  render();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

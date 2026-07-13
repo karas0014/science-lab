@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>數碼鴻溝 · Digital Divide</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .brow{ display:flex;align-items:center;gap:10px;margin-bottom:9px; }
+ .blabel{ width:8.5rem;flex-shrink:0;font-size:.8rem;text-align:right; }
+ .btrack{ flex-grow:1;height:1.4rem;background:#d7dee7;border-radius:5px;overflow:hidden; } body.dark .btrack{ background:#1e2c44; }
+ .bfill{ height:100%;border-radius:5px;transition:width .6s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:flex-end;padding-right:7px;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;color:#fff; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-3xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.36</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">數碼鴻溝</span><span class="lang-en hidden">Digital Divide</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Access Gap</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <p class="text-sm text-slate-600 dark:text-slate-300 mb-3"><span class="lang-zh">互聯網普及率並不平均。切換不同<b style="color:var(--ac)">切入維度</b>,看看誰被落下。</span><span class="lang-en hidden">Internet access is uneven. Switch the <b style="color:var(--ac)">dimension</b> to see who gets left behind.</span></p>
+
+    <div class="flex flex-wrap gap-2 mb-5" id="dims"></div>
+
+    <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2" id="axistitle"></div>
+    <div id="bars" class="mb-4"></div>
+
+    <div class="bp-panel rounded p-3 flex items-center gap-3">
+      <i data-lucide="trending-down" width="20" height="20" style="color:var(--ac)"></i>
+      <div class="text-sm"><span class="mono text-xs text-slate-400"><span class="lang-zh">最大差距</span><span class="lang-en hidden">widest gap</span></span> <span id="gap" class="font-bold" style="color:var(--ac)"></span></div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">數碼鴻溝</b>是指不同群體在接觸及運用資訊科技上的差距,成因包括<b>經濟</b> (買不起裝置／上網)、<b>地理</b> (偏遠地區缺基建)、<b>年齡</b>與<b>教育</b> (數碼技能不足)。後果是資訊、教育、就業機會的不平等。縮窄鴻溝的方法:公共 Wi-Fi、資助裝置、數碼培訓等。(數字為示意教學數據。)</span>
+      <span class="lang-en hidden">The <b style="color:var(--ac)">digital divide</b> is the gap between groups in access to and use of ICT. Causes include <b>economic</b> (can\'t afford devices/data), <b>geographic</b> (no infrastructure in remote areas), and <b>age / education</b> (low digital skills). It creates inequality in information, education and jobs. Bridging it: public Wi-Fi, subsidised devices, digital training. (Figures are illustrative teaching data.)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();render();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const DIMS={
+    region:{zh:'按地區',en:'By region',title:{zh:'互聯網普及率 · 按地區',en:'Internet penetration · by region'},
+      data:[{zh:'北歐／北美',en:'N. Europe / America',v:96},{zh:'東亞',en:'East Asia',v:82},{zh:'拉丁美洲',en:'Latin America',v:74},{zh:'南亞',en:'South Asia',v:48},{zh:'撒哈拉以南非洲',en:'Sub-Saharan Africa',v:36}]},
+    income:{zh:'按收入',en:'By income',title:{zh:'家庭上網率 · 按收入',en:'Household access · by income'},
+      data:[{zh:'高收入家庭',en:'High income',v:98},{zh:'中等收入',en:'Middle income',v:88},{zh:'低收入家庭',en:'Low income',v:61},{zh:'綜援家庭',en:'Welfare households',v:47}]},
+    age:{zh:'按年齡',en:'By age',title:{zh:'互聯網使用率 · 按年齡',en:'Internet use · by age'},
+      data:[{zh:'15–24 歲',en:'Age 15–24',v:99},{zh:'25–44 歲',en:'Age 25–44',v:97},{zh:'45–64 歲',en:'Age 45–64',v:84},{zh:'65 歲以上',en:'Age 65+',v:52}]},
+    edu:{zh:'按教育',en:'By education',title:{zh:'數碼技能水平 · 按教育程度',en:'Digital skills · by education'},
+      data:[{zh:'專上教育',en:'Tertiary',v:92},{zh:'中學',en:'Secondary',v:78},{zh:'小學或以下',en:'Primary or below',v:41}]},
+  };
+  let cur='region';
+  function colFor(v){ return v>=85?'#10b981': v>=65?'#f59e0b': v>=45?'#f97316':'#f43f5e'; }
+  function render(){
+    $('dims').innerHTML=Object.keys(DIMS).map(k=>`<button class="bp-btn" data-k="${k}" style="${k===cur?'border-color:var(--ac);color:var(--ac)':''}"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${DIMS[k].zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${DIMS[k].en}</span></button>`).join('');
+    $('dims').querySelectorAll('button').forEach(b=>b.onclick=()=>{ cur=b.dataset.k; render(); });
+    const d=DIMS[cur];
+    $('axistitle').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${d.title.zh}（%）</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${d.title.en} (%)</span>`;
+    $('bars').innerHTML=d.data.map((row,i)=>`<div class="brow">
+        <div class="blabel"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${row.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${row.en}</span></div>
+        <div class="btrack"><div class="bfill" id="bf${i}" style="width:0%;background:${colFor(row.v)}"></div></div>
+      </div>`).join('');
+    requestAnimationFrame(()=>d.data.forEach((row,i)=>{ const f=$('bf'+i); if(f){ f.style.width=row.v+'%'; f.textContent=row.v+'%'; } }));
+    const vs=d.data.map(x=>x.v); const gap=Math.max(...vs)-Math.min(...vs);
+    $('gap').textContent=gap+' 個百分點 / pts';
+    if(window.lucide)lucide.createIcons();
+  }
+  window.render=render; render();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>
