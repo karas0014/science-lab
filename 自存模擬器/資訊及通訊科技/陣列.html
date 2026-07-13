@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>陣列 · Arrays</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .cell{ width:3.5rem;height:3.5rem;display:flex;align-items:center;justify-content:center;border:2px solid #c3ccd8;border-radius:8px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.25rem;cursor:pointer;transition:all .2s;background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)); }
+ body.dark .cell{ border-color:#2c3e57;background:rgba(10,22,38,.5); }
+ .cell.hl{ border-color:var(--ac);color:var(--ac);box-shadow:0 0 16px -3px var(--ac);transform:translateY(-4px); }
+ .cell.best{ background:color-mix(in srgb,var(--ac) 22%,transparent);border-color:var(--ac); }
+ .idx{ width:3.5rem;text-align:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#94a3b8;margin-top:3px; }
+ .codeln{ padding:2px 8px;border-radius:4px;transition:all .2s;white-space:pre; } .codeln.cur{ background:color-mix(in srgb,var(--ac) 18%,transparent);color:var(--ac);font-weight:700; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.28</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">陣列</span><span class="lang-en hidden">Arrays</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Index &amp; Traverse</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="flex flex-col items-center mb-5">
+      <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2">int scores[6]</div>
+      <div id="row" class="flex gap-2"></div>
+      <div id="idxrow" class="flex gap-2"></div>
+      <div class="idx mt-1 w-full text-center" style="width:auto">
+        <span class="lang-zh">↑ 索引 (index) 由 0 開始</span><span class="lang-en hidden">↑ index starts at 0</span>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 justify-center mb-4">
+      <button onclick="opAccess()" class="bp-btn"><i data-lucide="mouse-pointer-click" width="13" height="13"></i><span class="lang-zh">存取 scores[3]</span><span class="lang-en hidden">Access scores[3]</span></button>
+      <button onclick="opTraverse()" class="bp-btn"><i data-lucide="scan" width="13" height="13"></i><span class="lang-zh">遍歷求總和</span><span class="lang-en hidden">Traverse → sum</span></button>
+      <button onclick="opMax()" class="bp-btn"><i data-lucide="trophy" width="13" height="13"></i><span class="lang-zh">尋找最大值</span><span class="lang-en hidden">Find max</span></button>
+      <button onclick="shuffle()" class="bp-btn"><i data-lucide="shuffle" width="13" height="13"></i><span class="lang-zh">重新填值</span><span class="lang-en hidden">Refill</span></button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">虛擬碼</span><span class="lang-en hidden">Pseudocode</span></div>
+        <div id="code" class="mono text-[12.5px] leading-relaxed text-slate-400"><span class="lang-zh">選一個操作 ▸</span><span class="lang-en hidden">pick an operation ▸</span></div>
+      </div>
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">狀態</span><span class="lang-en hidden">State</span></div>
+        <div id="msg" class="text-sm" style="min-height:3rem"></div>
+        <div id="acc" class="mono text-lg mt-2" style="color:var(--ac)"></div>
+      </div>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">陣列</b>把同類型的多個資料放在一個名字下,用<b>索引</b>存取個別元素。索引通常由 <b>0</b> 開始,所以 6 個元素的索引是 0–5。要處理每個元素,就用迴圈<b>遍歷</b> (traverse) 整個陣列。</span>
+      <span class="lang-en hidden">An <b style="color:var(--ac)">array</b> stores many values of the same type under one name, reaching each element by its <b>index</b>. Indices usually start at <b>0</b>, so 6 elements have indices 0–5. To process every element you <b>traverse</b> the array with a loop.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let arr=[63,88,42,71,95,57], busy=false;
+
+  function draw(){
+    $('row').innerHTML=arr.map((v,i)=>`<div class="cell" id="c${i}" onclick="peek(${i})">${v}</div>`).join('');
+    $('idxrow').innerHTML=arr.map((v,i)=>`<div class="idx">[${i}]</div>`).join('');
+  }
+  function clearHL(){ arr.forEach((v,i)=>{ const c=$('c'+i); c.className='cell'; }); }
+  function setMsg(zh,en){ $('msg').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${en}</span>`; }
+  function setCode(lines,cur){ $('code').classList.remove('text-slate-400'); $('code').innerHTML=lines.map((l,i)=>`<div class="codeln ${i===cur?'cur':''}">${l.replace(/</g,'&lt;')}</div>`).join(''); }
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  async function guard(fn){ if(busy)return; busy=true; clearHL(); $('acc').textContent=''; try{ await fn(); } finally{ busy=false; } }
+
+  window.peek=i=>{ if(busy)return; clearHL(); $('c'+i).classList.add('hl'); setMsg(`scores[${i}] 的值是 <b style="color:var(--ac)">${arr[i]}</b>`,`scores[${i}] holds <b style="color:var(--ac)">${arr[i]}</b>`); $('acc').textContent=`scores[${i}] = ${arr[i]}`; };
+
+  window.opAccess=()=>guard(async()=>{
+    const code=['// 直接以索引存取,O(1)','value ← scores[3]','OUTPUT value'];
+    setCode(code,1); $('c3').classList.add('hl');
+    setMsg('陣列以索引<b>直接</b>存取任何元素,不需逐個尋找。','Arrays reach any element <b>directly</b> by index — no scanning needed.');
+    $('acc').textContent=`scores[3] = ${arr[3]}`;
+  });
+
+  window.opTraverse=()=>guard(async()=>{
+    const code=['sum ← 0','FOR i ← 0 TO 5','   sum ← sum + scores[i]','NEXT i','OUTPUT sum'];
+    let sum=0;
+    for(let i=0;i<arr.length;i++){ clearHL(); $('c'+i).classList.add('hl'); setCode(code,2); sum+=arr[i];
+      setMsg(`i=${i} ▸ sum = ${sum-arr[i]} + ${arr[i]} = <b style="color:var(--ac)">${sum}</b>`,`i=${i} ▸ sum = ${sum-arr[i]} + ${arr[i]} = <b style="color:var(--ac)">${sum}</b>`);
+      $('acc').textContent=`sum = ${sum}`; await sleep(650); }
+    setCode(code,4); setMsg(`遍歷完成,總和 = <b style="color:var(--ac)">${sum}</b>`,`traversal done, total = <b style="color:var(--ac)">${sum}</b>`);
+  });
+
+  window.opMax=()=>guard(async()=>{
+    const code=['max ← scores[0]','FOR i ← 1 TO 5','   IF scores[i] > max THEN','      max ← scores[i]','NEXT i','OUTPUT max'];
+    let max=arr[0],mi=0; clearHL(); $('c0').classList.add('best'); setCode(code,0); await sleep(600);
+    for(let i=1;i<arr.length;i++){ clearHL(); $('c'+mi).classList.add('best'); $('c'+i).classList.add('hl'); setCode(code,2);
+      const better=arr[i]>max;
+      setMsg(`scores[${i}]=${arr[i]} ${better?'>':'≤'} max=${max} → ${better?'<b style=\"color:var(--ac)\">更新 max</b>':'不變'}`,`scores[${i}]=${arr[i]} ${better?'>':'≤'} max=${max} → ${better?'<b style=\"color:var(--ac)\">update max</b>':'keep'}`);
+      if(better){ max=arr[i]; mi=i; } await sleep(720); }
+    clearHL(); $('c'+mi).classList.add('best'); setCode(code,5); setMsg(`最大值是 scores[${mi}] = <b style="color:var(--ac)">${max}</b>`,`maximum is scores[${mi}] = <b style="color:var(--ac)">${max}</b>`); $('acc').textContent=`max = ${max}`;
+  });
+
+  window.shuffle=()=>{ if(busy)return; arr=Array.from({length:6},()=>Math.floor(Math.random()*90)+10); draw(); clearHL(); setMsg('已填入新的隨機值。','filled with new random values.'); $('acc').textContent=''; $('code').classList.add('text-slate-400'); $('code').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">選一個操作 ▸</span><span class="lang-en ${__lang!=='en'?'hidden':''}">pick an operation ▸</span>`; };
+
+  draw();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

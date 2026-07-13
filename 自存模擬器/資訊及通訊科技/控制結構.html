@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>控制結構 · Control Structures</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .codeln{ padding:2px 8px;border-radius:4px;transition:all .2s;white-space:pre; } .codeln.cur{ background:color-mix(in srgb,var(--ac) 18%,transparent);color:var(--ac);font-weight:700; }
+ .codeln.skip{ opacity:.35;text-decoration:line-through; }
+ .vbox{ border:1px solid #c3ccd8;border-radius:6px;padding:6px 10px;min-width:3.5rem;text-align:center; } body.dark .vbox{ border-color:#2c3e57; }
+ .vbox .vv{ color:var(--ac);font-weight:700; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.27</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">控制結構</span><span class="lang-en hidden">Control Structures</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Seq / Sel / Iter</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="flex flex-wrap gap-2 mb-4" id="tabs">
+      <button onclick="setS('seq')"  id="t-seq"  class="bp-btn"><span class="lang-zh">序列</span><span class="lang-en hidden">Sequence</span></button>
+      <button onclick="setS('sel')"  id="t-sel"  class="bp-btn"><span class="lang-zh">選擇</span><span class="lang-en hidden">Selection</span></button>
+      <button onclick="setS('iter')" id="t-iter" class="bp-btn"><span class="lang-zh">迭代</span><span class="lang-en hidden">Iteration</span></button>
+    </div>
+
+    <div id="inputrow" class="flex items-center gap-3 mb-4 text-sm hidden">
+      <span class="mono text-xs text-slate-400" id="inputlabel"></span>
+      <div class="flex gap-1" id="inputbtns"></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">虛擬碼</span><span class="lang-en hidden">Pseudocode</span></div>
+        <div id="code" class="mono text-[12.5px] leading-relaxed"></div>
+      </div>
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">執行狀態</span><span class="lang-en hidden">Execution state</span></div>
+        <div id="vars" class="flex flex-wrap gap-2 mono text-sm mb-3"></div>
+        <div id="msg" class="text-sm" style="min-height:2.4rem"></div>
+        <div id="outp" class="mono text-sm mt-2" style="color:var(--ac)"></div>
+      </div>
+    </div>
+
+    <div class="flex gap-2 mt-4">
+      <button onclick="stepFwd()" class="bp-btn" style="border-color:var(--ac)"><i data-lucide="step-forward" width="14" height="14"></i><span class="lang-zh">單步</span><span class="lang-en hidden">Step</span></button>
+      <button onclick="auto()" id="autobtn" class="bp-btn"><i data-lucide="play" width="14" height="14"></i><span class="lang-zh">自動</span><span class="lang-en hidden">Auto</span></button>
+      <button onclick="reset()" class="bp-btn"><i data-lucide="rotate-ccw" width="13" height="13"></i><span class="lang-zh">重設</span><span class="lang-en hidden">Reset</span></button>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh">任何程式都由三種<b style="color:var(--ac)">控制結構</b>組成:<b>序列</b>(逐行執行)、<b>選擇</b>(IF…THEN…ELSE 按條件分支)與<b>迭代</b>(WHILE／FOR 重複)。灰化刪線的行代表本次執行<b>沒有走到</b>的分支。</span>
+      <span class="lang-en hidden">Every program is built from three <b style="color:var(--ac)">control structures</b>: <b>sequence</b> (run line by line), <b>selection</b> (IF…THEN…ELSE branches on a condition), and <b>iteration</b> (WHILE／FOR repeats). Greyed, struck-through lines are the branch <b>not taken</b> this run.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();render();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let mode='seq', steps=[], si=-1, timer=null, selVal=72, iterN=3;
+
+  const T={
+    seq:{
+      code:['x ← 5','y ← 3','sum ← x + y','OUTPUT sum'],
+      input:null,
+      gen(){ const s=[]; let st={x:'–',y:'–',sum:'–'},out='';
+        s.push({line:0,st:{...st={...st,x:5}},msg:{zh:'把 5 存入 x',en:'store 5 into x'},out});
+        s.push({line:1,st:{...st={...st,y:3}},msg:{zh:'把 3 存入 y',en:'store 3 into y'},out});
+        s.push({line:2,st:{...st={...st,sum:8}},msg:{zh:'計算 x + y = 8',en:'compute x + y = 8'},out});
+        s.push({line:3,st:{...st},msg:{zh:'輸出 sum',en:'output sum'},out:String(st.sum)});
+        return s; } },
+    sel:{
+      code:['INPUT score','IF score ≥ 50 THEN','   grade ← "PASS"','ELSE','   grade ← "FAIL"','END IF','OUTPUT grade'],
+      input:{label:{zh:'score =',en:'score ='},vals:[42,50,72,95],get:()=>selVal,set:v=>selVal=v},
+      gen(){ const s=[]; const pass=selVal>=50; let st={score:selVal,grade:'–'};
+        s.push({line:0,st:{...st},msg:{zh:`輸入 score = ${selVal}`,en:`input score = ${selVal}`}});
+        s.push({line:1,st:{...st},msg:{zh:`檢查 ${selVal} ≥ 50 → ${pass?'真':'假'}`,en:`test ${selVal} ≥ 50 → ${pass?'true':'false'}`},cond:pass});
+        if(pass){ s.push({line:2,st:{...st={...st,grade:'"PASS"'}},msg:{zh:'走 THEN 分支',en:'take THEN branch'}}); }
+        else    { s.push({line:4,st:{...st={...st,grade:'"FAIL"'}},msg:{zh:'走 ELSE 分支',en:'take ELSE branch'}}); }
+        s.push({line:6,st:{...st},msg:{zh:'輸出 grade',en:'output grade'},out:st.grade});
+        s._skip = pass? [4] : [2];
+        return s; } },
+    iter:{
+      code:['i ← 1','WHILE i ≤ N','   OUTPUT i','   i ← i + 1','END WHILE'],
+      input:{label:{zh:'N =',en:'N ='},vals:[2,3,4,5],get:()=>iterN,set:v=>iterN=v},
+      gen(){ const s=[]; let st={i:1,N:iterN},out='';
+        s.push({line:0,st:{...st},msg:{zh:'i 初始化為 1',en:'initialise i to 1'},out});
+        while(true){
+          const go=st.i<=st.N;
+          s.push({line:1,st:{...st},msg:{zh:`檢查 i ≤ N → ${go?'真,繼續':'假,結束'}`,en:`test i ≤ N → ${go?'true, loop':'false, exit'}`},cond:go});
+          if(!go) break;
+          out=(out?out+' ':'')+st.i;
+          s.push({line:2,st:{...st},msg:{zh:`輸出 ${st.i}`,en:`output ${st.i}`},out});
+          st={...st,i:st.i+1};
+          s.push({line:3,st:{...st},msg:{zh:`i 加 1 → ${st.i}`,en:`i + 1 → ${st.i}`},out});
+        }
+        s.push({line:4,st:{...st},msg:{zh:'離開迴圈',en:'exit loop'},out});
+        return s; } },
+  };
+
+  function render(){
+    const t=T[mode]; const cur=si>=0?steps[si].line:-1; const skip=steps._skip||[];
+    $('code').innerHTML=t.code.map((l,i)=>{ const cls=(i===cur?'cur':'')+(skip.includes(i)?' skip':''); return `<div class="codeln ${cls}"><span class="text-slate-400 mr-2">${i+1}</span>${l.replace(/</g,'&lt;')}</div>`; }).join('');
+    const st=si>=0?steps[si].st:(steps[0]?steps[0].st:{});
+    $('vars').innerHTML=Object.keys(st).map(k=>`<div class="vbox"><div class="text-[10px] text-slate-400">${k}</div><div class="vv">${st[k]}</div></div>`).join('');
+    const m=si>=0?steps[si].msg:{zh:'按「單步」開始',en:'press Step to begin'};
+    $('msg').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${m.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${m.en}</span>`;
+    let out=''; for(let r=0;r<=si;r++){ if(steps[r]&&steps[r].out!==undefined) out=steps[r].out; }
+    $('outp').textContent=out?('OUTPUT ▸ '+out):'';
+  }
+  function stepFwd(){ if(si<steps.length-1){ si++; render(); if(window.lucide)lucide.createIcons(); } else stopAuto(); }
+  function stopAuto(){ if(timer){clearInterval(timer);timer=null; $('autobtn').innerHTML='<i data-lucide="play" width="14" height="14"></i><span class="lang-zh">自動</span><span class="lang-en hidden">Auto</span>'; applyLang(); if(window.lucide)lucide.createIcons();} }
+  function auto(){ if(timer){stopAuto();return;} $('autobtn').innerHTML='<i data-lucide="pause" width="14" height="14"></i><span class="lang-zh">暫停</span><span class="lang-en hidden">Pause</span>'; applyLang(); if(window.lucide)lucide.createIcons(); timer=setInterval(()=>{ if(si>=steps.length-1){stopAuto();return;} stepFwd(); },850); }
+  function reset(){ stopAuto(); steps=T[mode].gen(); si=-1; buildInput(); render(); }
+
+  function buildInput(){
+    const t=T[mode];
+    if(!t.input){ $('inputrow').classList.add('hidden'); return; }
+    $('inputrow').classList.remove('hidden');
+    $('inputlabel').innerHTML=`<span class="lang-zh ${__lang!=='zh'?'hidden':''}">${t.input.label.zh}</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${t.input.label.en}</span>`;
+    $('inputbtns').innerHTML=t.input.vals.map(v=>`<button class="bp-btn" data-v="${v}" style="${t.input.get()===v?'border-color:var(--ac);color:var(--ac)':''}">${v}</button>`).join('');
+    $('inputbtns').querySelectorAll('button').forEach(b=>b.onclick=()=>{ t.input.set(+b.dataset.v); reset(); });
+  }
+
+  window.setS=function(m){ mode=m; ['seq','sel','iter'].forEach(k=>$('t-'+k).style.borderColor=k===m?'var(--ac)':''); reset(); };
+  window.stepFwd=stepFwd; window.auto=auto; window.reset=reset; window.render=render;
+  setS('seq');
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

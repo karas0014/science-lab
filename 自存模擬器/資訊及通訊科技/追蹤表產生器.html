@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>追蹤表產生器 · Trace Table Generator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ .codeln{ padding:2px 8px;border-radius:4px;transition:all .2s; } .codeln.cur{ background:color-mix(in srgb,var(--ac) 18%,transparent);color:var(--ac);font-weight:700; }
+ table.trace th,table.trace td{ border:1px solid #c3ccd8;padding:4px 10px;text-align:center; } body.dark table.trace th,body.dark table.trace td{ border-color:#2c3e57; }
+ table.trace tr:last-child td{ background:color-mix(in srgb,var(--ac) 10%,transparent); }
+ .chg{ color:var(--ac);font-weight:700; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.25</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">追蹤表產生器</span><span class="lang-en hidden">Trace Table Generator</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Dry Run</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button onclick="setProg('fact')" id="p-fact" class="bp-btn"><span class="lang-zh">階乘 N!</span><span class="lang-en hidden">Factorial N!</span></button>
+      <button onclick="setProg('evens')" id="p-evens" class="bp-btn"><span class="lang-zh">數偶數</span><span class="lang-en hidden">Count evens</span></button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">虛擬碼</span><span class="lang-en hidden">Pseudocode</span></div>
+        <div id="code" class="mono text-[12.5px] leading-relaxed"></div>
+      </div>
+      <div class="bp-panel rounded p-4 overflow-x-auto">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">追蹤表</span><span class="lang-en hidden">Trace table</span></div>
+        <table class="trace mono text-xs w-full" id="table"></table>
+      </div>
+    </div>
+
+    <div class="flex gap-2 mt-4">
+      <button onclick="stepFwd()" class="bp-btn" style="border-color:var(--ac)"><i data-lucide="step-forward" width="14" height="14"></i><span class="lang-zh">單步</span><span class="lang-en hidden">Step</span></button>
+      <button onclick="auto()" id="autobtn" class="bp-btn"><i data-lucide="play" width="14" height="14"></i><span class="lang-zh">自動</span><span class="lang-en hidden">Auto</span></button>
+      <button onclick="reset()" class="bp-btn"><i data-lucide="rotate-ccw" width="13" height="13"></i><span class="lang-zh">重設</span><span class="lang-en hidden">Reset</span></button>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh"><b style="color:var(--ac)">追蹤表 (dry run)</b> 是人手逐行「執行」算法,把每次變量的變化記錄下來。這是 DSE 常考的技巧,用來理解迴圈行為、找出<b>邏輯錯誤</b>,或預測輸出。左邊高亮目前執行的一行。</span>
+      <span class="lang-en hidden"><b style="color:var(--ac)">A trace table (dry run)</b> means hand-executing an algorithm line by line, recording every change to the variables. It is a common DSE skill used to understand loop behaviour, find <b>logic errors</b>, or predict the output. The currently executing line is highlighted on the left.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();renderCode();renderTable();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let prog='fact', steps=[], si=-1, timer=null;
+  const PROGS={
+    fact:{ cols:['i','fact','OUTPUT'],
+      code:['fact ← 1','FOR i ← 1 TO 5','   fact ← fact × i','NEXT i','OUTPUT fact'],
+      gen(){ const rows=[]; let fact=1,out=''; rows.push({line:0,i:'',fact:1,OUTPUT:''});
+        for(let i=1;i<=5;i++){ rows.push({line:1,i,fact,OUTPUT:''}); fact=fact*i; rows.push({line:2,i,fact,OUTPUT:''}); }
+        rows.push({line:4,i:5,fact,OUTPUT:fact}); return rows; } },
+    evens:{ cols:['i','list[i]','count','OUTPUT'],
+      code:['list = [4,7,2,9,6]','count ← 0','FOR i ← 0 TO 4','   IF list[i] MOD 2 = 0','      count ← count + 1','OUTPUT count'],
+      gen(){ const L=[4,7,2,9,6]; const rows=[]; let count=0; rows.push({line:1,i:'','list[i]':'',count:0,OUTPUT:''});
+        for(let i=0;i<5;i++){ rows.push({line:2,i,'list[i]':L[i],count,OUTPUT:''}); rows.push({line:3,i,'list[i]':L[i],count,OUTPUT:'',note:(L[i]%2===0)}); if(L[i]%2===0){ count++; rows.push({line:4,i,'list[i]':L[i],count,OUTPUT:''}); } }
+        rows.push({line:5,i:4,'list[i]':L[4],count,OUTPUT:count}); return rows; } },
+  };
+
+  function renderCode(){
+    const p=PROGS[prog]; const cur=si>=0?steps[si].line:-1;
+    $('code').innerHTML=p.code.map((l,i)=>`<div class="codeln ${i===cur?'cur':''}"><span class="text-slate-400 mr-2">${i+1}</span>${l.replace(/</g,'&lt;').replace(/ /g,'&nbsp;')}</div>`).join('');
+  }
+  function renderTable(){
+    const p=PROGS[prog];
+    let h='<thead><tr>'+p.cols.map(c=>`<th>${c}</th>`).join('')+'</tr></thead><tbody>';
+    for(let r=0;r<=si;r++){ const row=steps[r]; if(row.line===undefined) continue; }
+    // build displayed rows: only rows that represent a table entry (skip pure decision lines w/o change) — we show all recorded snapshots up to si
+    const shown=[];
+    for(let r=0;r<=si;r++){ shown.push(steps[r]); }
+    // collapse: show each recorded step as a row
+    h+=shown.map((row,ri)=>{
+      const prev=ri>0?shown[ri-1]:null;
+      return '<tr>'+p.cols.map(c=>{ const v=row[c]; const changed=prev && String(prev[c])!==String(v) && v!=='' ; return `<td class="${changed?'chg':''}">${v===''?'':v}</td>`; }).join('')+'</tr>';
+    }).join('');
+    h+='</tbody>';
+    $('table').innerHTML=h;
+  }
+  function stepFwd(){ if(si<steps.length-1){ si++; renderCode(); renderTable(); if(window.lucide)lucide.createIcons(); } else stopAuto(); }
+  function stopAuto(){ if(timer){clearInterval(timer);timer=null; $('autobtn').innerHTML='<i data-lucide="play" width="14" height="14"></i><span class="lang-zh">自動</span><span class="lang-en hidden">Auto</span>'; applyLang(); if(window.lucide)lucide.createIcons();} }
+  function auto(){ if(timer){stopAuto();return;} $('autobtn').innerHTML='<i data-lucide="pause" width="14" height="14"></i><span class="lang-zh">暫停</span><span class="lang-en hidden">Pause</span>'; applyLang(); if(window.lucide)lucide.createIcons(); timer=setInterval(()=>{ if(si>=steps.length-1){stopAuto();return;} stepFwd(); },700); }
+  function reset(){ stopAuto(); steps=PROGS[prog].gen(); si=-1; renderCode(); renderTable(); }
+  window.setProg=function(p){ prog=p; $('p-fact').style.borderColor=p==='fact'?'var(--ac)':''; $('p-evens').style.borderColor=p==='evens'?'var(--ac)':''; reset(); };
+  window.stepFwd=stepFwd; window.auto=auto; window.reset=reset; window.renderCode=renderCode; window.renderTable=renderTable;
+  setProg('fact');
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

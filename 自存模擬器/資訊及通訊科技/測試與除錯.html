@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>測試與除錯 · Testing &amp; Debugging</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&family=Noto+Serif+HK:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+ :root{ color-scheme:light dark; --ac:#8b5cf6; }
+ body{ font-family:'Noto Sans HK',sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; transition:background-color .3s; }
+ .serif-font{ font-family:'Noto Serif HK',serif; } .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+ .bp-surface{ background-color:#eaeef3; background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(rgba(37,99,235,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.10) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ body.dark .bp-surface{ background-color:#0a1626; background-image:linear-gradient(rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px),linear-gradient(rgba(56,189,248,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.11) 1px,transparent 1px); background-size:26px 26px,26px 26px,130px 130px,130px 130px; }
+ .bp-panel{ position:relative;border:1px solid #c3ccd8;border-radius:3px;background:linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)); }
+ body.dark .bp-panel{ border-color:#2c3e57;background:linear-gradient(rgba(13,25,43,.6),rgba(13,25,43,.6)); }
+ .tk{ position:absolute;width:10px;height:10px;color:var(--ac);opacity:.6;pointer-events:none; }
+ .tk.tl{ top:6px;left:6px;border-top:1.5px solid;border-left:1.5px solid; } .tk.tr{ top:6px;right:6px;border-top:1.5px solid;border-right:1.5px solid; }
+ .tk.bl{ bottom:6px;left:6px;border-bottom:1.5px solid;border-left:1.5px solid; } .tk.br{ bottom:6px;right:6px;border-bottom:1.5px solid;border-right:1.5px solid; }
+ .bp-bar{ position:fixed;top:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px; }
+ .bp-btn{ display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;border:1px solid #c3ccd8;background:rgba(255,255,255,.85);color:#334155;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-decoration:none;cursor:pointer;box-shadow:0 2px 10px rgba(2,6,23,.12);transition:border-color .2s,color .2s; }
+ .bp-btn:hover{ border-color:var(--ac);color:#0f172a; } body.dark .bp-btn{ background:rgba(10,22,38,.85);border-color:#2c3e57;color:#cbd5e1; } body.dark .bp-btn:hover{ border-color:var(--ac);color:#fff; }
+ table.tst th,table.tst td{ border:1px solid #c3ccd8;padding:5px 9px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:.78rem; } body.dark table.tst th,body.dark table.tst td{ border-color:#2c3e57; }
+ .tag{ display:inline-block;padding:1px 7px;border-radius:99px;font-size:.66rem;font-weight:700; }
+ .tag.normal{ background:rgba(16,185,129,.15);color:#10b981; } .tag.bound{ background:rgba(139,92,246,.18);color:#8b5cf6; } .tag.abn{ background:rgba(244,63,94,.15);color:#f43f5e; }
+ .ok{ color:#10b981;font-weight:700; } .bad{ color:#f43f5e;font-weight:700; }
+ .codeln{ padding:1px 8px;white-space:pre; }
+ .buggy{ background:color-mix(in srgb,#f43f5e 16%,transparent);border-radius:4px; }
+</style>
+</head>
+<body class="dark bp-surface text-slate-800 dark:text-slate-200 p-4 select-none min-h-screen">
+
+<a href="../../ict.html" class="bp-bar bp-btn" style="left:12px"><i data-lucide="home" width="15" height="15"></i><span>INDEX</span></a>
+<div class="bp-bar" style="right:12px">
+  <button onclick="toggleTheme()" class="bp-btn"><span id="theme-ic"><i data-lucide="sun" width="16" height="16"></i></span></button>
+  <button onclick="toggleLang()" class="bp-btn"><i data-lucide="languages" width="15" height="15"></i><span id="lang-label">EN</span></button>
+</div>
+
+<div class="max-w-4xl mx-auto bp-panel rounded-md shadow-lg overflow-hidden mt-14 sm:mt-2">
+  <span class="tk tl"></span><span class="tk tr"></span><span class="tk bl"></span><span class="tk br"></span>
+  <div class="px-5 py-4 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="mono text-[11px] font-bold tracking-[0.18em] uppercase" style="color:var(--ac)">FIG.31</span>
+      <h1 class="serif-font text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"><span class="lang-zh">測試與除錯</span><span class="lang-en hidden">Testing &amp; Debugging</span></h1>
+    </div>
+    <span class="mono hidden sm:inline text-[10.5px] tracking-[0.16em] uppercase text-slate-400 dark:text-slate-500">ICT · Test Data</span>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <p class="text-sm text-slate-600 dark:text-slate-300 mb-4"><span class="lang-zh">程式要驗證輸入的<b>考試分數</b> (規則:<b style="color:var(--ac)">0–100</b> 才接受)。選擇驗證版本,然後用不同<b>測試數據</b>去試。</span><span class="lang-en hidden">A program validates an <b>exam mark</b> (rule: accept only <b style="color:var(--ac)">0–100</b>). Pick a validation version, then probe it with different <b>test data</b>.</span></p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bp-panel rounded p-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400"><span class="lang-zh">驗證程式</span><span class="lang-en hidden">Validation code</span></div>
+          <div class="flex gap-1">
+            <button onclick="setV(false)" id="v-ok" class="bp-btn" style="padding:4px 9px"><span class="lang-zh">正確版</span><span class="lang-en hidden">Correct</span></button>
+            <button onclick="setV(true)" id="v-bug" class="bp-btn" style="padding:4px 9px"><span class="lang-zh">有錯版</span><span class="lang-en hidden">Buggy</span></button>
+          </div>
+        </div>
+        <div id="code" class="mono text-[12px] leading-relaxed"></div>
+        <div id="bughint" class="text-[11px] mt-2 hidden" style="color:#f43f5e"><span class="lang-zh">⚠ 這版用了 <b>&gt; 0</b> 而非 <b>≥ 0</b> — 一個常見的「差一」錯誤。</span><span class="lang-en hidden">⚠ this version uses <b>&gt; 0</b> instead of <b>≥ 0</b> — a classic off-by-one bug.</span></div>
+      </div>
+
+      <div class="bp-panel rounded p-4">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400 mb-2"><span class="lang-zh">試一個輸入</span><span class="lang-en hidden">Try one input</span></div>
+        <div class="flex flex-wrap gap-1 mb-3" id="probe"></div>
+        <div id="result" class="text-sm" style="min-height:4.5rem"></div>
+      </div>
+    </div>
+
+    <div class="bp-panel rounded p-4 mt-4 overflow-x-auto">
+      <div class="flex items-center justify-between mb-2">
+        <div class="mono text-[10px] tracking-[0.2em] uppercase text-slate-400"><span class="lang-zh">測試計劃</span><span class="lang-en hidden">Test plan</span></div>
+        <button onclick="runAll()" class="bp-btn" style="padding:4px 10px"><i data-lucide="play" width="13" height="13"></i><span class="lang-zh">全部執行</span><span class="lang-en hidden">Run all</span></button>
+      </div>
+      <table class="tst w-full" id="plan"></table>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-300 dark:border-slate-700 pt-3">
+      <span class="lang-zh">好的測試要涵蓋三類數據:<span class="tag normal">正常</span>(規則內的一般值)、<span class="tag bound">邊界</span>(剛好在界線上,如 0 和 100)與<span class="tag abn">異常</span>(界外或不合法,如 -1、150、"abc")。<b style="color:var(--ac)">邊界值</b>最能揭露「差一」等錯誤 — 試試「有錯版」對 <b>0</b> 的反應。</span>
+      <span class="lang-en hidden">Good testing covers three kinds of data: <span class="tag normal">normal</span> (typical valid values), <span class="tag bound">boundary</span> (right on the limits, e.g. 0 and 100), and <span class="tag abn">abnormal / erroneous</span> (out of range or invalid, e.g. -1, 150, "abc"). <b style="color:var(--ac)">Boundary values</b> best expose off-by-one bugs — see how the buggy version handles <b>0</b>.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+ let __isDark=true,__lang='zh';
+ function applyLang(){document.querySelectorAll('.lang-zh').forEach(e=>e.classList.toggle('hidden',__lang!=='zh'));document.querySelectorAll('.lang-en').forEach(e=>e.classList.toggle('hidden',__lang!=='en'));}
+ function toggleTheme(){__isDark=!__isDark;document.body.classList.toggle('dark',__isDark);document.getElementById('theme-ic').innerHTML=`<i data-lucide="${__isDark?'sun':'moon'}" width="16" height="16"></i>`;if(window.lucide)lucide.createIcons();}
+ function toggleLang(){__lang=__lang==='zh'?'en':'zh';document.getElementById('lang-label').textContent=__lang==='zh'?'EN':'中';applyLang();renderPlan();}
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let buggy=false;
+  // test cases: value, expected accept?, category
+  const CASES=[
+    {v:'55',  exp:true,  cat:'normal', zh:'一般合格分', en:'typical valid mark'},
+    {v:'0',   exp:true,  cat:'bound',  zh:'下界',       en:'lower boundary'},
+    {v:'100', exp:true,  cat:'bound',  zh:'上界',       en:'upper boundary'},
+    {v:'-1',  exp:false, cat:'abn',    zh:'界外(過低)', en:'out of range (low)'},
+    {v:'150', exp:false, cat:'abn',    zh:'界外(過高)', en:'out of range (high)'},
+    {v:'abc', exp:false, cat:'abn',    zh:'非數字',     en:'not a number'},
+  ];
+  const CAT={normal:{zh:'正常',en:'normal'},bound:{zh:'邊界',en:'boundary'},abn:{zh:'異常',en:'abnormal'}};
+
+  // the program under test. returns {accept, err}
+  function program(raw){
+    const n=Number(raw);
+    if(raw.trim()===''||isNaN(n)||!Number.isInteger(n)) return {accept:false,err:true};
+    const low = buggy ? (n>0) : (n>=0);          // <-- the injected bug
+    const high = n<=100;
+    return {accept: low && high, err:false};
+  }
+  function renderCode(){
+    const lo = buggy ? 'mark &gt; 0' : 'mark ≥ 0';
+    const lines=['INPUT mark','IF NOT isNumber(mark) THEN','   OUTPUT "error"','ELSE IF '+lo+' AND mark ≤ 100 THEN','   OUTPUT "accepted"','ELSE','   OUTPUT "rejected"','END IF'];
+    $('code').innerHTML=lines.map((l,i)=>`<div class="codeln ${i===3&&buggy?'buggy':''}">${l}</div>`).join('');
+    $('bughint').classList.toggle('hidden',!buggy);
+    $('v-ok').style.borderColor=buggy?'':'var(--ac)'; $('v-bug').style.borderColor=buggy?'#f43f5e':'';
+  }
+  function verdict(c){
+    const r=program(c.v); const got = r.err? 'error' : (r.accept?'accepted':'rejected');
+    const acc = r.accept; const correct = acc===c.exp;
+    return {got, acc, correct, err:r.err};
+  }
+  function probe(c){
+    const r=verdict(c);
+    const outTxt = r.err?'"error"':(r.acc?'"accepted"':'"rejected"');
+    const expTxt = c.exp?'接受 accept':'拒絕 reject';
+    $('result').innerHTML=
+      `<div class="mono text-lg mb-1">mark = <b style="color:var(--ac)">${c.v}</b></div>`+
+      `<div class="text-sm mb-1"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">程式輸出:</span><span class="lang-en ${__lang!=='en'?'hidden':''}">program output:</span> <span class="mono">${outTxt}</span></div>`+
+      `<div class="text-sm"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">應該:</span><span class="lang-en ${__lang!=='en'?'hidden':''}">expected:</span> <span class="mono">${c.exp?'"accepted"':(r.err?'"error"/"rejected"':'"rejected"')}</span> ${r.correct?'<span class="ok">✓ 正確 pass</span>':'<span class="bad">✗ 有錯 FAIL — bug caught!</span>'}</div>`;
+  }
+  function renderPlan(){
+    let h='<thead><tr>'
+      +`<th><span class="lang-zh ${__lang!=='zh'?'hidden':''}">測試數據</span><span class="lang-en ${__lang!=='en'?'hidden':''}">test data</span></th>`
+      +`<th><span class="lang-zh ${__lang!=='zh'?'hidden':''}">類別</span><span class="lang-en ${__lang!=='en'?'hidden':''}">category</span></th>`
+      +`<th><span class="lang-zh ${__lang!=='zh'?'hidden':''}">預期</span><span class="lang-en ${__lang!=='en'?'hidden':''}">expected</span></th>`
+      +`<th><span class="lang-zh ${__lang!=='zh'?'hidden':''}">實際</span><span class="lang-en ${__lang!=='en'?'hidden':''}">actual</span></th>`
+      +'<th>✓/✗</th></tr></thead><tbody>';
+    h+=CASES.map(c=>{ const r=verdict(c);
+      const cat=`<span class="tag ${c.cat}">${__lang==='zh'?CAT[c.cat].zh:CAT[c.cat].en}</span>`;
+      const actual = r.err?'error':(r.acc?'accepted':'rejected');
+      return `<tr><td class="cursor-pointer" onclick='__probe(${JSON.stringify(c)})' style="color:var(--ac)">${c.v}</td><td>${cat}</td><td>${c.exp?'accept':'reject'}</td><td>${actual}</td><td>${r.correct?'<span class="ok">✓</span>':'<span class="bad">✗</span>'}</td></tr>`;
+    }).join('');
+    h+='</tbody>'; $('plan').innerHTML=h;
+  }
+  function buildProbe(){ $('probe').innerHTML=CASES.map(c=>`<button class="bp-btn" style="padding:5px 10px" onclick='__probe(${JSON.stringify(c)})'>${c.v}</button>`).join(''); }
+  window.__probe=probe;
+  window.setV=function(b){ buggy=b; renderCode(); renderPlan(); $('result').innerHTML=`<span class="text-slate-400 text-sm"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">按上方任一測試值 ▸</span><span class="lang-en ${__lang!=='en'?'hidden':''}">click a test value above ▸</span></span>`; };
+  window.runAll=function(){ renderPlan(); const fails=CASES.filter(c=>!verdict(c).correct).length;
+    $('result').innerHTML= fails? `<div class="bad text-sm"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">${fails} 個測試失敗 — 表中 ✗ 就是被揭發的錯誤。</span><span class="lang-en ${__lang!=='en'?'hidden':''}">${fails} test(s) failed — each ✗ in the table is a caught bug.</span></div>` : `<div class="ok text-sm"><span class="lang-zh ${__lang!=='zh'?'hidden':''}">全部測試通過 ✓ 程式在這些數據下正確。</span><span class="lang-en ${__lang!=='en'?'hidden':''}">all tests pass ✓ correct for this data.</span></div>`;
+  };
+  buildProbe(); setV(false);
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>
